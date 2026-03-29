@@ -9,14 +9,13 @@ dotenv.config();
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(cors({
-  origin: [
-    'https://reektickets-d9wl7b4hb-bernicesarpomaa1-wqs-projects.vercel.app',
-    'http://localhost:3000'
-  ],
+  origin: true,
   credentials: true
 }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // Middleware to ensure DB connection
 app.use(async (req, res, next) => {
@@ -33,8 +32,6 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api', require('./routes/extras'));
-
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 5000;
 

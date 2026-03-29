@@ -90,7 +90,7 @@ export async function fetchTicket(id) {
 
 export async function createEvent(payload) {
   try {
-    const res = await fetch(`${API_BASE}/events/create`, {
+    const res = await fetch(`${API_BASE}/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(payload),
