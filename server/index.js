@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
-const serverless = require('serverless-http');
 const connectDB = require('./config/db');
 const { initSocket } = require('./services/socket');
 
@@ -58,4 +57,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = serverless(app);
+// Export Express app for serverless environments (Vercel)
+module.exports = app;

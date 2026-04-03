@@ -3,6 +3,11 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', 'server', '.env') });
 
+// Fallback to Vercel environment variables
+if (!process.env.MONGO_URI && !process.env.MONGODB_URI) {
+  console.log('Loading environment from Vercel env vars');
+}
+
 const connectDB = require('../server/config/db');
 
 // Create Express app
@@ -60,6 +65,15 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Not found' });
 });
 
-module.exports = app;
+// Vercel serverless function export
+module.exports = (req, res) => {
+  return new Promise((resolve) => {
+    app(req, res);
+    resolve();
+  });
+};
+
+// For local development, also export the app
+module.exports.app = app;
 
 

@@ -2,7 +2,12 @@
   "version": 2,
   "buildCommand": "CI=false npm run build",
   "outputDirectory": "build",
-  "framework": "create-react-app",
+  "framework": null,
+  "functions": {
+    "api/[...path].js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "env": {
     "DISABLE_ESLINT_PLUGIN": "true",
     "CI": "false",
@@ -18,7 +23,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/handler"
+      "dest": "/api/[...path].js"
     },
     {
       "src": "/static/(.*)",
