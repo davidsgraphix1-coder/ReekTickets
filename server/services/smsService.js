@@ -1,15 +1,99 @@
 /**
  * SMS Service for Node.js Backend
- * Hybrid approach: Try SMS gateway first, fallback to direct HTTP API
+ * Using Termii SMS API (reliable for Ghana)
  */
 
 const axios = require('axios');
 
-const SMS_API_KEY = process.env.SMS_API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
+const SMS_API_KEY = process.env.SMS_API_KEY || 'TLx8j8p8nq9w4r5t6y7u8i9o0p1a2s3d4f5g6h7j8k9l0z1x2c3v4b5n6m7';
 const SMS_SENDER_ID = process.env.SMS_SENDER_ID || 'ReekTickets';
-const SMS_HOST = process.env.SMS_HOST || 'api.smsonlinegh.com';
+const SMS_HOST = process.env.SMS_HOST || 'api.ng.termii.com';
 const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'http://localhost:8001';
-const USE_GATEWAY = process.env.USE_SMS_GATEWAY !== 'false'; // Default true
+const USE_GATEWAY = process.env.USE_SMS_GATEWAY !== 'false';
+
+/**
+ * Send SMS via Termii API (reliable SMS provider)
+ */
+async function sendViaTermii(phone, message) {
+  try {
+    console.log(`[SMS] Using Termii API: ${SMS_HOST}`);
+
+    // Clean phone number
+    let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
+
+    // Convert to international format
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '233' + cleanPhone.substring(1);
+    } else if (!cleanPhone.startsWith('233')) {
+      cleanPhone = '233' + cleanPhone;
+    }
+
+    console.log(`[SMS] Sending to cleaned phone: ${cleanPhone}`);
+
+    const payload = {
+      to: cleanPhone,
+      from: SMS_SENDER_ID,
+      sms: message,
+      type: "plain",
+      channel: "generic",
+      api_key: SMS_API_KEY
+    };
+
+    const url = `https://${SMS_HOST}/api/sms/send`;
+    console.log(`[SMS] Termii API call to ${cleanPhone}`);
+
+    const response = await axios.post(url, payload, {
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'ReekTickets-SMS/1.0'
+      },
+      validateStatus: () => true
+    });
+
+    console.log(`[SMS] Termii response status: ${response.status}`);
+    console.log(`[SMS] Termii response data:`, JSON.stringify(response.data, null, 2));
+
+    if (response.status === 200 && response.data && response.data.message === "Successfully Sent") {
+      console.log(`[SMS] Termii success: ${response.data.message_id || 'no-id'}`);
+      return {
+        success: true,
+        status: 200,
+        data: response.data,
+        message: `SMS sent successfully via Termii to ${cleanPhone}`
+      };
+    } else {
+      console.error(`[SMS] Termii failed: ${response.data?.message || 'Unknown error'}`);
+      return {
+        success: false,
+        status: response.status,
+        error: response.data?.message || 'Termii API error',
+        message: `Termii failed: ${response.data?.message || 'Unknown error'}`
+      };
+    }
+
+  } catch (error) {
+    console.error('[SMS] Termii error:', error.message);
+    let errorMsg = error.message;
+
+    if (error.response) {
+      errorMsg = `HTTP ${error.response.status}: ${error.response.data?.message || error.response.statusText}`;
+    } else if (error.code === 'ECONNREFUSED') {
+      errorMsg = 'Termii service unreachable';
+    } else if (error.code === 'ENOTFOUND') {
+      errorMsg = 'Termii host not found';
+    } else if (error.code === 'ETIMEDOUT') {
+      errorMsg = 'Termii request timeout';
+    }
+
+    return {
+      success: false,
+      status: 500,
+      error: errorMsg,
+      message: `Termii API error: ${errorMsg}`
+    };
+  }
+}
 
 /**
  * Send SMS via HTTP Gateway (if available - runs Python handler)
@@ -17,7 +101,7 @@ const USE_GATEWAY = process.env.USE_SMS_GATEWAY !== 'false'; // Default true
 async function sendViaGateway(phone, message) {
   try {
     console.log(`[SMS] Trying gateway: ${SMS_GATEWAY_URL}`);
-    
+
     const response = await axios.post(`${SMS_GATEWAY_URL}/send-sms`, {
       phone,
       message
@@ -27,7 +111,7 @@ async function sendViaGateway(phone, message) {
         'Content-Type': 'application/json'
       }
     });
-    
+
     if (response.data && response.data.success) {
       console.log('[SMS] Gateway sent successfully');
       return response.data;
@@ -41,80 +125,13 @@ async function sendViaGateway(phone, message) {
 }
 
 /**
- * Send SMS via direct HTTP API (fallback for Vercel)
- */
-async function sendViaDirectAPI(phone, message) {
-  try {
-    console.log(`[SMS] Using direct API: ${SMS_HOST}`);
-
-    // Clean phone number
-    let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
-
-    // Convert to international format
-    if (cleanPhone.startsWith('0')) {
-      cleanPhone = '233' + cleanPhone.substring(1);
-    } else if (!cleanPhone.startsWith('233')) {
-      cleanPhone = '233' + cleanPhone;
-    }
-
-    const params = {
-      apikey: SMS_API_KEY,
-      sender: SMS_SENDER_ID,
-      message: message,
-      recipients: cleanPhone
-    };
-
-    const url = `https://${SMS_HOST}/sms/send/?${new URLSearchParams(params).toString()}`;
-    console.log(`[SMS] Direct API call to ${cleanPhone}`);
-
-    const response = await axios.get(url, {
-      timeout: 20000,
-      headers: {
-        'User-Agent': 'ReekTickets-SMS/1.0',
-        'Accept': 'application/json'
-      },
-      validateStatus: () => true // Accept all status codes
-    });
-
-    console.log(`[SMS] Direct API response: ${response.status}`);
-
-    if (response.status === 200) {
-      console.log(`[SMS] Direct API success`);
-      return {
-        success: true,
-        status: 200,
-        data: response.data,
-        message: `SMS sent successfully to ${cleanPhone}`
-      };
-    } else {
-      console.error(`[SMS] Direct API failed with ${response.status}`);
-      return {
-        success: false,
-        status: response.status,
-        error: `API returned ${response.status}`,
-        message: `Direct API failed: HTTP ${response.status}`
-      };
-    }
-
-  } catch (error) {
-    console.error('[SMS] Direct API error:', error.message);
-    return {
-      success: false,
-      status: 500,
-      error: error.message,
-      message: `Direct API error: ${error.message}`
-    };
-  }
-}
-
-/**
- * Send SMS - main function with fallback logic
+ * Send SMS - main function with Termii as primary
  */
 async function sendSMS(phone, message) {
   try {
     console.log(`[SMS] Sending to ${phone}: ${message.substring(0, 50)}...`);
 
-    // Try gateway first if enabled
+    // Try gateway first if enabled (for local development)
     if (USE_GATEWAY) {
       const gatewayResult = await sendViaGateway(phone, message);
       if (gatewayResult && gatewayResult.success) {
@@ -122,9 +139,39 @@ async function sendSMS(phone, message) {
       }
     }
 
-    // Fallback to direct API
-    console.log('[SMS] Using direct API fallback');
-    return await sendViaDirectAPI(phone, message);
+    // Use Termii API (works on Vercel)
+    console.log('[SMS] Using Termii API');
+    return await sendViaTermii(phone, message);
+
+  } catch (error) {
+    console.error('[SMS] Unexpected error:', error.message);
+    return {
+      success: false,
+      status: 500,
+      error: error.message,
+      message: 'SMS sending failed'
+    };
+  }
+}
+
+/**
+ * Send SMS - main function with Termii as primary
+ */
+async function sendSMS(phone, message) {
+  try {
+    console.log(`[SMS] Sending to ${phone}: ${message.substring(0, 50)}...`);
+
+    // Try gateway first if enabled (for local development)
+    if (USE_GATEWAY) {
+      const gatewayResult = await sendViaGateway(phone, message);
+      if (gatewayResult && gatewayResult.success) {
+        return gatewayResult;
+      }
+    }
+
+    // Use Termii API (works on Vercel)
+    console.log('[SMS] Using Termii API');
+    return await sendViaTermii(phone, message);
 
   } catch (error) {
     console.error('[SMS] Unexpected error:', error.message);
