@@ -5,10 +5,17 @@
 
 const axios = require('axios');
 
-const SMS_API_KEY = process.env.SMS_API_KEY || 'TLx8j8p8nq9w4r5t6y7u8i9o0p1a2s3d4f5g6h7j8k9l0z1x2c3v4b5n6m7';
+const SMS_API_KEY = process.env.SMS_API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
 const SMS_SENDER_ID = process.env.SMS_SENDER_ID || 'ReekTickets';
 const SMS_HOST = process.env.SMS_HOST || 'api.ng.termii.com';
-const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'http://localhost:8001';
+
+// Gateway configuration - prioritize environment variable
+let SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL;
+if (!SMS_GATEWAY_URL) {
+  // Default to local for development
+  SMS_GATEWAY_URL = 'http://localhost:8001';
+}
+
 const USE_GATEWAY = process.env.USE_SMS_GATEWAY !== 'false';
 
 /**

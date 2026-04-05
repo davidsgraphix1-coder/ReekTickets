@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "heroku.buildpacks",
+    "buildpacks": [
+      "heroku/python",
+      "heroku/nodejs"
+    ]
+  }
+}
