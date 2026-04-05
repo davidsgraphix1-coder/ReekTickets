@@ -1,35 +1,37 @@
-const mongoose = require('mongoose');
+const { connectDB } = require('../config/db');
 
-const UserSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  firstName: { type: String },
-  lastName: { type: String },
-  email: { type: String, required: true, unique: true, lowercase: true },
-  phone: { type: String, required: true },
-  role: { type: String, enum: ['attendee', 'organizer', 'vendor', 'agent', 'admin', 'supporter'], default: 'attendee' },
-    avatarUrl: { type: String },
-  status: { type: String, enum: ['active', 'suspended', 'banned'], default: 'active' },
-  password: { type: String, required: true },
-  otpCode: { type: String },
-  otpExpiry: { type: Date },
-  isVerified: { type: Boolean, default: false },
-  failedAttempts: { type: Number, default: 0 },
-  lastFailedAttempt: { type: Date },
-  lockUntil: { type: Date },
+// Helper functions for Supabase 'users' table
+const getUserByEmail = async (email) => {
+	const supabase = await connectDB();
+	const { data, error } = await supabase.from('users').select('*').eq('email', email.toLowerCase()).single();
+	if (error && error.code !== 'PGRST116') throw error;
+	return data || null;
+};
 
-  // Organizer specific fields
-  businessName: { type: String },
-  contactNumber: { type: String },
-  businessPartners: [{ firstName: String, lastName: String, phone: String }],
-  businessDetails: {
-    country: { type: String, default: 'Ghana' },
-    city: { type: String },
-    address: { type: String },
-    zipCode: { type: String },
-  },
-  termsAccepted: { type: Boolean, default: false },
+const createUser = async (userData) => {
+	const supabase = await connectDB();
+	const { data, error } = await supabase.from('users').insert(userData).select().single();
+	if (error) throw error;
+	return data;
+};
 
-  createdAt: { type: Date, default: Date.now },
-});
+const updateUser = async (id, updates) => {
+	const supabase = await connectDB();
+	const { data, error } = await supabase.from('users').update(updates).eq('id', id).select().single();
+	if (error) throw error;
+	return data;
+};
 
-module.exports = mongoose.model('User', UserSchema);
+const deleteUser = async (id) => {
+	const supabase = await connectDB();
+	const { error } = await supabase.from('users').delete().eq('id', id);
+	if (error) throw error;
+	return true;
+};
+
+module.exports = {
+	getUserByEmail,
+	createUser,
+	updateUser,
+	deleteUser,
+};

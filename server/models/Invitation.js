@@ -1,11 +1,42 @@
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const InvitationSchema = new mongoose.Schema({
-  event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  organizer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  guestEmail: { type: String, required: true },
-  status: { type: String, enum: ['sent', 'accepted', 'declined'], default: 'sent' },
-  sentAt: { type: Date, default: Date.now },
-});
+const TABLE = 'invitations';
 
-module.exports = mongoose.model('Invitation', InvitationSchema);
+async function getAllInvitations() {
+	const { data, error } = await supabase.from(TABLE).select('*');
+	if (error) throw error;
+	return data;
+}
+
+async function getInvitationById(id) {
+	const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function createInvitation(invitation) {
+	const { data, error } = await supabase.from(TABLE).insert([invitation]).single();
+	if (error) throw error;
+	return data;
+}
+
+async function updateInvitation(id, updates) {
+	const { data, error } = await supabase.from(TABLE).update(updates).eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function deleteInvitation(id) {
+	const { data, error } = await supabase.from(TABLE).delete().eq('id', id);
+	if (error) throw error;
+	return data;
+}
+
+module.exports = {
+	getAllInvitations,
+	getInvitationById,
+	createInvitation,
+	updateInvitation,
+	deleteInvitation,
+};

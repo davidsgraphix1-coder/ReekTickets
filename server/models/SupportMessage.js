@@ -1,12 +1,37 @@
-const mongoose = require('mongoose');
+const { connectDB } = require('../config/db');
 
-const SupportMessageSchema = new mongoose.Schema({
-  chatId: { type: mongoose.Schema.Types.ObjectId, ref: 'SupportChat', required: true },
-  sender: { type: String, enum: ['user', 'admin'], required: true },
-  message: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
-  fileUrl: String,
-  emoji: String,
-}, { timestamps: true });
+// Helper functions for Supabase 'support_messages' table
+const getSupportMessageById = async (id) => {
+  const supabase = await connectDB();
+  const { data, error } = await supabase.from('support_messages').select('*').eq('id', id).single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
+};
 
-module.exports = mongoose.model('SupportMessage', SupportMessageSchema);
+const createSupportMessage = async (msgData) => {
+  const supabase = await connectDB();
+  const { data, error } = await supabase.from('support_messages').insert(msgData).select().single();
+  if (error) throw error;
+  return data;
+};
+
+const updateSupportMessage = async (id, updates) => {
+  const supabase = await connectDB();
+  const { data, error } = await supabase.from('support_messages').update(updates).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+};
+
+const deleteSupportMessage = async (id) => {
+  const supabase = await connectDB();
+  const { error } = await supabase.from('support_messages').delete().eq('id', id);
+  if (error) throw error;
+  return true;
+};
+
+module.exports = {
+  getSupportMessageById,
+  createSupportMessage,
+  updateSupportMessage,
+  deleteSupportMessage,
+};

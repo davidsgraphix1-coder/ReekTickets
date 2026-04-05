@@ -163,11 +163,7 @@ export default function VerifyOtp({ onLogin }) {
               ))}
             </div>
 
-          {verificationCode && (
-            <div className="verify-code-display">
-              Test code: <strong>{verificationCode}</strong>
-            </div>
-          )}
+          {/* Test code display removed for production */}
           
           <div className="verify-timer">
             <span className={`timer-text ${timeLeft < 60 ? 'timer-warning' : ''}`}>

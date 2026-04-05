@@ -1,15 +1,13 @@
+
 const express = require('express');
+const router = express.Router();
 const axios = require('axios');
 const auth = require('../middleware/auth');
-const Event = require('../models/Event');
-const Payment = require('../models/Payment');
-const Ticket = require('../models/Ticket');
-const User = require('../models/User');
-const Wallet = require('../models/Wallet');
+const { getUserByEmail, updateUser, getUserById } = require('../models/User');
+const { getEventById } = require('../models/Event');
+const { createPayment, getPaymentById } = require('../models/Payment');
+// TODO: Implement Ticket and Wallet helpers for Supabase
 
-const router = express.Router();
-
-// Fee calculation utilities
 const SERVICE_FEES = {
   standard: 0.05,  // 5%
   gold: 0.075,     // 7.5%
@@ -23,7 +21,6 @@ const calculateFees = (amount, serviceTier = 'standard') => {
   const transactionFee = amount * TRANSACTION_FEE;
   const totalFees = serviceFee + transactionFee;
   const organizerAmount = amount - totalFees;
-
   return {
     originalAmount: amount,
     serviceFee,
@@ -37,7 +34,7 @@ router.post('/paystack', auth, async (req, res) => {
   try {
     const { eventId, email, amount, ticketType, quantity = 1, items } = req.body;
     if (!eventId || !email || !amount) return res.status(400).json({ message: 'Missing payment info' });
-    const event = await Event.findById(eventId);
+    const event = await getEventById(eventId);
     if (!event) return res.status(404).json({ message: 'Event not found' });
     const paystackKey = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackKey) return res.status(500).json({ message: 'Paystack key not configured' });
@@ -78,7 +75,7 @@ router.get('/verify', async (req, res) => {
     }
     const metadata = data.data.metadata || {};
     const amount = data.data.amount / 100;
-    const payment = await Payment.create({
+    const payment = await createPayment({
       user: metadata.userId,
       event: metadata.eventId,
       reference,
@@ -89,19 +86,12 @@ router.get('/verify', async (req, res) => {
     });
 
     const tickets = [];
+    // TODO: Implement createTicket helper for Supabase and push to tickets array
     const createTicket = async (ticketType, price) => {
-      const ticket = await Ticket.create({
-        user: metadata.userId,
-        event: metadata.eventId,
-        ticketType: ticketType || 'General',
-        price,
-        reference,
-        status: 'active',
-      });
-      ticket.smsCode = String(Math.floor(100000 + Math.random() * 900000));
-      ticket.smsCodeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      await ticket.save();
-      tickets.push(ticket);
+      // Implement ticket creation with Supabase here
+      // Example:
+      // const ticket = await createTicketSupabase({ ... });
+      // tickets.push(ticket);
     };
 
     if (Array.isArray(metadata.items) && metadata.items.length > 0) {
@@ -125,8 +115,7 @@ router.get('/verify', async (req, res) => {
       }
     }
 
-    await Event.findById(metadata.eventId);
-    await User.findById(metadata.userId);
+    // Optionally fetch event and user with Supabase if needed
     return res.json({ message: 'Payment verified', payment, ticket: tickets[0], tickets, event });
   } catch (error) {
     console.error(error?.response?.data || error.message);
@@ -138,12 +127,9 @@ router.post('/withdraw', auth, async (req, res) => {
   try {
     const { amount } = req.body;
     if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
-    const wallet = await Wallet.findOne({ user: req.user.id });
-    if (!wallet || wallet.balance < amount) return res.status(400).json({ message: 'Insufficient balance' });
-    wallet.balance -= amount;
-    wallet.updatedAt = new Date();
-    await wallet.save();
-    res.json({ message: 'Withdrawal successful', balance: wallet.balance });
+    // TODO: Implement wallet logic with Supabase
+    // Example: fetch wallet, check balance, update balance, save
+    res.json({ message: 'Withdrawal successful (Supabase logic not yet implemented)' });
   } catch (error) {
     res.status(500).json({ message: 'Withdrawal failed' });
   }
@@ -157,42 +143,14 @@ router.post('/organizer/payout', auth, async (req, res) => {
     if (!bankDetails) return res.status(400).json({ message: 'Bank details required' });
 
     // Check if user is an organizer
-    const user = await User.findById(req.user.id);
+    const user = await getUserById(req.user.id);
     if (!user || user.role !== 'organizer') return res.status(403).json({ message: 'Access denied' });
 
     // Calculate available balance from events with proper fee deductions
-    const events = await Event.find({ organizer: req.user.id }).select('_id serviceTier');
-    const eventIds = events.map(e => e._id);
-    
-    // Get all successful payments for organizer's events
-    const payments = await Payment.find({ 
-      event: { $in: eventIds }, 
-      status: 'success' 
-    }).populate('event');
-    
-    // Calculate total organizer earnings after fees
-    let totalOrganizerEarnings = 0;
-    for (const payment of payments) {
-      const event = events.find(e => e._id.toString() === payment.event.toString());
-      const serviceTier = event?.serviceTier || 'standard';
-      const feeCalculation = calculateFees(payment.amount, serviceTier);
-      totalOrganizerEarnings += feeCalculation.organizerAmount;
-    }
-
-    const availableBalance = totalOrganizerEarnings;
-    if (availableBalance < amount) return res.status(400).json({ message: 'Insufficient available balance' });
-
-    // Here you would integrate with Paystack Transfer API for bank transfers
-    // For now, we'll create a payout record
-    const payout = await Payment.create({
-      user: req.user.id,
-      amount: -amount, // Negative to indicate payout
-      status: 'pending',
-      provider: 'paystack_transfer',
-      meta: { type: 'organizer_payout', bankDetails },
-    });
-
-    res.json({ message: 'Payout request submitted successfully', payout, reference: payout._id });
+    // TODO: Implement fetching events and payments for organizer with Supabase
+    // Calculate available balance, then create payout record with Supabase
+    // Example: const payout = await createPayment({ ... });
+    res.json({ message: 'Payout request submitted (Supabase logic not yet implemented)' });
   } catch (error) {
     console.error('Organizer payout error:', error);
     res.status(500).json({ message: 'Payout request failed' });
@@ -202,14 +160,18 @@ router.post('/organizer/payout', auth, async (req, res) => {
 // Get organizer payout history
 router.get('/organizer/payouts', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await getUserById(req.user.id);
     if (!user || user.role !== 'organizer') return res.status(403).json({ message: 'Access denied' });
-
-    const payouts = await Payment.find({
-      user: req.user.id,
-      'meta.type': 'organizer_payout'
-    }).sort({ createdAt: -1 });
-
+    const { connectDB } = require('../config/db');
+    const supabase = await connectDB();
+    // Query payments where user matches and meta.type is 'organizer_payout'
+    const { data: payouts, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('user', req.user.id)
+      .contains('meta', { type: 'organizer_payout' })
+      .order('createdAt', { ascending: false });
+    if (error) throw error;
     res.json(payouts);
   } catch (error) {
     res.status(500).json({ message: 'Could not fetch payout history' });

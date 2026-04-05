@@ -1,26 +1,24 @@
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
 
-let isConnected = false;
+let supabase = null;
 
-const connectDB = async () => {
-  if (isConnected && mongoose.connection.readyState === 1) {
-    return;
+const initSupabase = () => {
+  if (supabase) return supabase;
+
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_KEY;
+  if (!url || !key) {
+    throw new Error('SUPABASE_URL and SUPABASE_KEY must be set for Supabase provider');
   }
 
-  const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
-  if (!uri) {
-    throw new Error('MONGO_URI or MONGODB_URI environment variable must be set');
-  }
-
-  await mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 10000,
-    connectTimeoutMS: 10000,
-  });
-
-  isConnected = true;
-  console.log('MongoDB connected');
+  supabase = createClient(url, key);
+  console.log('Supabase client initialized');
+  return supabase;
 };
 
-module.exports = connectDB;
+const connectDB = async () => {
+  return initSupabase();
+};
+
+module.exports = { connectDB, initSupabase };
+

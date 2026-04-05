@@ -1,15 +1,42 @@
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const SalesAgentSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  referral_code: { type: String, required: true, unique: true },
-  total_sales: { type: Number, default: 0 },
-  total_commission: { type: Number, default: 0 },
-  commission_rate: { type: Number, default: 0.05 }, // 5% default commission
-  created_at: { type: Date, default: Date.now },
-  // Commission levels
-  level: { type: String, enum: ['bronze', 'silver', 'gold'], default: 'bronze' },
-  level_threshold: { type: Number, default: 0 }, // Sales threshold for level
-});
+const TABLE = 'sales_agents';
 
-module.exports = mongoose.model('SalesAgent', SalesAgentSchema);
+async function getAllSalesAgents() {
+	const { data, error } = await supabase.from(TABLE).select('*');
+	if (error) throw error;
+	return data;
+}
+
+async function getSalesAgentById(id) {
+	const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function createSalesAgent(agent) {
+	const { data, error } = await supabase.from(TABLE).insert([agent]).single();
+	if (error) throw error;
+	return data;
+}
+
+async function updateSalesAgent(id, updates) {
+	const { data, error } = await supabase.from(TABLE).update(updates).eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function deleteSalesAgent(id) {
+	const { data, error } = await supabase.from(TABLE).delete().eq('id', id);
+	if (error) throw error;
+	return data;
+}
+
+module.exports = {
+	getAllSalesAgents,
+	getSalesAgentById,
+	createSalesAgent,
+	updateSalesAgent,
+	deleteSalesAgent,
+};

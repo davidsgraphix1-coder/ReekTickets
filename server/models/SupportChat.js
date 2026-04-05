@@ -1,30 +1,37 @@
-const mongoose = require('mongoose');
+const { connectDB } = require('../config/db');
 
-const messageSchema = new mongoose.Schema({
-  sender: {
-    type: String,
-    enum: ['user', 'admin', 'system'],
-    default: 'user',
-  },
-  text: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
-  read: { type: Boolean, default: false },
-});
+// Helper functions for Supabase 'support_chats' table
+const getSupportChatById = async (id) => {
+  const supabase = await connectDB();
+  const { data, error } = await supabase.from('support_chats').select('*').eq('id', id).single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
+};
 
-const SupportChatSchema = new mongoose.Schema(
-  {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    category: { type: String, required: true },
-    status: {
-      type: String,
-      enum: ['open', 'pending', 'closed'],
-      default: 'open',
-    },
-    messages: [messageSchema],
-  },
-  {
-    timestamps: true,
-  }
-);
+const createSupportChat = async (chatData) => {
+  const supabase = await connectDB();
+  const { data, error } = await supabase.from('support_chats').insert(chatData).select().single();
+  if (error) throw error;
+  return data;
+};
 
-module.exports = mongoose.model('SupportChat', SupportChatSchema);
+const updateSupportChat = async (id, updates) => {
+  const supabase = await connectDB();
+  const { data, error } = await supabase.from('support_chats').update(updates).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+};
+
+const deleteSupportChat = async (id) => {
+  const supabase = await connectDB();
+  const { error } = await supabase.from('support_chats').delete().eq('id', id);
+  if (error) throw error;
+  return true;
+};
+
+module.exports = {
+  getSupportChatById,
+  createSupportChat,
+  updateSupportChat,
+  deleteSupportChat,
+};

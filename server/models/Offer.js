@@ -1,15 +1,42 @@
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const OfferSchema = new mongoose.Schema({
-  event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  organizer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  title: String,
-  description: String,
-  discount: Number,
-  code: String,
-  validFrom: Date,
-  validTo: Date,
-  createdAt: { type: Date, default: Date.now },
-});
+const TABLE = 'offers';
 
-module.exports = mongoose.model('Offer', OfferSchema);
+async function getAllOffers() {
+	const { data, error } = await supabase.from(TABLE).select('*');
+	if (error) throw error;
+	return data;
+}
+
+async function getOfferById(id) {
+	const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function createOffer(offer) {
+	const { data, error } = await supabase.from(TABLE).insert([offer]).single();
+	if (error) throw error;
+	return data;
+}
+
+async function updateOffer(id, updates) {
+	const { data, error } = await supabase.from(TABLE).update(updates).eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function deleteOffer(id) {
+	const { data, error } = await supabase.from(TABLE).delete().eq('id', id);
+	if (error) throw error;
+	return data;
+}
+
+module.exports = {
+	getAllOffers,
+	getOfferById,
+	createOffer,
+	updateOffer,
+	deleteOffer,
+};

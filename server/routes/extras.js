@@ -1,4 +1,11 @@
 const express = require('express');
+const router = express.Router();
+
+const Wallet = require('../models/Wallet');
+const Offer = require('../models/Offer');
+const Invitation = require('../models/Invitation');
+const Coupon = require('../models/Coupon');
+
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
 const Ticket = require('../models/Ticket');
@@ -6,16 +13,301 @@ const Payment = require('../models/Payment');
 const User = require('../models/User');
 const Event = require('../models/Event');
 const SalesAgent = require('../models/SalesAgent');
+const Announcement = require('../models/Announcement');
 const AgentSales = require('../models/AgentSales');
 const ReportMessage = require('../models/ReportMessage');
-const Announcement = require('../models/Announcement');
 
-const router = express.Router();
+
+
+// Wallet endpoints
+router.get('/wallets', auth, async (req, res) => {
+  try {
+    const wallets = await Wallet.getAllWallets();
+    if (!wallets) return res.status(404).json({ message: 'No wallets found' });
+    res.json(wallets);
+  } catch (error) {
+    console.error('Fetch wallets error:', error);
+    res.status(500).json({ message: 'Could not fetch wallets' });
+  }
+});
+
+router.get('/wallets/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Wallet ID required' });
+    const wallet = await Wallet.getWalletById(req.params.id);
+    if (!wallet) return res.status(404).json({ message: 'Wallet not found' });
+    res.json(wallet);
+  } catch (error) {
+    console.error('Fetch wallet by ID error:', error);
+    res.status(500).json({ message: 'Could not fetch wallet' });
+  }
+});
+
+router.post('/wallets', auth, async (req, res) => {
+  try {
+    if (!req.body) return res.status(400).json({ message: 'Wallet data required' });
+    const wallet = await Wallet.createWallet(req.body);
+    res.status(201).json(wallet);
+  } catch (error) {
+    console.error('Create wallet error:', error);
+    res.status(500).json({ message: 'Could not create wallet' });
+  }
+});
+
+router.patch('/wallets/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Wallet ID required' });
+    const wallet = await Wallet.updateWallet(req.params.id, req.body);
+    if (!wallet) return res.status(404).json({ message: 'Wallet not found' });
+    res.json(wallet);
+  } catch (error) {
+    console.error('Update wallet error:', error);
+    res.status(500).json({ message: 'Could not update wallet' });
+  }
+});
+
+router.delete('/wallets/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Wallet ID required' });
+    await Wallet.deleteWallet(req.params.id);
+    res.status(204).end();
+  } catch (error) {
+    console.error('Delete wallet error:', error);
+    res.status(500).json({ message: 'Could not delete wallet' });
+  }
+});
+
+
+// Offer endpoints
+router.get('/offers', auth, async (req, res) => {
+  try {
+    const offers = await Offer.getAllOffers();
+    if (!offers) return res.status(404).json({ message: 'No offers found' });
+    res.json(offers);
+  } catch (error) {
+    console.error('Fetch offers error:', error);
+    res.status(500).json({ message: 'Could not fetch offers' });
+  }
+});
+
+router.get('/offers/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Offer ID required' });
+    const offer = await Offer.getOfferById(req.params.id);
+    if (!offer) return res.status(404).json({ message: 'Offer not found' });
+    res.json(offer);
+  } catch (error) {
+    console.error('Fetch offer by ID error:', error);
+    res.status(500).json({ message: 'Could not fetch offer' });
+  }
+});
+
+router.post('/offers', auth, async (req, res) => {
+  try {
+    if (!req.body) return res.status(400).json({ message: 'Offer data required' });
+    const offer = await Offer.createOffer(req.body);
+    res.status(201).json(offer);
+  } catch (error) {
+    console.error('Create offer error:', error);
+    res.status(500).json({ message: 'Could not create offer' });
+  }
+});
+
+router.patch('/offers/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Offer ID required' });
+    const offer = await Offer.updateOffer(req.params.id, req.body);
+    if (!offer) return res.status(404).json({ message: 'Offer not found' });
+    res.json(offer);
+  } catch (error) {
+    console.error('Update offer error:', error);
+    res.status(500).json({ message: 'Could not update offer' });
+  }
+});
+
+router.delete('/offers/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Offer ID required' });
+    await Offer.deleteOffer(req.params.id);
+    res.status(204).end();
+  } catch (error) {
+    console.error('Delete offer error:', error);
+    res.status(500).json({ message: 'Could not delete offer' });
+  }
+});
+
+
+// Invitation endpoints
+router.get('/invitations', auth, async (req, res) => {
+  try {
+    const invitations = await Invitation.getAllInvitations();
+    if (!invitations) return res.status(404).json({ message: 'No invitations found' });
+    res.json(invitations);
+  } catch (error) {
+    console.error('Fetch invitations error:', error);
+    res.status(500).json({ message: 'Could not fetch invitations' });
+  }
+});
+
+router.get('/invitations/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Invitation ID required' });
+    const invitation = await Invitation.getInvitationById(req.params.id);
+    if (!invitation) return res.status(404).json({ message: 'Invitation not found' });
+    res.json(invitation);
+  } catch (error) {
+    console.error('Fetch invitation by ID error:', error);
+    res.status(500).json({ message: 'Could not fetch invitation' });
+  }
+});
+
+router.post('/invitations', auth, async (req, res) => {
+  try {
+    if (!req.body) return res.status(400).json({ message: 'Invitation data required' });
+    const invitation = await Invitation.createInvitation(req.body);
+    res.status(201).json(invitation);
+  } catch (error) {
+    console.error('Create invitation error:', error);
+    res.status(500).json({ message: 'Could not create invitation' });
+  }
+});
+
+router.patch('/invitations/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Invitation ID required' });
+    const invitation = await Invitation.updateInvitation(req.params.id, req.body);
+    if (!invitation) return res.status(404).json({ message: 'Invitation not found' });
+    res.json(invitation);
+  } catch (error) {
+    console.error('Update invitation error:', error);
+    res.status(500).json({ message: 'Could not update invitation' });
+  }
+});
+
+router.delete('/invitations/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Invitation ID required' });
+    await Invitation.deleteInvitation(req.params.id);
+    res.status(204).end();
+  } catch (error) {
+    console.error('Delete invitation error:', error);
+    res.status(500).json({ message: 'Could not delete invitation' });
+  }
+});
+
+// Coupon endpoints
+router.get('/coupons', auth, async (req, res) => {
+  try {
+    const coupons = await Coupon.getAllCoupons();
+    if (!coupons) return res.status(404).json({ message: 'No coupons found' });
+    res.json(coupons);
+  } catch (error) {
+    console.error('Fetch coupons error:', error);
+    res.status(500).json({ message: 'Could not fetch coupons' });
+  }
+});
+
+router.get('/coupons/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Coupon ID required' });
+    const coupon = await Coupon.getCouponById(req.params.id);
+    if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+    res.json(coupon);
+  } catch (error) {
+    console.error('Fetch coupon by ID error:', error);
+    res.status(500).json({ message: 'Could not fetch coupon' });
+  }
+});
+
+router.post('/coupons', auth, async (req, res) => {
+  try {
+    if (!req.body) return res.status(400).json({ message: 'Coupon data required' });
+    const coupon = await Coupon.createCoupon(req.body);
+    res.status(201).json(coupon);
+  } catch (error) {
+    console.error('Create coupon error:', error);
+    res.status(500).json({ message: 'Could not create coupon' });
+  }
+});
+
+router.patch('/coupons/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Coupon ID required' });
+    const coupon = await Coupon.updateCoupon(req.params.id, req.body);
+    if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+    res.json(coupon);
+  } catch (error) {
+    console.error('Update coupon error:', error);
+    res.status(500).json({ message: 'Could not update coupon' });
+  }
+});
+
+router.delete('/coupons/:id', auth, async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json({ message: 'Coupon ID required' });
+    await Coupon.deleteCoupon(req.params.id);
+    res.status(204).end();
+  } catch (error) {
+    console.error('Delete coupon error:', error);
+    res.status(500).json({ message: 'Could not delete coupon' });
+  }
+});
+
+// Coupon endpoints
+router.get('/coupons', auth, async (req, res) => {
+  try {
+    const coupons = await Coupon.getAllCoupons();
+    res.json(coupons);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not fetch coupons' });
+  }
+});
+
+router.get('/coupons/:id', auth, async (req, res) => {
+  try {
+    const coupon = await Coupon.getCouponById(req.params.id);
+    if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+    res.json(coupon);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not fetch coupon' });
+  }
+});
+
+router.post('/coupons', auth, async (req, res) => {
+  try {
+    const coupon = await Coupon.createCoupon(req.body);
+    res.status(201).json(coupon);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not create coupon' });
+  }
+});
+
+router.patch('/coupons/:id', auth, async (req, res) => {
+  try {
+    const coupon = await Coupon.updateCoupon(req.params.id, req.body);
+    if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
+    res.json(coupon);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not update coupon' });
+  }
+});
+
+router.delete('/coupons/:id', auth, async (req, res) => {
+  try {
+    await Coupon.deleteCoupon(req.params.id);
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ message: 'Could not delete coupon' });
+  }
+});
+
+
+
 
 router.get('/tickets', auth, async (req, res) => {
   try {
+    if (!req.user || !req.user.role) return res.status(401).json({ message: 'Unauthorized' });
     let tickets;
-
     if (req.user.role === 'organizer') {
       const organizerEventIds = await Event.find({ organizer: req.user.id }).select('_id');
       const eventIds = organizerEventIds.map((item) => item._id);
@@ -25,67 +317,72 @@ router.get('/tickets', auth, async (req, res) => {
     } else {
       tickets = await Ticket.find({ user: req.user.id }).populate('event').populate('user', 'fullName email phone');
     }
-
+    if (!tickets) return res.status(404).json({ message: 'No tickets found' });
     res.json(tickets);
   } catch (error) {
+    console.error('Fetch tickets error:', error);
     res.status(500).json({ message: 'Could not fetch tickets' });
   }
 });
 
 // Get single ticket by id (for QR/OCR access)
+
 router.get('/tickets/:id', async (req, res) => {
   try {
+    if (!req.params.id) return res.status(400).json({ message: 'Ticket ID required' });
     const authHeader = req.headers.authorization;
     let requesterId = null;
     let requesterRole = null;
-
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey');
         requesterId = decoded.id;
         requesterRole = decoded.role;
-      } catch {
+      } catch (err) {
         requesterId = null;
         requesterRole = null;
       }
     }
-
     const ticket = await Ticket.findById(req.params.id).populate('event').populate('user', 'fullName email phone');
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
-
     const accessCode = req.query.code;
     const codeValid = accessCode && ticket.smsCode === accessCode && (!ticket.smsCodeExpiry || new Date(ticket.smsCodeExpiry) > new Date());
-
     if (codeValid) {
       return res.json(ticket);
     }
-
     if (requesterId && (ticket.user._id.toString() === requesterId || requesterRole === 'admin')) {
       return res.json(ticket);
     }
-
     return res.status(403).json({ message: 'Forbidden' });
   } catch (error) {
+    console.error('Fetch ticket by ID error:', error);
     res.status(500).json({ message: 'Could not fetch ticket' });
-  }``
+  }
 });
+
 
 
 router.get('/payments', auth, async (req, res) => {
   try {
+    if (!req.user || !req.user.id) return res.status(401).json({ message: 'Unauthorized' });
     const payments = await Payment.find({ user: req.user.id });
+    if (!payments) return res.status(404).json({ message: 'No payments found' });
     res.json(payments);
   } catch (error) {
+    console.error('Fetch payments error:', error);
     res.status(500).json({ message: 'Could not fetch payments' });
   }
 });
 
+
 router.get('/users', auth, async (req, res) => {
   try {
     const users = await User.find().select('-password');
+    if (!users) return res.status(404).json({ message: 'No users found' });
     res.json(users);
   } catch (error) {
+    console.error('Fetch users error:', error);
     res.status(500).json({ message: 'Could not fetch users' });
   }
 });
@@ -277,17 +574,14 @@ router.get('/agent/sales', auth, async (req, res) => {
 router.get('/agent/profile', auth, async (req, res) => {
   try {
     if (req.user.role !== 'agent') return res.status(403).json({ message: 'Forbidden' });
-
-    let agent = await SalesAgent.findOne({ user_id: req.user.id }).populate('user_id', 'fullName email phone');
+    let agent = await SalesAgent.getSalesAgentById(req.user.id);
     if (!agent) {
       // Create agent profile if it doesn't exist
       const referralCode = `AGENT_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-      agent = new SalesAgent({
+      agent = await SalesAgent.createSalesAgent({
         user_id: req.user.id,
         referral_code: referralCode,
       });
-      await agent.save();
-      agent = await SalesAgent.findById(agent._id).populate('user_id', 'fullName email phone');
     }
     res.json(agent);
   } catch (error) {
@@ -300,18 +594,59 @@ router.get('/agent/profile', auth, async (req, res) => {
 router.patch('/agent/profile', auth, async (req, res) => {
   try {
     if (req.user.role !== 'agent') return res.status(403).json({ message: 'Forbidden' });
-
-    const agent = await SalesAgent.findOneAndUpdate(
-      { user_id: req.user.id },
-      { ...req.body },
-      { new: true, runValidators: true }
-    ).populate('user_id', 'fullName email phone');
-
+    const agent = await SalesAgent.updateSalesAgent(req.user.id, req.body);
     if (!agent) return res.status(404).json({ message: 'Agent profile not found' });
     res.json(agent);
   } catch (error) {
     console.error('Agent profile update error:', error);
     res.status(500).json({ message: 'Could not update agent profile' });
+  }
+});
+// Announcements endpoints (Supabase)
+router.get('/announcements', auth, async (req, res) => {
+  try {
+    const announcements = await Announcement.getAllAnnouncements();
+    res.json(announcements);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not fetch announcements' });
+  }
+});
+
+router.get('/announcements/:id', auth, async (req, res) => {
+  try {
+    const announcement = await Announcement.getAnnouncementById(req.params.id);
+    if (!announcement) return res.status(404).json({ message: 'Announcement not found' });
+    res.json(announcement);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not fetch announcement' });
+  }
+});
+
+router.post('/announcements', auth, async (req, res) => {
+  try {
+    const announcement = await Announcement.createAnnouncement(req.body);
+    res.status(201).json(announcement);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not create announcement' });
+  }
+});
+
+router.patch('/announcements/:id', auth, async (req, res) => {
+  try {
+    const announcement = await Announcement.updateAnnouncement(req.params.id, req.body);
+    if (!announcement) return res.status(404).json({ message: 'Announcement not found' });
+    res.json(announcement);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not update announcement' });
+  }
+});
+
+router.delete('/announcements/:id', auth, async (req, res) => {
+  try {
+    await Announcement.deleteAnnouncement(req.params.id);
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ message: 'Could not delete announcement' });
   }
 });
 

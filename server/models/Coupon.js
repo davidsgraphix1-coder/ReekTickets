@@ -1,15 +1,42 @@
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const CouponSchema = new mongoose.Schema({
-  event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  organizer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  code: { type: String, required: true, unique: true },
-  discount: Number,
-  validFrom: Date,
-  validTo: Date,
-  usageCount: { type: Number, default: 0 },
-  maxUsage: Number,
-  createdAt: { type: Date, default: Date.now },
-});
+const TABLE = 'coupons';
 
-module.exports = mongoose.model('Coupon', CouponSchema);
+async function getAllCoupons() {
+	const { data, error } = await supabase.from(TABLE).select('*');
+	if (error) throw error;
+	return data;
+}
+
+async function getCouponById(id) {
+	const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function createCoupon(coupon) {
+	const { data, error } = await supabase.from(TABLE).insert([coupon]).single();
+	if (error) throw error;
+	return data;
+}
+
+async function updateCoupon(id, updates) {
+	const { data, error } = await supabase.from(TABLE).update(updates).eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function deleteCoupon(id) {
+	const { data, error } = await supabase.from(TABLE).delete().eq('id', id);
+	if (error) throw error;
+	return data;
+}
+
+module.exports = {
+	getAllCoupons,
+	getCouponById,
+	createCoupon,
+	updateCoupon,
+	deleteCoupon,
+};

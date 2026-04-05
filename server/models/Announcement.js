@@ -1,11 +1,42 @@
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const AnnouncementSchema = new mongoose.Schema({
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  createdByName: { type: String, required: true },
-  roles: [{ type: String, enum: ['attendee', 'organizer', 'vendor', 'agent', 'admin'], required: true }],
-  message: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+const TABLE = 'announcements';
 
-module.exports = mongoose.model('Announcement', AnnouncementSchema);
+async function getAllAnnouncements() {
+	const { data, error } = await supabase.from(TABLE).select('*');
+	if (error) throw error;
+	return data;
+}
+
+async function getAnnouncementById(id) {
+	const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function createAnnouncement(announcement) {
+	const { data, error } = await supabase.from(TABLE).insert([announcement]).single();
+	if (error) throw error;
+	return data;
+}
+
+async function updateAnnouncement(id, updates) {
+	const { data, error } = await supabase.from(TABLE).update(updates).eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function deleteAnnouncement(id) {
+	const { data, error } = await supabase.from(TABLE).delete().eq('id', id);
+	if (error) throw error;
+	return data;
+}
+
+module.exports = {
+	getAllAnnouncements,
+	getAnnouncementById,
+	createAnnouncement,
+	updateAnnouncement,
+	deleteAnnouncement,
+};

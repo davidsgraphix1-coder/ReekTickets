@@ -1,267 +1,217 @@
 /**
  * SMS Service for Node.js Backend
- * Sends SMS via Python handler (SMSONLINEGH API)
+ * Sends SMS via Python handler (local) or HTTP Gateway (Vercel)
  */
 
+const axios = require('axios');
 const { spawn } = require('child_process');
 const path = require('path');
 
-const SMS_API_HOST = process.env.SMS_API_HOST || 'api.smsonlinegh.com';
 const SMS_API_KEY = process.env.SMS_API_KEY || process.env.API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
 const SMS_SENDER_ID = process.env.SMS_SENDER_ID || process.env.SENDER_ID || 'ReekTickets';
+const PYTHON_HANDLER = path.join(__dirname, '..', 'sms_handler.py');
+const IS_VERCEL = !!process.env.VERCEL || !!process.env.VERCEL_ENV;
+const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'http://localhost:8001';
 
 /**
- * Send SMS via Python handler
+ * Send SMS via HTTP Gateway (for Vercel/serverless)
  */
-async function sendSMSViaPython(phone, message) {
-  return new Promise((resolve) => {
-    try {
-      const pythonScript = path.join(__dirname, '..', 'sms_handler.py');
-      const python = spawn('python3', [pythonScript]);
-      
-      let output = '';
-      let errorOutput = '';
-      
-      python.stdout.on('data', (data) => {
-        output += data.toString();
-      });
-      
-      python.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-      });
-      
-      python.on('close', (code) => {
-        try {
-          if (errorOutput) {
-            console.error('[SMS] Python stderr:', errorOutput);
-          }
-          
-          const result = JSON.parse(output);
-          console.log(`[SMS] Python result: ${result.success ? 'SUCCESS' : 'FAILED'}`, result.message);
-          resolve(result);
-        } catch (parseError) {
-          console.error('[SMS] Failed to parse Python output:', output, parseError);
-          resolve({
-            success: false,
-            status: 500,
-            error: 'Failed to parse SMS handler response',
-            message: 'SMS handler error'
-          });
-        }
-      });
-      
-      python.on('error', (error) => {
-        console.error('[SMS] Python process error:', error.message);
-        resolve({
-          success: false,
-          status: 500,
-          error: error.message,
-          message: `SMS handler error: ${error.message}`
-        });
-      });
-      
-      // Send input to Python script
-      const inputData = JSON.stringify({ phone, message });
-      python.stdin.write(inputData);
-      python.stdin.end();
-      
-      // Timeout after 15 seconds
-      setTimeout(() => {
-        python.kill();
-        resolve({
-          success: false,
-          status: 504,
-          error: 'SMS handler timeout',
-          message: 'SMS request timed out'
-        });
-      }, 15000);
-      
-    } catch (error) {
-      console.error('[SMS] Error:', error.message);
-      resolve({
-        success: false,
-        status: 500,
-        error: error.message,
-        message: `Failed to send SMS: ${error.message}`
-      });
-    }
-  });
-}
-
-/**
- * Fallback: Send SMS via direct API (if Python not available)
- */
-async function sendSMSDirectAPI(phone, message) {
-  return new Promise((resolve) => {
-    try {
-      const https = require('https');
-      
-      if (!SMS_API_KEY) {
-        throw new Error('SMS_API_KEY not configured');
-      }
-
-      const queryString = new URLSearchParams({
-        apikey: SMS_API_KEY,
-        sender: SMS_SENDER_ID,
-        message: message,
-        recipients: phone
-      }).toString();
-
-      const urlStr = `https://${SMS_API_HOST}/sms/send/?${queryString}`;
-      const url = new URL(urlStr);
-
-      console.log(`[SMS] Sending to ${phone} via direct API (fallback)`);
-
-      const options = {
-        hostname: url.hostname,
-        port: 443,
-        path: url.pathname + url.search,
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      };
-
-      const req = https.request(options, (res) => {
-        let body = '';
-        res.on('data', (chunk) => { body += chunk; });
-        res.on('end', () => {
-          try {
-            const parsed = JSON.parse(body);
-            const success = res.statusCode === 200;
-            console.log(`[SMS] Direct API Response ${res.statusCode}:`, parsed);
-            
-            resolve({
-              success: success,
-              status: res.statusCode,
-              data: parsed,
-              message: success ? 'SMS sent successfully' : `Failed with status ${res.statusCode}`
-            });
-          } catch {
-            const success = res.statusCode === 200;
-            resolve({
-              success: success,
-              status: res.statusCode,
-              data: body,
-              message: success ? 'SMS sent successfully' : `Failed with status ${res.statusCode}`
-            });
-          }
-        });
-      });
-
-      req.on('error', (error) => {
-        console.error('[SMS] API Error:', error.message);
-        resolve({
-          success: false,
-          status: 500,
-          error: error.message,
-          message: `Failed to send SMS: ${error.message}`
-        });
-      });
-
-      req.setTimeout(10000, () => {
-        req.destroy();
-        resolve({
-          success: false,
-          status: 504,
-          error: 'Request timeout',
-          message: 'SMS request timed out'
-        });
-      });
-
-      req.end();
-    } catch (error) {
-      console.error('[SMS] Fallback Error:', error.message);
-      resolve({
-        success: false,
-        status: 500,
-        error: error.message,
-        message: `Failed to send SMS: ${error.message}`
-      });
-    }
-  });
-}
-
-/**
- * Send SMS
- */
-async function sendSMS(phone, message) {
+async function sendViaGateway(phone, message) {
   try {
-    if (!phone || !message) {
-      throw new Error('Phone and message are required');
-    }
-
-    // Try Python handler first
-    console.log('[SMS] Attempting to send via Python handler...');
-    let result = await sendSMSViaPython(phone, message);
+    console.log(`[SMS] Using HTTP gateway: ${SMS_GATEWAY_URL}`);
     
-    if (!result.success) {
-      console.warn('[SMS] Python handler failed, trying direct API fallback...');
-      result = await sendSMSDirectAPI(phone, message);
-    }
+    const response = await axios.post(`${SMS_GATEWAY_URL}/send-sms`, {
+      phone,
+      message
+    }, {
+      timeout: 15000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
     
-    return result;
-
+    return response.data;
   } catch (error) {
-    console.error('[SMS] sendSMS Error:', error.message);
+    console.error('[SMS] Gateway error:', error.message);
     return {
       success: false,
       status: 500,
       error: error.message,
-      message: `Failed to send SMS: ${error.message}`
+      message: 'SMS gateway unavailable'
     };
   }
 }
 
 /**
- * Send OTP
+ * Send SMS via Python handler (spawn - local development only)
+ */
+function sendViaPython(phone, message) {
+  return new Promise((resolve) => {
+    try {
+      console.log(`[SMS] Using Python handler locally`);
+      
+      const handler = spawn('python3', [PYTHON_HANDLER], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 15000
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      handler.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      handler.stderr.on('data', (data) => {
+        stderr += data.toString();
+        console.log(`[SMS] Python stderr: ${data}`);
+      });
+
+      handler.on('close', (code) => {
+        console.log(`[SMS] Handler exit code: ${code}`);
+
+        if (code === 0 && stdout) {
+          try {
+            const result = JSON.parse(stdout);
+            if (result.success) {
+              console.log(`[SMS] Success: ${phone}`);
+              resolve(result);
+            } else {
+              console.error(`[SMS] Handler returned failure: ${result.message}`);
+              resolve(result);
+            }
+          } catch (e) {
+            console.error(`[SMS] Failed to parse handler output: ${stdout}`);
+            resolve({
+              success: false,
+              status: 500,
+              error: 'Invalid response format',
+              message: 'SMS handler returned invalid JSON'
+            });
+          }
+        } else {
+          console.error(`[SMS] Handler failed with code ${code}`);
+          resolve({
+            success: false,
+            status: 500,
+            error: stderr || 'Handler process failed',
+            message: 'SMS handler process failed'
+          });
+        }
+      });
+
+      handler.on('error', (err) => {
+        console.error(`[SMS] Failed to spawn handler: ${err.message}`);
+        resolve({
+          success: false,
+          status: 500,
+          error: err.message,
+          message: 'Failed to spawn SMS handler'
+        });
+      });
+
+      setTimeout(() => {
+        try {
+          handler.kill('SIGTERM');
+        } catch (e) {
+          console.error(`[SMS] Failed to kill handler: ${e.message}`);
+        }
+      }, 15000);
+
+      const input = JSON.stringify({ phone, message });
+      handler.stdin.write(input);
+      handler.stdin.end();
+
+    } catch (error) {
+      console.error('[SMS] Error in sendViaPython:', error.message);
+      resolve({
+        success: false,
+        status: 500,
+        error: error.message,
+        message: 'Error in sendViaPython'
+      });
+    }
+  });
+}
+
+/**
+ * Send SMS - main function that routes to appropriate handler
+ */
+async function sendSMS(phone, message) {
+  try {
+    console.log(`[SMS] Sending to ${phone}: ${message.substring(0, 50)}...`);
+    console.log(`[SMS] Environment: ${IS_VERCEL ? 'Vercel' : 'Local'}`);
+
+    // Clean phone number
+    let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
+
+    // Convert to international format if local format
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '233' + cleanPhone.substring(1);
+    } else if (!cleanPhone.startsWith('233')) {
+      cleanPhone = '233' + cleanPhone;
+    }
+
+    // Route based on environment
+    if (IS_VERCEL) {
+      console.log('[SMS] Using gateway for Vercel');
+      return await sendViaGateway(cleanPhone, message);
+    } else {
+      console.log('[SMS] Using Python handler for local development');
+      return await sendViaPython(cleanPhone, message);
+    }
+
+  } catch (error) {
+    console.error('[SMS] Error in sendSMS:', error.message);
+    return {
+      success: false,
+      status: 500,
+      error: error.message,
+      message: 'SMS sending failed'
+    };
+  }
+}
+
+/**
+ * Send OTP SMS
  */
 async function sendOTP(phone, otp) {
-  const message = `Your ReekTickets OTP is: ${otp}. Valid for 5 minutes.`;
-  return sendSMS(phone, message);
+  const message = `Your ReekTickets verification code is ${otp}`;
+  return await sendSMS(phone, message);
 }
 
 /**
  * Send ticket confirmation SMS
  */
-async function sendTicketConfirmation(phone, ticketCode) {
-  const ticketLink = `${process.env.REACT_APP_URL || 'https://reektickets.com'}/ticket/${ticketCode}`;
-  const message = `Your ReekTickets ticket code: ${ticketCode}. View: ${ticketLink}`;
-  return sendSMS(phone, message);
+async function sendTicketConfirmation(phone, ticketDetails) {
+  const message = `Your ReekTickets ticket is confirmed! Event: ${ticketDetails.eventName}, Date: ${ticketDetails.date}, Code: ${ticketDetails.code}`;
+  return await sendSMS(phone, message);
 }
 
 /**
- * Send booking confirmation SMS
- */
-async function sendBookingConfirmation(phone, eventName, ticketCode) {
-  const message = `Booking confirmed for ${eventName}. Ticket: ${ticketCode}. Visit reektickets.com for details.`;
-  return sendSMS(phone, message);
-}
-
-/**
- * Health check
+ * Health check for SMS service
  */
 async function healthCheck() {
-  if (!SMS_API_KEY) {
+  try {
+    // Simple test SMS to verify API connectivity
+    const testResult = await sendSMS('0273476701', 'SMS service health check');
     return {
-      status: 'unconfigured',
-      error: 'SMS_API_KEY not configured',
-      configured: false
+      success: true,
+      message: 'SMS service is operational',
+      testResult: testResult.success
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'SMS service health check failed',
+      error: error.message
     };
   }
-
-  return {
-    status: 'healthy',
-    host: SMS_API_HOST,
-    sender_id: SMS_SENDER_ID,
-    configured: true
-  };
 }
 
 module.exports = {
   sendSMS,
   sendOTP,
   sendTicketConfirmation,
-  sendBookingConfirmation,
   healthCheck
 };

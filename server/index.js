@@ -3,8 +3,13 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
-const connectDB = require('./config/db');
-const { initSocket } = require('./services/socket');
+
+// Conditionally import Socket.IO only for local development
+let initSocket = null;
+if (require.main === module) {
+  const { initSocket: socketInit } = require('./services/socket');
+  initSocket = socketInit;
+}
 
 // Load environment variables from server/.env by default, fall back to root .env.
 const envPath = path.join(__dirname, '.env');
@@ -14,6 +19,21 @@ if (envResult.error) {
   dotenv.config();
 } else {
   console.log(`Loaded environment from ${envPath}`);
+}
+
+
+// --- ENVIRONMENT VARIABLE VALIDATION ---
+const requiredEnv = [
+  'SUPABASE_URL',
+  'SUPABASE_KEY',
+  'JWT_SECRET',
+  'FRONTEND_URL',
+  'PAYSTACK_SECRET_KEY',
+];
+const missingEnv = requiredEnv.filter((key) => !process.env[key]);
+if (missingEnv.length) {
+  console.error('Missing required environment variables:', missingEnv.join(', '));
+  process.exit(1);
 }
 
 const app = express();
@@ -28,17 +48,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// Middleware to ensure DB connection
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    console.error('DB connection error:', err);
-    res.status(500).json({ message: 'Database connection failed' });
-  }
-});
-
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/payments', require('./routes/payments'));
@@ -46,6 +55,12 @@ app.use('/api/support', require('./routes/support'));
 app.use('/api/sms', require('./routes/sms'));
 app.use('/api', require('./routes/extras'));
 app.use('/api/upload', require('./routes/upload'));
+
+// --- GLOBAL ERROR HANDLER ---
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
 
 const PORT = process.env.PORT || 5000;
 
@@ -58,4 +73,8 @@ if (require.main === module) {
 }
 
 // Export Express app for serverless environments (Vercel)
-module.exports = app;
+// Skip Socket.IO in serverless as it doesn't support persistent connections
+const serverless = require('serverless-http');
+module.exports = serverless(app, {
+  binary: ['image/*', 'application/octet-stream']
+});

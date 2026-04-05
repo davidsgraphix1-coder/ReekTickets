@@ -1,10 +1,42 @@
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const WalletSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-  balance: { type: Number, default: 0 },
-  currency: { type: String, default: 'GHS' },
-  updatedAt: { type: Date, default: Date.now },
-});
+const TABLE = 'wallets';
 
-module.exports = mongoose.model('Wallet', WalletSchema);
+async function getAllWallets() {
+	const { data, error } = await supabase.from(TABLE).select('*');
+	if (error) throw error;
+	return data;
+}
+
+async function getWalletById(id) {
+	const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function createWallet(wallet) {
+	const { data, error } = await supabase.from(TABLE).insert([wallet]).single();
+	if (error) throw error;
+	return data;
+}
+
+async function updateWallet(id, updates) {
+	const { data, error } = await supabase.from(TABLE).update(updates).eq('id', id).single();
+	if (error) throw error;
+	return data;
+}
+
+async function deleteWallet(id) {
+	const { data, error } = await supabase.from(TABLE).delete().eq('id', id);
+	if (error) throw error;
+	return data;
+}
+
+module.exports = {
+	getAllWallets,
+	getWalletById,
+	createWallet,
+	updateWallet,
+	deleteWallet,
+};

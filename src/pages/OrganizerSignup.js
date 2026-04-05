@@ -143,7 +143,7 @@ export default function OrganizerSignup({ onLogin }) {
       const data = await signup(submitData);
 
       if (data?.user) {
-        navigate('/verify-email', { state: { email: submitData.email, verificationCode: data.verificationCode } });
+        navigate('/verify-email', { state: { phone: submitData.phone, verificationCode: data.verificationCode, method: 'sms' } });
       } else {
         setErrors({ submit: data.message || 'Registration failed' });
       }

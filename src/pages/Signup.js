@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTicketAlt, FaCalendarAlt, FaStoreAlt, FaBriefcase, FaEye, FaEyeSlash, FaUserShield } from 'react-icons/fa';
-import { signup, sendNaloSms } from '../services/api';
+import { signup } from '../services/api';
 import SEO from '../components/SEO';
 
 export default function Signup({ onLogin }) {
@@ -97,23 +97,12 @@ export default function Signup({ onLogin }) {
 
     const data = await signup(signupData);
     if (data?.user) {
-      if (signupData.phone) {
-        await sendNaloSms({
-          to: signupData.phone,
-          message: `Your ReekTickets verification code is ${data.verificationCode}. Use it to complete signup.`,
-          userId: data.user._id,
-        }).then((smsResult) => {
-          if (smsResult?.message) {
-            setSmsStatus(smsResult.message);
-          }
-        }).catch(() => {
-          setSmsStatus('Could not send SMS verification right now.');
-        });
-      }
+      setSmsStatus('Verification code sent to your phone. Please check your SMS.');
       navigate('/verify-email', {
         state: {
           phone: signupData.phone,
           verificationCode: data.verificationCode,
+          method: 'sms'
         }
       });
       return;

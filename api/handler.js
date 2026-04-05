@@ -4,10 +4,6 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', 'server', '.env') });
 
 // Fallback to Vercel environment variables
-if (!process.env.MONGO_URI && !process.env.MONGODB_URI) {
-  console.log('Loading environment from Vercel env vars');
-}
-
 const connectDB = require('../server/config/db');
 
 // Create Express app
@@ -29,8 +25,9 @@ app.use(async (req, res, next) => {
     try {
       await connectDB();
       dbConnected = true;
+      console.log('[API] Database connected');
     } catch (err) {
-      console.error('DB connection error:', err);
+      console.error('[API] DB connection error:', err);
     }
   }
   next();
@@ -41,39 +38,48 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes
+// Test endpoint
+app.get('/test', (req, res) => {
+  res.json({ message: 'API handler is working!' });
+});
+
+// Routes - mount with proper paths (Vercel strips /api/ prefix)
 try {
-  app.use('/auth', require('../server/routes/auth'));
+  console.log('[API] Attempting to load routes...');
+  const authRouter = require('../server/routes/auth');
+  console.log('[API] Auth router loaded:', !!authRouter);
+  app.use('/auth', authRouter);
+  
+  const smsRouter = require('../server/routes/sms');
+  console.log('[API] SMS router loaded:', !!smsRouter);
+  app.use('/sms', smsRouter);
+  
   app.use('/events', require('../server/routes/events'));
   app.use('/payments', require('../server/routes/payments'));
   app.use('/support', require('../server/routes/support'));
-  app.use('/sms', require('../server/routes/sms'));
-  app.use('/tickets', require('../server/routes/extras').router || require('../server/routes/extras'));
+  const extrasRouter = require('../server/routes/extras');
+  app.use('/', extrasRouter);
   app.use('/upload', require('../server/routes/upload'));
+  
+  console.log('[API] All routes mounted successfully');
 } catch (e) {
-  console.error('Routes error:', e);
+  console.error('[API] Routes error:', e.message);
+  console.error('[API] Stack:', e.stack);
 }
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error('[API] Error:', err);
   res.status(500).json({ error: err.message });
 });
 
 // 404
 app.use((req, res) => {
-  res.status(404).json({ message: 'Not found' });
+  console.warn('[API] 404:', req.method, req.path);
+  res.status(404).json({ message: 'API endpoint not found' });
 });
 
 // Vercel serverless function export
-module.exports = (req, res) => {
-  return new Promise((resolve) => {
-    app(req, res);
-    resolve();
-  });
-};
-
-// For local development, also export the app
-module.exports.app = app;
+module.exports = app;
 
 

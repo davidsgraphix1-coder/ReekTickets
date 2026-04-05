@@ -1,0 +1,15 @@
+[2026-04-05T08:03:55.061341] Attempting SMS: 0273476701 | Test SMS from terminal
+[2026-04-05T08:03:57.492406] Zenoph send 0273476701 | status: 200 | data: 
+[2026-04-05T08:03:57.494091] Zenoph success: 0273476701 | {'success': True, 'status': 200, 'data': '', 'message': 'SMS sent successfully via Zenoph'}
+[2026-04-05T10:33:07.129187] Attempting SMS: 0273476701 | Test OTP 123456
+[2026-04-05T10:33:09.419397] Zenoph send 0273476701 | status: 200 | data: 
+[2026-04-05T10:33:09.423062] Zenoph success: 0273476701 | {'success': True, 'status': 200, 'data': '', 'message': 'SMS sent successfully via Zenoph'}
+[2026-04-05T10:33:17.653075] Attempting SMS: 233273476701 | Your ReekTickets verification code is 123456
+[2026-04-05T10:33:19.814088] Zenoph send 233273476701 | status: 200 | data: 
+[2026-04-05T10:33:19.817344] Zenoph success: 233273476701 | {'success': True, 'status': 200, 'data': '', 'message': 'SMS sent successfully via Zenoph'}
+[2026-04-05T10:36:27.961381] Attempting SMS: 0273476701 | Your ReekTickets verification code is 654321
+[2026-04-05T10:36:30.207763] Zenoph send 0273476701 | status: 200 | data: 
+[2026-04-05T10:36:30.211931] Zenoph success: 0273476701 | {'success': True, 'status': 200, 'data': '', 'message': 'SMS sent successfully via Zenoph'}
+[2026-04-05T10:37:18.918935] Attempting SMS: 0273476701 | Test SMS 999999
+[2026-04-05T10:37:20.841209] Zenoph send 0273476701 | status: 200 | data: 
+[2026-04-05T10:37:20.844614] Zenoph success: 0273476701 | {'success': True, 'status': 200, 'data': '', 'message': 'SMS sent successfully via Zenoph'}

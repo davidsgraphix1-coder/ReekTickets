@@ -1,15 +1,21 @@
-const mongoose = require('mongoose');
+const { connectDB } = require('../config/db');
 
-const VendorApplicationSchema = new mongoose.Schema({
-  vendor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  vendorType: { type: String, enum: ['food', 'merchandise', 'services', 'entertainment'], required: true },
-  payableAmount: { type: Number, required: true },
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-  applicationDate: { type: Date, default: Date.now },
-  booth: String,
-  notes: String,
-  createdAt: { type: Date, default: Date.now },
-});
+// Helper functions for Supabase 'vendor_applications' table
+const createVendorApplication = async (applicationData) => {
+  const supabase = await connectDB();
+  const { data, error } = await supabase.from('vendor_applications').insert(applicationData).select().single();
+  if (error) throw error;
+  return data;
+};
 
-module.exports = mongoose.model('VendorApplication', VendorApplicationSchema);
+const deleteAllVendorApplications = async () => {
+  const supabase = await connectDB();
+  const { error } = await supabase.from('vendor_applications').delete();
+  if (error) throw error;
+  return true;
+};
+
+module.exports = {
+  createVendorApplication,
+  deleteAllVendorApplications,
+};
