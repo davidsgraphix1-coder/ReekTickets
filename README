@@ -1,0 +1,25 @@
+# ReekTickets
+
+ReekTickets is a ticketing web app with React frontend and Node.js backend.
+
+This repository includes the web app, backend server, and SMS gateway integration.
+
+## Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Run frontend locally:
+   ```bash
+   npm start
+   ```
+
+3. The SMS gateway runs on port `8001`.
+
+## Deployment
+
+- Vercel is used for the frontend/backend app.
+- Railway or Render can host the SMS gateway.
+- Environment variables include `SMS_GATEWAY_URL`, `USE_SMS_GATEWAY`, `SMS_API_KEY`, `SMS_SENDER_ID`, and `SMS_HOST`.
