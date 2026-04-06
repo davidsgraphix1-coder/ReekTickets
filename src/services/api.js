@@ -224,62 +224,24 @@ export async function sendNaloSms(payload) {
   }
   
   try {
-    // Use Node backend SMS endpoint
-    const res = await fetch(`${API_BASE}/sms/send`, {
+    // Use backend SMS endpoint only
+    const res = await fetch(`${API_BASE}/sms/send-otp`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         phone: to,
-        message: message,
+        otp: message,
       }),
     });
     
     const result = await safeJson(res);
-    
-    if (result.success === false || !res.ok) {
-      console.warn('[SMS] Backend SMS failed');
-      return await sendSmsDirectSMSONLINEGH(to, message);
-    }
-    
-    return { 
-      message: result.message || 'SMS sent successfully',
-      success: true 
-    };
-  } catch (error) {
-    console.error('[SMS] Backend error:', error);
-    // Fallback to direct SMSONLINEGH API
-    return await sendSmsDirectSMSONLINEGH(to, message);
-  }
-}
-
-async function sendSmsDirectSMSONLINEGH(to, message) {
-  // Fallback: Direct SMSONLINEGH API call (bypasses Python backend)
-  const SMSONLINEGH_API_KEY = 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
-  const SMSONLINEGH_SENDER = 'ReekTickets';
-  const SMSONLINEGH_API_URL = 'https://api.smsonlinegh.com/send';
-  
-  try {
-    const res = await fetch(SMSONLINEGH_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        apikey: SMSONLINEGH_API_KEY,
-        to: to.replace(/^\+/, ''),
-        from: SMSONLINEGH_SENDER,
-        msg: message,
-        type: 0,
-      }),
-    });
-    const result = await safeJson(res);
-    return result.status === 'success' 
-      ? { message: 'SMS sent successfully', success: true } 
+    return result.success 
+      ? { message: result.message || 'SMS sent successfully', success: true }
       : { message: result.message || 'SMS delivery failed', success: false };
   } catch (error) {
-    console.error('[SMS] Direct API error:', error);
+    console.error('[SMS] Backend error:', error);
     return { message: 'Network error: could not send SMS', success: false };
   }
 }
