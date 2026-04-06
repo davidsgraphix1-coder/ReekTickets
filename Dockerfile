@@ -16,7 +16,6 @@ RUN pip install -r requirements-sms.txt
 # Copy SMS handler and gateway
 COPY server/sms_handler.py ./server/
 COPY server/sms-gateway.js ./server/
-COPY server/.env ./server/ 2>/dev/null || true
 
 # Environment
 ENV NODE_ENV=production
