@@ -1,5 +1,4 @@
 // SMS OTP endpoint for Vercel serverless
-const axios = require('axios');
 
 const SMS_API_KEY = process.env.SMS_API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
 const SMS_SENDER_ID = process.env.SMS_SENDER_ID || 'ReekTickets';
@@ -28,9 +27,8 @@ async function sendViaSmsonlinegh(phone, message) {
     const url = `https://${SMS_HOST}/sms/send/?${new URLSearchParams(params).toString()}`;
     console.log(`[SMS] SMSONLINEGH API call to ${cleanPhone}`);
 
-    const response = await axios.get(url, {
-      timeout: 20000,
-      validateStatus: () => true
+    const response = await fetch(url, {
+      method: 'GET'
     });
 
     console.log(`[SMS] SMSONLINEGH response status: ${response.status}`);

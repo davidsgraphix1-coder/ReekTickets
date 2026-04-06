@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
-import axios from 'axios';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -26,10 +25,13 @@ async function sendOtpSms(phone, otp) {
     };
     const url = `https://${process.env.SMS_HOST || 'api.smsonlinegh.com'}/sms/send/?${new URLSearchParams(params).toString()}`;
     
-    const response = await axios.get(url, {
-      timeout: 20000,
-      validateStatus: () => true
+    console.log('[SMS] Sending to:', cleanPhone);
+    const response = await fetch(url, {
+      method: 'GET',
+      timeout: 20000
     });
+    
+    console.log('[SMS] Response status:', response.status);
     
     // SMSONLINEGH returns 200 with empty body on success
     const isSuccess = response.status === 200;
