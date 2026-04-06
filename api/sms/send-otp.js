@@ -1,4 +1,74 @@
 // SMS OTP endpoint for Vercel serverless
+const axios = require('axios');
+
+const SMS_API_KEY = process.env.SMS_API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
+const SMS_SENDER_ID = process.env.SMS_SENDER_ID || 'ReekTickets';
+const SMS_HOST = process.env.SMS_HOST || 'api.smsonlinegh.com';
+
+function formatPhone(phone) {
+  let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '233' + cleanPhone.substring(1);
+  } else if (!cleanPhone.startsWith('233')) {
+    cleanPhone = '233' + cleanPhone;
+  }
+  return cleanPhone;
+}
+
+async function sendViaSmsonlinegh(phone, message) {
+  try {
+    const cleanPhone = formatPhone(phone);
+    const params = {
+      apikey: SMS_API_KEY,
+      sender: SMS_SENDER_ID,
+      message,
+      recipients: cleanPhone
+    };
+
+    const url = `https://${SMS_HOST}/sms/send/?${new URLSearchParams(params).toString()}`;
+    console.log(`[SMS] SMSONLINEGH API call to ${cleanPhone}`);
+
+    const response = await axios.get(url, {
+      timeout: 20000,
+      headers: {
+        'User-Agent': 'ReekTickets-SMS/1.0',
+        'Accept': 'application/json'
+      },
+      validateStatus: () => true
+    });
+
+    console.log(`[SMS] SMSONLINEGH response status: ${response.status}`);
+
+    if (response.status === 200) {
+      return {
+        success: true,
+        status: 200,
+        data: response.data,
+        message: `SMS sent successfully to ${cleanPhone}`
+      };
+    }
+
+    return {
+      success: false,
+      status: response.status,
+      error: `SMSONLINEGH response ${response.status}`,
+      message: 'Failed to send SMS via SMSONLINEGH'
+    };
+  } catch (error) {
+    console.error('[SMS] SMSONLINEGH error:', error.message);
+    let errorMsg = error.message;
+    if (error.response) {
+      errorMsg = `HTTP ${error.response.status}: ${error.response.statusText}`;
+    }
+    return {
+      success: false,
+      status: 500,
+      error: errorMsg,
+      message: `SMSONLINEGH API error: ${errorMsg}`
+    };
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -14,23 +84,19 @@ export default async function handler(req, res) {
       });
     }
 
-    // For now, just log the OTP (in production, integrate with SMS service)
-    console.log(`SMS OTP for ${phone}: ${otp}`);
+    const message = `Your ReekTickets verification code is ${otp}`;
+    const result = await sendViaSmsonlinegh(phone, message);
 
-    // Simulate SMS sending
-    const success = Math.random() > 0.1; // 90% success rate for testing
-
-    if (success) {
+    if (result.success) {
       res.status(200).json({
         success: true,
-        message: `OTP sent to ${phone}`,
-        otp: otp // Include for testing
+        message: result.message
       });
     } else {
       res.status(500).json({
         success: false,
-        error: 'SMS service temporarily unavailable',
-        message: 'Failed to send OTP'
+        error: result.error,
+        message: result.message
       });
     }
 
