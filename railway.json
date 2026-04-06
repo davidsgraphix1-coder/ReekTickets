@@ -1,9 +1,9 @@
 {
   "build": {
-    "builder": "heroku.buildpacks",
-    "buildpacks": [
-      "heroku/python",
-      "heroku/nodejs"
-    ]
+    "builder": "DOCKERFILE",
+    "dockerfile": "Dockerfile.sms"
+  },
+  "deploy": {
+    "startCommand": "node server/sms-gateway.js"
   }
 }
