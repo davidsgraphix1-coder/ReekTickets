@@ -8,7 +8,6 @@ export default function VerifyOtp({ onLogin }) {
   const navigate = useNavigate();
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef([]);
-  const [verificationCode] = useState(location.state?.verificationCode || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);

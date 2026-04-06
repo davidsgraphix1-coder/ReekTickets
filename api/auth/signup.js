@@ -1,7 +1,44 @@
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
+import axios from 'axios';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+function formatPhone(phone) {
+  let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '233' + cleanPhone.substring(1);
+  } else if (!cleanPhone.startsWith('233')) {
+    cleanPhone = '233' + cleanPhone;
+  }
+  return cleanPhone;
+}
+
+async function sendOtpSms(phone, otp) {
+  const cleanPhone = formatPhone(phone);
+  const message = `Your ReekTickets verification code is ${otp}`;
+  const params = {
+    apikey: process.env.SMS_API_KEY,
+    sender: process.env.SMS_SENDER_ID || 'ReekTickets',
+    message,
+    recipients: cleanPhone
+  };
+  const url = `https://${process.env.SMS_HOST || 'api.smsonlinegh.com'}/sms/send/?${new URLSearchParams(params).toString()}`;
+  const response = await axios.get(url, {
+    timeout: 20000,
+    headers: {
+      'User-Agent': 'ReekTickets-SMS/1.0',
+      'Accept': 'application/json'
+    },
+    validateStatus: () => true
+  });
+  return {
+    success: response.status === 200,
+    status: response.status,
+    data: response.data,
+    message: response.status === 200 ? 'SMS sent successfully' : `SMS provider returned ${response.status}`
+  };
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -70,21 +107,22 @@ export default async function handler(req, res) {
       user = created;
     }
 
-
-
-    // No SMS handler call at all. Log OTP for debugging only.
-    console.log(`OTP for ${email}: ${otpCode}`);
+    const smsResult = await sendOtpSms(phone, otpCode);
+    if (!smsResult.success) {
+      console.error('SMS send failed:', smsResult);
+    }
 
     res.status(200).json({
-      message: 'Signup complete. Verification code sent via SMS.',
+      message: smsResult.success
+        ? 'Signup complete. Verification code sent via SMS.'
+        : 'Signup complete. SMS sending failed, please retry verification.',
       user: {
         id: user.id,
         fullName: user.fullName,
         email: user.email,
         role: user.role,
         phone: user.phone
-      },
-      verificationCode: otpCode
+      }
     });
   } catch (error) {
     console.error('Signup error:', error);

@@ -101,7 +101,6 @@ export default function Signup({ onLogin }) {
       navigate('/verify-email', {
         state: {
           phone: signupData.phone,
-          verificationCode: data.verificationCode,
           method: 'sms'
         }
       });
