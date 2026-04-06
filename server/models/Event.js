@@ -15,6 +15,7 @@ const EventSchema = new mongoose.Schema({
   banner: String,
   organizer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   ticketTypes: [TicketTypeSchema],
+  serviceTier: { type: String, enum: ['standard', 'gold', 'platinum'], default: 'standard' },
   status: { type: String, enum: ['pending','approved','rejected'], default: 'pending' },
   published: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },

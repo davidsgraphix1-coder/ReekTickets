@@ -1,3 +1,5 @@
+import { FaUsers } from 'react-icons/fa';
+
 export default function UserManagement({ tickets, users }) {
   const uniqueUsers = [...new Map(
     tickets.map(t => t.user?.email || t.user?._id)
@@ -14,7 +16,7 @@ export default function UserManagement({ tickets, users }) {
 
       <div className="stats-grid" style={{ marginBottom: '30px' }}>
         <div className="stat-card stat-card-2">
-          <div className="card-icon">👥</div>
+          <div className="card-icon"><FaUsers /></div>
           <div className="card-content">
             <h3>Total Users</h3>
             <p className="stat-number">{uniqueUsers.length}</p>

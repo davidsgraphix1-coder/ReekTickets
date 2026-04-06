@@ -1,15 +1,17 @@
+import { FaCommentDots, FaSync } from 'react-icons/fa';
+
 export default function Messages({ messages, onRefresh }) {
   const data = messages || [];
 
   return (
     <div className="section fade-in">
       <div className="dashboard-title" style={{ marginBottom: '30px' }}>
-        <div className="title-icon">💬</div>
+        <div className="title-icon"><FaCommentDots /></div>
         <h1>Messages</h1>
       </div>
 
       <div style={{ marginBottom: '16px', maxWidth: '700px', marginLeft: 'auto', marginRight: 'auto' }}>
-        <button className="btn btn-primary" onClick={onRefresh}>🔄 Refresh Messages</button>
+        <button className="btn btn-primary" onClick={onRefresh}><FaSync /> Refresh Messages</button>
       </div>
 
       <div style={{ maxWidth: '700px', margin: '0 auto' }}>

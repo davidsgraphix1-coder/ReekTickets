@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FaCog } from 'react-icons/fa';
 
 export default function OrganizerSettings({ organizer }) {
   const [settings, setSettings] = useState({
@@ -28,7 +29,7 @@ export default function OrganizerSettings({ organizer }) {
   return (
     <div className="section fade-in">
       <div className="dashboard-title" style={{ marginBottom: '30px' }}>
-        <div className="title-icon">⚙️</div>
+        <div className="title-icon"><FaCog /></div>
         <h1>Settings</h1>
       </div>
 

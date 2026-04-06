@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { FaChartPie, FaUsers, FaUserShield, FaCalendarAlt, FaTicketAlt, FaMoneyBillWave, FaFileAlt, FaCog, FaSearch, FaBell, FaStore, FaHandsHelping, FaSun, FaMoon, FaChevronDown, FaBullhorn, FaBolt, FaEye, FaUserPlus, FaUndo, FaClipboard, FaLink, FaTimes, FaDollarSign, FaClock, FaCreditCard } from 'react-icons/fa';
 import axios from 'axios';
+import ProfilePicUpload from '../components/ProfilePicUpload';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -72,7 +74,6 @@ export default function AdminDashboard() {
       setTickets(t.data || []);
       setPayments(p.data || []);
       setReports(r.data || []);
-      setRevenue((p.data || []).reduce((sum, pay) => sum + Number(pay.amount || 0), 0));
 
       // Update stats
       setStats({
@@ -98,6 +99,62 @@ export default function AdminDashboard() {
     loadData();
   }, [fetchUserData, fetchAll]);
 
+  // Fetch additional dashboard data (sales agents, vendors, fraud alerts, logs, notifications)
+  useEffect(() => {
+    const fetchAdditionalData = async () => {
+      try {
+        // Fetch sales agents - filter users with role 'agent'
+        if (users.length > 0) {
+          const agents = users.filter(u => u.role === 'agent');
+          setSalesAgents(agents);
+        }
+        // Fetch vendors - filter users with role 'vendor'
+        if (users.length > 0) {
+          const vendorList = users.filter(u => u.role === 'vendor');
+          setVendors(vendorList);
+        }
+        // Fetch activity logs from payments/tickets
+        if (payments.length > 0) {
+          const actLogs = payments.map((p, idx) => ({
+            userName: p.userId?.fullName || 'User',
+            activity: `Payment for ticket - ${p.reference}`,
+            type: 'payment',
+            ipAddress: p.ipAddress || 'N/A',
+            timestamp: p.createdAt
+          }));
+          setUserActivityLogs(actLogs);
+        }
+        // Generate dummy notifications
+        setNotifications([
+          { title: 'High Transaction Volume', message: 'Unusual activity detected', timestamp: new Date() },
+          { title: 'Server Health', message: 'All systems operational', timestamp: new Date(Date.now() - 3600000) }
+        ]);
+        // Generate admin activity logs
+        setAdminLogs([
+          { adminName: 'System', action: 'Dashboard viewed', target: 'Admin Panel', changes: 'N/A', timestamp: new Date() }
+        ]);
+        // Generate fraud alerts if suspicious activity detected
+        const suspiciousPayments = payments.filter(p => Number(p.amount || 0) > 5000);
+        const alerts = suspiciousPayments.map((p, idx) => ({
+          type: 'High Amount Transaction',
+          user: p.userId?.fullName || 'Unknown',
+          details: `${p.reference} - Amount: ${p.amount}`,
+          timestamp: p.createdAt,
+          status: 'pending'
+        }));
+        setFraudAlerts(alerts);
+        // Calculate revenue from payments
+        const totalRevenue = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        setRevenue(totalRevenue);
+      } catch (err) {
+        console.error('Failed to fetch additional data:', err);
+      }
+    };
+    if (!loading) {
+      fetchAdditionalData();
+    }
+  }, [loading, users, payments]);
+
   // Handle escape key to close modal
   useEffect(() => {
     const handleEscape = (e) => {
@@ -120,8 +177,17 @@ export default function AdminDashboard() {
     }
   };
 
-  const userAvatar = user?.avatarUrl || user?.profilePic ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'Admin')}&background=667eea&color=ffffff`;
+  const userAvatar = user?.avatarUrl || user?.profilePic || null;
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const greetingName = user?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'Admin';
+  const greetingText = `${getGreeting()}, ${greetingName}`;
 
   const formatCurrency = (amount) => `GH₵ ${parseFloat(amount || 0).toFixed(2)}`;
   const formatDate = (date) => new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -146,19 +212,19 @@ export default function AdminDashboard() {
       {/* SIDEBAR */}
       <aside className="admin-sidebar">
         <div className="sidebar-header">
-          <h2 className="logo">⚙️ Admin</h2>
+          <h2 className="logo"><FaCog /> Admin</h2>
         </div>
 
         <nav className="sidebar-nav">
           {[
-            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-            { id: 'users', label: 'Users', icon: '👥' },
-            { id: 'admins', label: 'Admins', icon: '👨‍💼' },
-            { id: 'events', label: 'Events', icon: '🎉' },
-            { id: 'payments', label: 'Payments', icon: '💳' },
-            { id: 'tickets', label: 'Tickets', icon: '🎫' },
-            { id: 'reports', label: 'Reports', icon: '📋' },
-            { id: 'settings', label: 'Settings', icon: '⚙️' }
+            { id: 'dashboard', label: 'Dashboard', icon: <FaChartPie /> },
+            { id: 'users', label: 'Users', icon: <FaUsers /> },
+            { id: 'admins', label: 'Admins', icon: <FaUserShield /> },
+            { id: 'events', label: 'Events', icon: <FaCalendarAlt /> },
+            { id: 'payments', label: 'Payments', icon: <FaMoneyBillWave /> },
+            { id: 'tickets', label: 'Tickets', icon: <FaTicketAlt /> },
+            { id: 'reports', label: 'Reports', icon: <FaFileAlt /> },
+            { id: 'settings', label: 'Settings', icon: <FaCog /> }
           ].map(nav => (
             <button
               key={nav.id}
@@ -176,7 +242,7 @@ export default function AdminDashboard() {
             className="dark-mode-toggle"
             onClick={() => setDarkMode(!darkMode)}
           >
-            {darkMode ? '☀️ Light' : '🌙 Dark'}
+            {darkMode ? <><FaSun /> Light</> : <><FaMoon /> Dark</>}
           </button>
         </div>
       </aside>
@@ -187,6 +253,7 @@ export default function AdminDashboard() {
         <header className="admin-header">
           <div className="header-left">
             <h1 className="header-title">Admin Control Center</h1>
+            <p className="dashboard-greeting">{greetingText}</p>
           </div>
           <div className="header-actions">
             <div className="search-box">
@@ -196,16 +263,28 @@ export default function AdminDashboard() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <span className="search-icon">🔍</span>
+              <span className="search-icon"><FaSearch /></span>
             </div>
-            <button className="header-icon" title="Notifications">🔔</button>
-            <div className="user-dropdown">
-              <img src={userAvatar} alt="Admin" className="dropdown-avatar" />
+            <button className="header-icon" title="Notifications"><FaBell /></button>
+            <div className="user-dropdown" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <ProfilePicUpload
+                avatarUrl={userAvatar}
+                onUpload={async (url) => {
+                  // Save new avatar to backend
+                  try {
+                    await axios.patch('https://reektickets-production.up.railway.app/api/auth/me/avatar', { avatarUrl: url }, { headers });
+                    setUser((prev) => ({ ...prev, avatarUrl: url }));
+                  } catch (err) {
+                    alert('Failed to update avatar.');
+                  }
+                }}
+                disabled={loading}
+              />
               <div className="dropdown-info">
                 <p className="dropdown-name">{user?.fullName || 'Admin'}</p>
                 <p className="dropdown-role">Administrator</p>
               </div>
-              <span className="dropdown-arrow">▼</span>
+              <span className="dropdown-arrow"><FaChevronDown /></span>
             </div>
           </div>
         </header>
@@ -223,42 +302,42 @@ export default function AdminDashboard() {
                   {/* STAT CARDS */}
                   <div className="stats-grid">
                     <div className="stat-card">
-                      <div className="stat-icon">👥</div>
+                      <div className="stat-icon"><FaUsers /></div>
                       <div className="stat-info">
                         <p className="stat-label">Total Users</p>
                         <p className="stat-value">{stats.totalUsers}</p>
                       </div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-icon">🎉</div>
+                      <div className="stat-icon"><FaCalendarAlt /></div>
                       <div className="stat-info">
                         <p className="stat-label">Total Events</p>
                         <p className="stat-value">{stats.totalEvents}</p>
                       </div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-icon">🎫</div>
+                      <div className="stat-icon"><FaTicketAlt /></div>
                       <div className="stat-info">
                         <p className="stat-label">Total Tickets Sold</p>
                         <p className="stat-value">{stats.totalTickets}</p>
                       </div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-icon">💰</div>
+                      <div className="stat-icon"><FaMoneyBillWave /></div>
                       <div className="stat-info">
                         <p className="stat-label">Total Revenue</p>
                         <p className="stat-value">{formatCurrency(stats.totalRevenue)}</p>
                       </div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-icon">🏪</div>
+                      <div className="stat-icon"><FaStore /></div>
                       <div className="stat-info">
                         <p className="stat-label">Active Vendors</p>
                         <p className="stat-value">{stats.activeVendors}</p>
                       </div>
                     </div>
                     <div className="stat-card">
-                      <div className="stat-icon">🤝</div>
+                      <div className="stat-icon"><FaHandsHelping /></div>
                       <div className="stat-info">
                         <p className="stat-label">Sales Agents</p>
                         <p className="stat-value">{stats.activeSalesAgents}</p>
@@ -270,11 +349,275 @@ export default function AdminDashboard() {
                   <section className="quick-actions">
                     <h2>Quick Actions</h2>
                     <div className="action-buttons">
-                      <button className="action-btn btn-primary">📢 Send Announcement</button>
-                      <button className="action-btn btn-secondary">📊 Export Data</button>
-                      <button className="action-btn btn-secondary">🔍 System Health</button>
-                      <button className="action-btn btn-secondary">⚡ Platform Status</button>
+                      <button className="action-btn btn-primary"><FaBullhorn /> Send Announcement</button>
+                      <button className="action-btn btn-secondary"><FaChartPie /> Export Data</button>
+                      <button className="action-btn btn-secondary"><FaSearch /> System Health</button>
+                      <button className="action-btn btn-secondary"><FaBolt /> Platform Status</button>
                     </div>
+                  </section>
+
+                  {/* REVENUE SUMMARY */}
+                  <section className="section" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#fff', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
+                    <h2 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <FaDollarSign style={{ fontSize: '1.5rem' }} />
+                      Platform Revenue Summary
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                      <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '8px', padding: '16px' }}>
+                        <p style={{ margin: '0 0 8px 0', opacity: 0.9 }}>Calculated Revenue</p>
+                        <p style={{ margin: 0, fontSize: '1.8rem', fontWeight: 'bold' }}>{formatCurrency(revenue)}</p>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '8px', padding: '16px' }}>
+                        <p style={{ margin: '0 0 8px 0', opacity: 0.9 }}>Stats Total Revenue</p>
+                        <p style={{ margin: 0, fontSize: '1.8rem', fontWeight: 'bold' }}>{formatCurrency(stats.totalRevenue)}</p>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '8px', padding: '16px' }}>
+                        <p style={{ margin: '0 0 8px 0', opacity: 0.9 }}>Total Transactions</p>
+                        <p style={{ margin: 0, fontSize: '1.8rem', fontWeight: 'bold' }}>{payments.length}</p>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* SALES AGENTS SECTION */}
+                  <section className="section">
+                    <div className="section-header">
+                      <h2>Sales Agents ({salesAgents.length})</h2>
+                      <button className="action-btn btn-primary"><FaUserPlus /> Add Agent</button>
+                    </div>
+                    {salesAgents.length === 0 ? (
+                      <p>No sales agents registered yet.</p>
+                    ) : (
+                      <div className="table-container">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Agent Name</th>
+                              <th>Email</th>
+                              <th>Phone</th>
+                              <th>Sales Count</th>
+                              <th>Commission</th>
+                              <th>Status</th>
+                              <th>Joined</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {salesAgents.map(agent => (
+                              <tr key={agent._id}>
+                                <td>{agent.fullName || 'N/A'}</td>
+                                <td>{agent.email || 'N/A'}</td>
+                                <td>{agent.phone || 'N/A'}</td>
+                                <td className="badge-center">{payments.filter(p => p.agentId === agent._id).length}</td>
+                                <td className="badge-center">{agent.commission || '5%'}</td>
+                                <td><span className="badge">{agent.status || 'active'}</span></td>
+                                <td>{formatDate(agent.createdAt)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* VENDORS SECTION */}
+                  <section className="section">
+                    <div className="section-header">
+                      <h2>Vendors ({vendors.length})</h2>
+                      <button className="action-btn btn-primary"><FaUserPlus /> Manage Vendors</button>
+                    </div>
+                    {vendors.length === 0 ? (
+                      <p>No vendors registered yet.</p>
+                    ) : (
+                      <div className="table-container">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Vendor Name</th>
+                              <th>Business Type</th>
+                              <th>Email</th>
+                              <th>Phone</th>
+                              <th>Total Revenue</th>
+                              <th>Status</th>
+                              <th>Joined</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {vendors.map(vendor => {
+                              const vendorRevenue = payments.filter(p => p.vendorId === vendor._id).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+                              return (
+                                <tr key={vendor._id}>
+                                  <td>{vendor.fullName || 'N/A'}</td>
+                                  <td>{vendor.businessType || 'N/A'}</td>
+                                  <td>{vendor.email || 'N/A'}</td>
+                                  <td>{vendor.phone || 'N/A'}</td>
+                                  <td className="badge-center">${vendorRevenue.toFixed(2)}</td>
+                                  <td><span className="badge">{vendor.status || 'active'}</span></td>
+                                  <td>{formatDate(vendor.createdAt)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* NOTIFICATIONS */}
+                  <section className="section">
+                    <div className="section-header">
+                      <h2>System Notifications ({notifications.length})</h2>
+                    </div>
+                    {notifications.length === 0 ? (
+                      <p>No active notifications.</p>
+                    ) : (
+                      <div className="notification-list">
+                        {notifications.map((notif, idx) => (
+                          <div key={idx} className="notification-item">
+                            <span className="notification-icon"><FaBell /></span>
+                            <div className="notification-content">
+                              <p className="notification-title">{notif.title || 'Notification'}</p>
+                              <p className="notification-text">{notif.message}</p>
+                              <small>{formatDate(notif.timestamp)}</small>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  {/* FRAUD ALERTS */}
+                  <section className="section">
+                    <div className="section-header">
+                      <h2>Fraud Detection Alerts ({fraudAlerts.length})</h2>
+                    </div>
+                    {fraudAlerts.length === 0 ? (
+                      <p>No fraud alerts detected.</p>
+                    ) : (
+                      <div className="table-container">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Alert Type</th>
+                              <th>User</th>
+                              <th>Details</th>
+                              <th>Timestamp</th>
+                              <th>Status</th>
+                              <th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fraudAlerts.map((alert, idx) => (
+                              <tr key={idx}>
+                                <td><span className="badge">{alert.type || 'Unknown'}</span></td>
+                                <td>{alert.user || 'N/A'}</td>
+                                <td>{alert.details || 'N/A'}</td>
+                                <td>{formatDate(alert.timestamp)}</td>
+                                <td><span className="badge">{alert.status || 'pending'}</span></td>
+                                <td>
+                                  <button className="action-btn-sm">Review</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* ADMIN ACTIVITY LOGS */}
+                  <section className="section">
+                    <div className="section-header">
+                      <h2>Admin Activity Logs ({adminLogs.length})</h2>
+                    </div>
+                    {adminLogs.length === 0 ? (
+                      <p>No admin activity logs yet.</p>
+                    ) : (
+                      <div className="table-container">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Admin</th>
+                              <th>Action</th>
+                              <th>Target</th>
+                              <th>Changes</th>
+                              <th>Timestamp</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {adminLogs.map((log, idx) => (
+                              <tr key={idx}>
+                                <td>{log.adminName || 'System'}</td>
+                                <td><span className="badge">{log.action || 'N/A'}</span></td>
+                                <td>{log.target || 'N/A'}</td>
+                                <td>{log.changes || 'N/A'}</td>
+                                <td>{formatDate(log.timestamp)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* USER ACTIVITY LOGS */}
+                  <section className="section">
+                    <div className="section-header">
+                      <h2>User Activity Logs ({userActivityLogs.length})</h2>
+                      <div className="pagination">
+                        <select value={entriesPerPage} onChange={(e) => setEntriesPerPage(Number(e.target.value))}>
+                          <option value={5}>5 entries</option>
+                          <option value={10}>10 entries</option>
+                          <option value={20}>20 entries</option>
+                          <option value={50}>50 entries</option>
+                        </select>
+                        <div className="page-controls">
+                          <button 
+                            className="pagination-btn"
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Previous
+                          </button>
+                          <span className="page-info">Page {currentPage}</span>
+                          <button 
+                            className="pagination-btn"
+                            onClick={() => setCurrentPage(currentPage + 1)}
+                            disabled={currentPage * entriesPerPage >= userActivityLogs.length}
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    {userActivityLogs.length === 0 ? (
+                      <p>No user activity logs yet.</p>
+                    ) : (
+                      <div className="table-container">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>User</th>
+                              <th>Activity</th>
+                              <th>Type</th>
+                              <th>IP Address</th>
+                              <th>Timestamp</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {userActivityLogs
+                              .slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage)
+                              .map((log, idx) => (
+                                <tr key={idx}>
+                                  <td>{log.userName || 'N/A'}</td>
+                                  <td>{log.activity || 'N/A'}</td>
+                                  <td><span className="badge">{log.type || 'N/A'}</span></td>
+                                  <td>{log.ipAddress || 'N/A'}</td>
+                                  <td>{formatDate(log.timestamp)}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </section>
                 </>
               )}
@@ -328,9 +671,11 @@ export default function AdminDashboard() {
                                       onClick={() => setSelectedUserDetails(u)}
                                       title="View detailed account info"
                                     >
-                                      👁 View
+                                      <FaEye /> View
                                     </button>
                                     {u.role !== 'admin' && <button className="action-btn-sm" onClick={() => runAction(`https://reektickets-production.up.railway.app/api/admin/users/${u._id}/role`, 'patch', { role: 'admin' })}>Make Admin</button>}
+                                    {u.role !== 'supporter' && u.role !== 'admin' && <button className="action-btn-sm" onClick={() => runAction(`https://reektickets-production.up.railway.app/api/admin/users/${u._id}/role`, 'patch', { role: 'supporter' })}>Make Supporter</button>}
+                                    {u.role === 'supporter' && <button className="action-btn-sm" onClick={() => runAction(`https://reektickets-production.up.railway.app/api/admin/users/${u._id}/role`, 'patch', { role: 'attendee' })}>Remove Supporter</button>}
                                     {u.role === 'admin' && <button className="action-btn-sm" onClick={() => runAction(`https://reektickets-production.up.railway.app/api/admin/users/${u._id}/role`, 'patch', { role: 'attendee' })}>Remove</button>}
                                     {u.status !== 'banned' && <button className="action-btn-sm" onClick={() => runAction(`https://reektickets-production.up.railway.app/api/admin/users/${u._id}/status`, 'patch', { status: 'banned' })}>Ban</button>}
                                     {u.status === 'banned' && <button className="action-btn-sm" onClick={() => runAction(`https://reektickets-production.up.railway.app/api/admin/users/${u._id}/status`, 'patch', { status: 'active' })}>Unban</button>}
@@ -355,7 +700,7 @@ export default function AdminDashboard() {
                       className="action-btn btn-primary"
                       onClick={() => setActiveTab('users')}
                     >
-                      ➕ Make User Admin
+                      <FaUserPlus /> Make User Admin
                     </button>
                   </div>
                   {users.filter(u => u.role === 'admin').length === 0 ? <p>No admins found.</p> : (
@@ -377,7 +722,7 @@ export default function AdminDashboard() {
                             const stats = getUserStats(admin._id);
                             return (
                               <tr key={admin._id}>
-                                <td><strong>👨‍💼 {admin.fullName}</strong></td>
+                                <td><strong><FaUserShield /> {admin.fullName}</strong></td>
                                 <td>{admin.email}</td>
                                 <td><span className={`badge ${admin.status === 'active' ? 'active' : 'banned'}`}>{admin.status || 'active'}</span></td>
                                 <td className="badge-center">{users.length}</td>
@@ -390,13 +735,13 @@ export default function AdminDashboard() {
                                       onClick={() => setSelectedUserDetails(admin)}
                                       title="View admin details"
                                     >
-                                      👁 View
+                                      <FaEye /> View
                                     </button>
                                     <button 
                                       className="action-btn-sm"
                                       onClick={() => runAction(`https://reektickets-production.up.railway.app/api/admin/users/${admin._id}/role`, 'patch', { role: 'attendee' })}
                                     >
-                                      ↩️ Remove Admin
+                                      <FaUndo /> Remove Admin
                                     </button>
                                     {admin.status !== 'banned' && <button className="action-btn-sm" onClick={() => runAction(`https://reektickets-production.up.railway.app/api/admin/users/${admin._id}/status`, 'patch', { status: 'banned' })}>Ban</button>}
                                     {admin.status === 'banned' && <button className="action-btn-sm" onClick={() => runAction(`https://reektickets-production.up.railway.app/api/admin/users/${admin._id}/status`, 'patch', { status: 'active' })}>Unban</button>}
@@ -525,7 +870,7 @@ export default function AdminDashboard() {
                           <tr>
                             <th>Attendee</th>
                             <th>Event</th>
-                            <th>Ticket Code</th>
+                            <th>Access Code</th>
                             <th>Status</th>
                             <th>Actions</th>
                           </tr>
@@ -543,10 +888,10 @@ export default function AdminDashboard() {
                                     className="btn-copy"
                                     onClick={() => {
                                       navigator.clipboard.writeText(t.smsCode);
-                                      alert(`Ticket code copied: ${t.smsCode}`);
+                                      alert(`Access code copied: ${t.smsCode}`);
                                     }}
                                   >
-                                    📋 Copy Code
+                                    <FaClipboard /> Copy Access Code
                                   </button>
                                   <button 
                                     className="btn-copy"
@@ -556,7 +901,7 @@ export default function AdminDashboard() {
                                       alert(`Ticket link copied to clipboard`);
                                     }}
                                   >
-                                    🔗 Copy Link
+                                    <FaLink /> Copy Link
                                   </button>
                                 </div>
                               </td>
@@ -636,7 +981,7 @@ export default function AdminDashboard() {
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>Account Details - {selectedUserDetails.fullName}</h2>
-                <button className="close-btn" onClick={() => setSelectedUserDetails(null)}>✕</button>
+                <button className="close-btn" onClick={() => setSelectedUserDetails(null)}><FaTimes /></button>
               </div>
               
               {(() => {
@@ -649,7 +994,7 @@ export default function AdminDashboard() {
                   <div className="modal-body">
                     {/* User Info */}
                     <div className="detail-section">
-                      <h3>📋 Personal Information</h3>
+                      <h3><FaClipboard /> Personal Information</h3>
                       <div className="detail-grid">
                         <div className="detail-item">
                           <label>Full Name</label>
@@ -680,22 +1025,22 @@ export default function AdminDashboard() {
 
                     {/* Activity Stats */}
                     <div className="detail-section">
-                      <h3>📊 Activity Summary</h3>
+                      <h3><FaChartPie /> Activity Summary</h3>
                       <div className="stats-grid">
                         <div className="stat-card">
-                          <p className="stat-label">🎫 Tickets Bought</p>
+                          <p className="stat-label"><FaTicketAlt /> Tickets Bought</p>
                           <p className="stat-value">{stats.ticketsBought}</p>
                         </div>
                         <div className="stat-card">
-                          <p className="stat-label">💰 Total Spent</p>
+                          <p className="stat-label"><FaDollarSign /> Total Spent</p>
                           <p className="stat-value">${stats.totalSpent.toFixed(2)}</p>
                         </div>
                         <div className="stat-card">
-                          <p className="stat-label">🎪 Events Created</p>
+                          <p className="stat-label"><FaCalendarAlt /> Events Created</p>
                           <p className="stat-value">{stats.eventCreated}</p>
                         </div>
                         <div className="stat-card">
-                          <p className="stat-label">⏰ Last Active</p>
+                          <p className="stat-label"><FaClock /> Last Active</p>
                           <p className="stat-value">{stats.lastActivity ? formatDate(stats.lastActivity) : 'Never'}</p>
                         </div>
                       </div>
@@ -704,7 +1049,7 @@ export default function AdminDashboard() {
                     {/* Recent Tickets */}
                     {userTickets.length > 0 && (
                       <div className="detail-section">
-                        <h3>🎫 Recent Tickets</h3>
+                        <h3><FaTicketAlt /> Recent Tickets</h3>
                         <div className="table-container">
                           <table className="data-table">
                             <thead>
@@ -733,7 +1078,7 @@ export default function AdminDashboard() {
                     {/* Recent Payments */}
                     {userPayments.length > 0 && (
                       <div className="detail-section">
-                        <h3>💳 Recent Payments</h3>
+                        <h3><FaCreditCard /> Recent Payments</h3>
                         <div className="table-container">
                           <table className="data-table">
                             <thead>
@@ -753,6 +1098,38 @@ export default function AdminDashboard() {
                                   <td>{formatDate(p.createdAt)}</td>
                                 </tr>
                               ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* User Events Created */}
+                    {userEvents.length > 0 && (
+                      <div className="detail-section">
+                        <h3><FaCalendarAlt /> Events Created</h3>
+                        <div className="table-container">
+                          <table className="data-table">
+                            <thead>
+                              <tr>
+                                <th>Event Title</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Tickets Sold</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {userEvents.slice(0, 5).map(e => {
+                                const eventTickets = tickets.filter(t => t.event?.id === e._id || t.event === e._id).length;
+                                return (
+                                  <tr key={e._id}>
+                                    <td>{e.title}</td>
+                                    <td><span className="badge">{e.status || 'pending'}</span></td>
+                                    <td>{formatDate(e.date || e.createdAt)}</td>
+                                    <td>{eventTickets}</td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>

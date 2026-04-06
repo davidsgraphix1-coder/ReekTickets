@@ -1029,3 +1029,18 @@
     font-size: 16px;
   }
 }
+
+/* Keep organizer dashboard focused on greeting and cards only */
+.organizer-content {
+  max-height: calc(100vh - 160px);
+  overflow: hidden;
+}
+
+.organizer-content .events-section,
+.organizer-content .visitor-section,
+.organizer-content .table-wrapper,
+.organizer-content .pagination,
+.organizer-content .filter-dropdown,
+.organizer-content .section {
+  display: none !important;
+}

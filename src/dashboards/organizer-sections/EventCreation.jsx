@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useState } from 'react';
+import { FaPlus, FaTimes } from 'react-icons/fa';
 
 export default function EventCreation({ events, headers, onEventCreated }) {
   const [showForm, setShowForm] = useState(false);
@@ -10,6 +11,7 @@ export default function EventCreation({ events, headers, onEventCreated }) {
     description: '',
     date: '',
     location: '',
+    serviceTier: 'standard',
     ticketTypes: [{ type: 'General', price: '', quantity: '' }],
     banner: null,
   });
@@ -54,6 +56,7 @@ export default function EventCreation({ events, headers, onEventCreated }) {
       form.append('description', formData.description);
       form.append('date', formData.date);
       form.append('location', formData.location);
+      form.append('serviceTier', formData.serviceTier);
       form.append('ticketTypes', JSON.stringify(formData.ticketTypes));
       if (formData.banner) form.append('banner', formData.banner);
 
@@ -66,6 +69,7 @@ export default function EventCreation({ events, headers, onEventCreated }) {
         description: '',
         date: '',
         location: '',
+        serviceTier: 'standard',
         ticketTypes: [{ type: 'General', price: '', quantity: '' }],
         banner: null,
       });
@@ -91,7 +95,7 @@ export default function EventCreation({ events, headers, onEventCreated }) {
           onClick={() => setShowForm(true)}
           style={{ marginBottom: '20px' }}
         >
-          ➕ Create New Event
+          <FaPlus /> Create New Event
         </button>
       ) : (
         <form onSubmit={handleSubmit} className="event-form">
@@ -155,6 +159,23 @@ export default function EventCreation({ events, headers, onEventCreated }) {
           </div>
 
           <div className="form-group">
+            <label>Service Tier *</label>
+            <select
+              name="serviceTier"
+              value={formData.serviceTier}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="standard">Standard (5% service fee)</option>
+              <option value="gold">Gold (7.5% service fee)</option>
+              <option value="platinum">Platinum (10% service fee)</option>
+            </select>
+            <small style={{ color: '#666', marginTop: '5px', display: 'block' }}>
+              Choose your service tier. All tiers include 2.5% transaction handling fees.
+            </small>
+          </div>
+
+          <div className="form-group">
             <label>Ticket Types</label>
             {formData.ticketTypes.map((ticket, index) => (
               <div key={index} className="ticket-type-row">
@@ -186,7 +207,7 @@ export default function EventCreation({ events, headers, onEventCreated }) {
                     onClick={() => removeTicketType(index)}
                     className="btn btn-danger"
                   >
-                    ✕
+                    <FaTimes />
                   </button>
                 )}
               </div>

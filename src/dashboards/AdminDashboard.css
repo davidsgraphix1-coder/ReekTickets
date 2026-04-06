@@ -1233,3 +1233,13 @@
     margin-bottom: 24px;
   }
 }
+
+/* Keep only greeting/header and top cards visible in admin dashboard views */
+.admin-content {
+  max-height: calc(100vh - 180px);
+  overflow: hidden;
+}
+
+.admin-content > :not(.stats-grid):not(.error-banner):not(.loading) {
+  display: none !important;
+}

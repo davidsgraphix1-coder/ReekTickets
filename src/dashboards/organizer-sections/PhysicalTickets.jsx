@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FaPlus } from 'react-icons/fa';
 import axios from 'axios';
 
 export default function PhysicalTickets({ tickets, events, headers, onRefresh }) {
@@ -78,7 +79,7 @@ export default function PhysicalTickets({ tickets, events, headers, onRefresh })
           onClick={() => setShowForm(true)}
           style={{ marginBottom: '20px' }}
         >
-          ➕ Create Physical Ticket
+          <FaPlus /> Create Physical Ticket
         </button>
       ) : (
         <form onSubmit={handleSubmit} className="ticket-form">

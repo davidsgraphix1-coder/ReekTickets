@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FaUserCircle, FaTicketAlt, FaMoneyBillWave } from 'react-icons/fa';
 
 export default function UserDashboard({ tickets, payments }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -15,27 +16,27 @@ export default function UserDashboard({ tickets, payments }) {
   return (
     <div className="section fade-in">
       <div className="dashboard-title" style={{ marginBottom: '30px' }}>
-        <div className="title-icon">👤</div>
+        <div className="title-icon"><FaUserCircle /></div>
         <h1>My Tickets & Profile</h1>
       </div>
 
       <div className="stats-grid" style={{ marginBottom: '30px' }}>
         <div className="stat-card stat-card-1">
-          <div className="card-icon">🎫</div>
+          <div className="card-icon"><FaTicketAlt /></div>
           <div className="card-content">
             <h3>Total Tickets</h3>
             <p className="stat-number">{tickets.length}</p>
           </div>
         </div>
         <div className="stat-card stat-card-2">
-          <div className="card-icon">💰</div>
+          <div className="card-icon"><FaMoneyBillWave /></div>
           <div className="card-content">
             <h3>Total Spent</h3>
             <p className="stat-number">GH₵ {totalSpent.toLocaleString()}</p>
           </div>
         </div>
         <div className="stat-card stat-card-3">
-          <div className="card-icon">🎟️</div>
+          <div className="card-icon"><FaTicketAlt /></div>
           <div className="card-content">
             <h3>Active Tickets</h3>
             <p className="stat-number">{tickets.filter(t => t.status === 'Active').length}</p>

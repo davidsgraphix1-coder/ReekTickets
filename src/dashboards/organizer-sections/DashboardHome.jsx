@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FaChartPie, FaMoneyBillWave, FaCalendarAlt, FaTicketAlt } from 'react-icons/fa';
 
 export default function DashboardHome({ events, tickets, stats }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,14 +22,14 @@ export default function DashboardHome({ events, tickets, stats }) {
   return (
     <>
       <div className="dashboard-title">
-        <div className="title-icon">📊</div>
+        <div className="title-icon"><FaChartPie /></div>
         <h1>DASHBOARD</h1>
       </div>
 
       {/* STAT CARDS */}
       <div className="stats-grid">
         <div className="stat-card stat-card-1">
-          <div className="card-icon">💰</div>
+          <div className="card-icon"><FaMoneyBillWave /></div>
           <div className="card-content">
             <h3>Top Selling Event</h3>
             <p className="stat-number">GH₵ {stats.topEventRevenue.toLocaleString()}</p>
@@ -36,7 +37,7 @@ export default function DashboardHome({ events, tickets, stats }) {
         </div>
 
         <div className="stat-card stat-card-2">
-          <div className="card-icon">📅</div>
+          <div className="card-icon"><FaCalendarAlt /></div>
           <div className="card-content">
             <h3>Total Events</h3>
             <p className="stat-number">{stats.totalEvents}</p>
@@ -44,7 +45,7 @@ export default function DashboardHome({ events, tickets, stats }) {
         </div>
 
         <div className="stat-card stat-card-3">
-          <div className="card-icon">🎫</div>
+          <div className="card-icon"><FaTicketAlt /></div>
           <div className="card-content">
             <h3>Top Event Ticket Sold</h3>
             <p className="stat-number">{stats.ticketsSold}</p>

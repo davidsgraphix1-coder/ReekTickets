@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FaPlus } from 'react-icons/fa';
 import axios from 'axios';
 
 export default function ComplementaryTickets({ tickets, events, headers, onRefresh }) {
@@ -74,7 +75,7 @@ export default function ComplementaryTickets({ tickets, events, headers, onRefre
           onClick={() => setShowForm(true)}
           style={{ marginBottom: '20px' }}
         >
-          ➕ Create Complimentary Ticket
+          <FaPlus /> Create Complimentary Ticket
         </button>
       ) : (
         <form onSubmit={handleSubmit} className="ticket-form">

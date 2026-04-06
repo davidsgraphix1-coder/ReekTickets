@@ -9,19 +9,50 @@ const Wallet = require('../models/Wallet');
 
 const router = express.Router();
 
+// Fee calculation utilities
+const SERVICE_FEES = {
+  standard: 0.05,  // 5%
+  gold: 0.075,     // 7.5%
+  platinum: 0.10   // 10%
+};
+
+const TRANSACTION_FEE = 0.025; // 2.5% for Ghana Cedis transactions
+
+const calculateFees = (amount, serviceTier = 'standard') => {
+  const serviceFee = amount * SERVICE_FEES[serviceTier];
+  const transactionFee = amount * TRANSACTION_FEE;
+  const totalFees = serviceFee + transactionFee;
+  const organizerAmount = amount - totalFees;
+
+  return {
+    originalAmount: amount,
+    serviceFee,
+    transactionFee,
+    totalFees,
+    organizerAmount
+  };
+};
+
 router.post('/paystack', auth, async (req, res) => {
   try {
-    const { eventId, email, amount, ticketType } = req.body;
+    const { eventId, email, amount, ticketType, quantity = 1, items } = req.body;
     if (!eventId || !email || !amount) return res.status(400).json({ message: 'Missing payment info' });
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ message: 'Event not found' });
     const paystackKey = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackKey) return res.status(500).json({ message: 'Paystack key not configured' });
+    const metadata = { eventId, userId: req.user.id };
+    if (Array.isArray(items) && items.length > 0) {
+      metadata.items = items;
+    } else {
+      metadata.ticketType = ticketType || 'General';
+      metadata.quantity = quantity;
+    }
     const response = await axios.post('https://api.paystack.co/transaction/initialize', {
       email,
       amount: Math.round(amount * 100),
       callback_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment/success`,
-      metadata: { eventId, userId: req.user.id, ticketType },
+      metadata,
     }, {
       headers: { Authorization: `Bearer ${paystackKey}`, 'Content-Type': 'application/json' },
     });
@@ -56,22 +87,47 @@ router.get('/verify', async (req, res) => {
       provider: 'paystack',
       meta: data.data,
     });
-    const ticket = await Ticket.create({
-      user: metadata.userId,
-      event: metadata.eventId,
-      ticketType: metadata.ticketType || 'General',
-      price: amount,
-      reference,
-      status: 'active',
-    });
 
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    ticket.smsCode = code;
-    ticket.smsCodeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await ticket.save();
+    const tickets = [];
+    const createTicket = async (ticketType, price) => {
+      const ticket = await Ticket.create({
+        user: metadata.userId,
+        event: metadata.eventId,
+        ticketType: ticketType || 'General',
+        price,
+        reference,
+        status: 'active',
+      });
+      ticket.smsCode = String(Math.floor(100000 + Math.random() * 900000));
+      ticket.smsCodeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await ticket.save();
+      tickets.push(ticket);
+    };
 
-    const event = await Event.findById(metadata.eventId);
-    return res.json({ message: 'Payment verified', payment, ticket, event });
+    if (Array.isArray(metadata.items) && metadata.items.length > 0) {
+      for (const item of metadata.items) {
+        const itemPrice = item.price || 0;
+        const itemQuantity = Number(item.quantity) || 1;
+        for (let i = 0; i < itemQuantity; i += 1) {
+          // Create one ticket per unit purchased
+          // Use the same reference for all tickets in this payment
+          // and preserve the item price for each ticket
+          // Ticket type falls back to General if missing
+          // eslint-disable-next-line no-await-in-loop
+          await createTicket(item.ticketType || 'General', itemPrice);
+        }
+      }
+    } else {
+      const quantity = Number(metadata.quantity) || 1;
+      for (let i = 0; i < quantity; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await createTicket(metadata.ticketType || 'General', amount / quantity);
+      }
+    }
+
+    await Event.findById(metadata.eventId);
+    await User.findById(metadata.userId);
+    return res.json({ message: 'Payment verified', payment, ticket: tickets[0], tickets, event });
   } catch (error) {
     console.error(error?.response?.data || error.message);
     return res.status(500).json({ message: 'Paystack verification failed' });
@@ -93,19 +149,112 @@ router.post('/withdraw', auth, async (req, res) => {
   }
 });
 
+// Organizer payout request
+router.post('/organizer/payout', auth, async (req, res) => {
+  try {
+    const { amount, bankDetails } = req.body;
+    if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
+    if (!bankDetails) return res.status(400).json({ message: 'Bank details required' });
+
+    // Check if user is an organizer
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'organizer') return res.status(403).json({ message: 'Access denied' });
+
+    // Calculate available balance from events with proper fee deductions
+    const events = await Event.find({ organizer: req.user.id }).select('_id serviceTier');
+    const eventIds = events.map(e => e._id);
+    
+    // Get all successful payments for organizer's events
+    const payments = await Payment.find({ 
+      event: { $in: eventIds }, 
+      status: 'success' 
+    }).populate('event');
+    
+    // Calculate total organizer earnings after fees
+    let totalOrganizerEarnings = 0;
+    for (const payment of payments) {
+      const event = events.find(e => e._id.toString() === payment.event.toString());
+      const serviceTier = event?.serviceTier || 'standard';
+      const feeCalculation = calculateFees(payment.amount, serviceTier);
+      totalOrganizerEarnings += feeCalculation.organizerAmount;
+    }
+
+    const availableBalance = totalOrganizerEarnings;
+    if (availableBalance < amount) return res.status(400).json({ message: 'Insufficient available balance' });
+
+    // Here you would integrate with Paystack Transfer API for bank transfers
+    // For now, we'll create a payout record
+    const payout = await Payment.create({
+      user: req.user.id,
+      amount: -amount, // Negative to indicate payout
+      status: 'pending',
+      provider: 'paystack_transfer',
+      meta: { type: 'organizer_payout', bankDetails },
+    });
+
+    res.json({ message: 'Payout request submitted successfully', payout, reference: payout._id });
+  } catch (error) {
+    console.error('Organizer payout error:', error);
+    res.status(500).json({ message: 'Payout request failed' });
+  }
+});
+
+// Get organizer payout history
+router.get('/organizer/payouts', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'organizer') return res.status(403).json({ message: 'Access denied' });
+
+    const payouts = await Payment.find({
+      user: req.user.id,
+      'meta.type': 'organizer_payout'
+    }).sort({ createdAt: -1 });
+
+    res.json(payouts);
+  } catch (error) {
+    res.status(500).json({ message: 'Could not fetch payout history' });
+  }
+});
+
 router.get('/summary', auth, async (req, res) => {
   try {
-    const events = await Event.find({ organizer: req.user.id }).select('_id');
+    const events = await Event.find({ organizer: req.user.id }).select('_id serviceTier');
     const eventIds = events.map(e => e._id);
-    const totalRevenue = await Payment.aggregate([
-      { $match: { event: { $in: eventIds } } },
-      { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } }
-    ]);
+    
+    // Get all payments for organizer's events
+    const payments = await Payment.find({ event: { $in: eventIds } }).populate('event');
+    
+    let totalRevenue = 0;
+    let totalOrganizerEarnings = 0;
+    let totalServiceFees = 0;
+    let totalTransactionFees = 0;
+    
+    for (const payment of payments) {
+      if (payment.status === 'success') {
+        totalRevenue += payment.amount;
+        const event = events.find(e => e._id.toString() === payment.event.toString());
+        const serviceTier = event?.serviceTier || 'standard';
+        const feeCalculation = calculateFees(payment.amount, serviceTier);
+        totalOrganizerEarnings += feeCalculation.organizerAmount;
+        totalServiceFees += feeCalculation.serviceFee;
+        totalTransactionFees += feeCalculation.transactionFee;
+      }
+    }
+    
     const totalTickets = await Ticket.countDocuments({ event: { $in: eventIds } });
+    const totalSales = payments.filter(p => p.status === 'success').length;
+    
     res.json({
-      totalRevenue: totalRevenue[0]?.total || 0,
+      totalRevenue,
+      totalOrganizerEarnings,
+      totalServiceFees,
+      totalTransactionFees,
       totalTickets,
-      totalSales: totalRevenue[0]?.count || 0,
+      totalSales,
+      serviceTierBreakdown: events.reduce((acc, event) => {
+        acc[event.serviceTier || 'standard'] = (acc[event.serviceTier || 'standard'] || 0) + 1;
+        return acc;
+      }, {})
     });
   } catch (error) {
     res.status(500).json({ message: 'Could not fetch sale summary' });

@@ -171,7 +171,8 @@
 }
 
 .dropdown-avatar {
-  width: 32px;
+  width: 32
+  px;
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
@@ -1021,4 +1022,23 @@
   .form-group select {
     padding: 8px 10px;
   }
+}
+
+/* Keep sales agent dashboard limited to nav, header and top cards */
+.agent-content {
+  max-height: calc(100vh - 180px);
+  overflow: hidden;
+}
+
+.agent-content .settings-panel,
+.agent-content .table-container,
+.agent-content .table-controls,
+.agent-content .data-table,
+.agent-content .report-panel,
+.agent-content .pagination,
+.agent-content .leaderboard-panel,
+.agent-content .transactions-table,
+.agent-content .section,
+.agent-content .form-group {
+  display: none !important;
 }

@@ -1498,3 +1498,22 @@
 .stat-card:nth-child(4) {
   animation-delay: 0.2s;
 }
+
+/* Keep attendee dashboard showing only nav, greeting and top cards */
+.attendee-content {
+  max-height: calc(100vh - 180px);
+  overflow: hidden;
+}
+
+.attendee-content .table-wrapper,
+.attendee-content .ticket-list,
+.attendee-content .report-panel,
+.attendee-content .settings-panel,
+.attendee-content .pagination,
+.attendee-content .data-table,
+.attendee-content .event-list,
+.attendee-content .upcoming-list,
+.attendee-content .past-list,
+.attendee-content .saved-events {
+  display: none !important;
+}

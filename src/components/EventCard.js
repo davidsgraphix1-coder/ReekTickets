@@ -2,8 +2,8 @@ export default function EventCard({ event, onBuy }) {
   const price = event?.ticketTypes?.[0]?.price || 0;
   const ticketType = event?.ticketTypes?.[0]?.type || 'General';
   return (
-    <div className="card event-card" onClick={() => window.location.href = `/event/${event._id}`}>
-      <div className="card-banner" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('${event.banner || '/banner.jpg'}')` }}>
+    <div className="card event-card" onClick={() => window.location.href = `/events/${event._id}`}>
+      <div className="card-banner" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('${event.banner || '/public/banner.jpg'}')` }}>
         <div className="event-tag">{event.category || 'All'}</div>
       </div>
       <div className="card-body">

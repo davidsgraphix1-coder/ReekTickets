@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { signup } from '../services/api';
 import './OrganizerSignup.css';
 
 export default function OrganizerSignup({ onLogin }) {
@@ -140,15 +140,12 @@ export default function OrganizerSignup({ onLogin }) {
         termsAccepted: formData.termsAccepted,
       };
 
-      const response = await axios.post('https://reektickets-production.up.railway.app/api/auth/signup', submitData);
+      const data = await signup(submitData);
 
-      if (response.data.token) {
-        localStorage.setItem('reek_token', response.data.token);
-        localStorage.setItem('reek_user', JSON.stringify(response.data.user));
-        onLogin(response.data.user);
-        navigate('/dashboard/organizer');
+      if (data?.user) {
+        navigate('/verify-email', { state: { email: submitData.email, verificationCode: data.verificationCode } });
       } else {
-        setErrors({ submit: response.data.message || 'Registration failed' });
+        setErrors({ submit: data.message || 'Registration failed' });
       }
     } catch (error) {
       setErrors({ submit: error.response?.data?.message || 'Network error. Please try again.' });

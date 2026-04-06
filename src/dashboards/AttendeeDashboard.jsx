@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { FaChartPie, FaTicketAlt, FaClock, FaCalendarAlt, FaRegCalendarAlt, FaHeart, FaRegHeart, FaBell, FaCog, FaRegFileAlt, FaChevronDown, FaSun, FaMoon, FaMapMarkerAlt, FaShareAlt, FaCopy, FaExternalLinkAlt, FaFilePdf, FaQrcode, FaSort, FaSortUp, FaSortDown, FaTimes } from 'react-icons/fa';
 import axios from 'axios';
 import './AttendeeDashboard.css';
 
@@ -104,12 +105,21 @@ export default function AttendeeDashboard() {
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return '↕️';
-    return sortConfig.direction === 'asc' ? '↑' : '↓';
+    if (sortConfig.key !== key) return <FaSort />;
+    return sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />;
   };
 
-  const userAvatar = user?.avatarUrl || user?.profilePic ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'Attendee')}&background=667eea&color=ffffff`;
+  const userAvatar = user?.avatarUrl || user?.profilePic || null;
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const greetingName = user?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'Attendee';
+  const greetingText = `${getGreeting()}, ${greetingName}`;
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -191,42 +201,42 @@ export default function AttendeeDashboard() {
 
         <nav className="sidebar-nav">
           <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-            <span className="nav-icon">📊</span>
+            <span className="nav-icon"><FaChartPie /></span>
             <span className="nav-label">Dashboard</span>
           </div>
           <div className={`nav-item ${activeTab === 'tickets' ? 'active' : ''}`} onClick={() => setActiveTab('tickets')}>
-            <span className="nav-icon">🎫</span>
+            <span className="nav-icon"><FaTicketAlt /></span>
             <span className="nav-label">My Tickets</span>
           </div>
           <div className={`nav-item ${activeTab === 'upcoming' ? 'active' : ''}`} onClick={() => setActiveTab('upcoming')}>
-            <span className="nav-icon">⏰</span>
+            <span className="nav-icon"><FaClock /></span>
             <span className="nav-label">Upcoming Events</span>
           </div>
           <div className={`nav-item ${activeTab === 'past' ? 'active' : ''}`} onClick={() => setActiveTab('past')}>
-            <span className="nav-icon">📜</span>
+            <span className="nav-icon"><FaRegCalendarAlt /></span>
             <span className="nav-label">Past Events</span>
           </div>
           <div className={`nav-item ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => setActiveTab('saved')}>
-            <span className="nav-icon">❤️</span>
+            <span className="nav-icon"><FaHeart /></span>
             <span className="nav-label">Saved Events</span>
           </div>
           <div className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>
-            <span className="nav-icon">🔔</span>
+            <span className="nav-icon"><FaBell /></span>
             <span className="nav-label">Notifications</span>
           </div>
           <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
-            <span className="nav-icon">⚙️</span>
+            <span className="nav-icon"><FaCog /></span>
             <span className="nav-label">Settings</span>
           </div>
           <div className={`nav-item ${activeTab === 'report' ? 'active' : ''}`} onClick={() => setActiveTab('report')}>
-            <span className="nav-icon">📝</span>
+            <span className="nav-icon"><FaRegFileAlt /></span>
             <span className="nav-label">Report</span>
           </div>
         </nav>
 
         <div className="sidebar-footer">
           <button className="dark-mode-toggle" onClick={() => setDarkMode(!darkMode)}>
-            {darkMode ? '☀️ Light' : '🌙 Dark'}
+            {darkMode ? <><FaSun /> Light</> : <><FaMoon /> Dark</>}
           </button>
         </div>
       </div>
@@ -237,13 +247,14 @@ export default function AttendeeDashboard() {
         <div className="attendee-header">
           <div className="header-left">
             <h1 className="header-title">EVENT ATTENDEE PORTAL</h1>
+            <p className="dashboard-greeting">{greetingText}</p>
           </div>
           <div className="header-actions">
-            <div className="header-icon notification-bell" onClick={() => setActiveTab('notifications')}>🔔</div>
+            <div className="header-icon notification-bell" onClick={() => setActiveTab('notifications')}><FaBell /></div>
             <div className="user-dropdown">
               <img src={userAvatar} alt={user?.fullName} className="dropdown-avatar" />
               <span className="dropdown-email">{user?.email || 'attendee@reektickets.com'}</span>
-              <span className="dropdown-arrow">▼</span>
+              <span className="dropdown-arrow"><FaChevronDown /></span>
             </div>
           </div>
         </div>
@@ -257,22 +268,22 @@ export default function AttendeeDashboard() {
               {/* Stat Cards */}
               <div className="stats-grid">
                 <div className="stat-card card-1">
-                  <div className="stat-card-icon">🎫</div>
+                  <div className="stat-card-icon"><FaTicketAlt /></div>
                   <div className="stat-card-title">Total Tickets</div>
                   <div className="stat-card-value">{tickets.length}</div>
                 </div>
                 <div className="stat-card card-2">
-                  <div className="stat-card-icon">⏰</div>
+                  <div className="stat-card-icon"><FaClock /></div>
                   <div className="stat-card-title">Upcoming Events</div>
                   <div className="stat-card-value">{upcomingEvents.length}</div>
                 </div>
                 <div className="stat-card card-3">
-                  <div className="stat-card-icon">📜</div>
+                  <div className="stat-card-icon"><FaRegCalendarAlt /></div>
                   <div className="stat-card-title">Past Events</div>
                   <div className="stat-card-value">{pastEvents.length}</div>
                 </div>
                 <div className="stat-card card-4">
-                  <div className="stat-card-icon">❤️</div>
+                  <div className="stat-card-icon"><FaHeart /></div>
                   <div className="stat-card-title">Saved Events</div>
                   <div className="stat-card-value">{savedEvents.length}</div>
                 </div>
@@ -284,7 +295,7 @@ export default function AttendeeDashboard() {
                   <h3>Upcoming Event Reminders</h3>
                   {upcomingEvents.slice(0, 3).map((ticket, idx) => (
                     <div key={idx} className="reminder-card">
-                      <div className="reminder-icon">⏲️</div>
+                      <div className="reminder-icon"><FaClock /></div>
                       <div className="reminder-content">
                         <div className="reminder-title">{ticket.event?.title}</div>
                         <div className="reminder-subtitle">Starts in {getCountdownTime(ticket.event?.date)}</div>
@@ -300,7 +311,7 @@ export default function AttendeeDashboard() {
                 <h3>Your Upcoming Events</h3>
                 <div className="events-grid">
                   {upcomingEvents.slice(0, 4).map((ticket, idx) => {
-                    const bgImg = ticket.event?.banner || '/banner.jpg';
+                    const bgImg = ticket.event?.banner || '/public/banner.jpg';
                     return (
                     <div key={idx} className="event-card-preview">
                       <div className="event-image" style={{ backgroundImage: `url('${bgImg}')` }}>
@@ -308,9 +319,9 @@ export default function AttendeeDashboard() {
                       </div>
                       <div className="event-details">
                         <h4>{ticket.event?.title}</h4>
-                        <p className="event-date">📅 {formatDate(ticket.event?.date)}</p>
-                        <p className="event-location">📍 {ticket.event?.location}</p>
-                        <button className="btn-small add-calendar">📅 Add to Calendar</button>
+                        <p className="event-date"><FaCalendarAlt /> {formatDate(ticket.event?.date)}</p>
+                        <p className="event-location"><FaMapMarkerAlt /> {ticket.event?.location}</p>
+                        <button className="btn-small add-calendar"><FaCalendarAlt /> Add to Calendar</button>
                       </div>
                     </div>
                     );
@@ -322,7 +333,7 @@ export default function AttendeeDashboard() {
             <>
               {/* My Tickets Table */}
               <div className="page-title">
-                <div className="title-icon">🎫</div>
+                <div className="title-icon"><FaTicketAlt /></div>
                 <h1>My Tickets</h1>
               </div>
 
@@ -371,18 +382,18 @@ export default function AttendeeDashboard() {
                             <td><span className={`status-badge status-${ticket.status}`}>{ticket.status || 'valid'}</span></td>
                             <td>
                               <div className="action-buttons">
-                                <button className="btn-tiny" onClick={() => { setSelectedTicket(ticket); setShowQRModal(true); }}>📋 QR & Share</button>
+                                <button className="btn-tiny" onClick={() => { setSelectedTicket(ticket); setShowQRModal(true); }}><FaShareAlt /> QR & Share</button>
                                 <button 
                                   className="btn-tiny" 
                                   onClick={() => {
                                     const ticketLink = `${window.location.origin}/ticket/${ticket._id}?code=${ticket.smsCode}`;
                                     navigator.clipboard.writeText(ticketLink);
-                                    alert('✅ Ticket link copied!');
+                                    alert('Ticket link copied!');
                                   }}
                                 >
-                                  📌 Copy Link
+                                  <FaCopy /> Copy Link
                                 </button>
-                                <button className="btn-tiny" onClick={() => downloadTicketPDF(ticket)}>📥 PDF</button>
+                                <button className="btn-tiny" onClick={() => downloadTicketPDF(ticket)}><FaFilePdf /> PDF</button>
                               </div>
                             </td>
                           </tr>
@@ -405,10 +416,10 @@ export default function AttendeeDashboard() {
             </>
           ) : activeTab === 'upcoming' ? (
             <>
-              <div className="page-title"><div className="title-icon">⏰</div><h1>Upcoming Events</h1></div>
+              <div className="page-title"><div className="title-icon"><FaClock /></div><h1>Upcoming Events</h1></div>
               <div className="events-grid">
                 {upcomingEvents.map((ticket, idx) => {
-                  const bgImg = ticket.event?.banner || '/banner.jpg';
+                  const bgImg = ticket.event?.banner || '/public/banner.jpg';
                   return (
                   <div key={idx} className="event-card">
                     <div className="event-image" style={{ backgroundImage: `url('${bgImg}')` }}>
@@ -416,12 +427,16 @@ export default function AttendeeDashboard() {
                     </div>
                     <div className="card-content">
                       <h4>{ticket.event?.title}</h4>
-                      <p>📅 {formatDate(ticket.event?.date)} @ {formatTime(ticket.event?.date)}</p>
-                      <p>📍 {ticket.event?.location}</p>
+                      <p><FaCalendarAlt /> {formatDate(ticket.event?.date)} @ {formatTime(ticket.event?.date)}</p>
+                      <p><FaMapMarkerAlt /> {ticket.event?.location}</p>
                       <div className="card-actions">
-                        <button className="btn-small">📅 Add Calendar</button>
+                        <button className="btn-small"><FaCalendarAlt /> Add Calendar</button>
                         <button className="btn-small" onClick={() => toggleSaveEvent(ticket.event?._id)}>
-                          {savedEvents.includes(ticket.event?._id) ? '❤️ Saved' : '🤍 Save'}
+                          {savedEvents.includes(ticket.event?._id) ? (
+                            <><FaHeart /> Saved</>
+                          ) : (
+                            <><FaRegHeart /> Save</>
+                          )}
                         </button>
                       </div>
                     </div>
@@ -432,10 +447,10 @@ export default function AttendeeDashboard() {
             </>
           ) : activeTab === 'past' ? (
             <>
-              <div className="page-title"><div className="title-icon">📜</div><h1>Past Events</h1></div>
+              <div className="page-title"><div className="title-icon"><FaRegCalendarAlt /></div><h1>Past Events</h1></div>
               <div className="events-grid">
                 {pastEvents.map((ticket, idx) => {
-                  const bgImg = ticket.event?.banner || '/banner.jpg';
+                  const bgImg = ticket.event?.banner || '/public/banner.jpg';
                   return (
                   <div key={idx} className="event-card">
                     <div className="event-image" style={{ backgroundImage: `url('${bgImg}')` }}>
@@ -443,8 +458,8 @@ export default function AttendeeDashboard() {
                     </div>
                     <div className="card-content">
                       <h4>{ticket.event?.title}</h4>
-                      <p>📅 {formatDate(ticket.event?.date)}</p>
-                      <p>📍 {ticket.event?.location}</p>
+                      <p><FaCalendarAlt /> {formatDate(ticket.event?.date)}</p>
+                      <p><FaMapMarkerAlt /> {ticket.event?.location}</p>
                       <button className="btn-small">View Ticket</button>
                     </div>
                   </div>
@@ -454,12 +469,12 @@ export default function AttendeeDashboard() {
             </>
           ) : activeTab === 'saved' ? (
             <>
-              <div className="page-title"><div className="title-icon">❤️</div><h1>Saved Events</h1></div>
+              <div className="page-title"><div className="title-icon"><FaHeart /></div><h1>Saved Events</h1></div>
               <div className="saved-list">
                 {upcomingEvents.filter(t => savedEvents.includes(t.event?._id)).map((ticket, idx) => (
                   <div key={idx} className="saved-item">
                     {(() => {
-                      const bgImg = ticket.event?.banner || '/banner.jpg';
+                      const bgImg = ticket.event?.banner || '/public/banner.jpg';
                       return <div className="saved-image" style={{ backgroundImage: `url('${bgImg}')` }}></div>;
                     })()}
                     <div className="saved-info">
@@ -473,11 +488,11 @@ export default function AttendeeDashboard() {
             </>
           ) : activeTab === 'notifications' ? (
             <>
-              <div className="page-title"><div className="title-icon">🔔</div><h1>Notifications</h1></div>
+              <div className="page-title"><div className="title-icon"><FaBell /></div><h1>Notifications</h1></div>
               <div className="notifications-list">
                 {notifications.map((notif, idx) => (
                   <div key={idx} className="notification-item">
-                    <div className="notif-icon">🎫</div>
+                    <div className="notif-icon"><FaTicketAlt /></div>
                     <div className="notif-content">
                       <div className="notif-title">{notif.title}</div>
                       <div className="notif-message">{notif.message}</div>
@@ -489,7 +504,7 @@ export default function AttendeeDashboard() {
             </>
           ) : activeTab === 'report' ? (
             <>
-              <div className="page-title"><div className="title-icon">📝</div><h1>Report to Admin</h1></div>
+              <div className="page-title"><div className="title-icon"><FaRegFileAlt /></div><h1>Report to Admin</h1></div>
               <div className="report-panel">
                 <div className="report-card">
                   <h3>Send a Report Message</h3>
@@ -509,7 +524,7 @@ export default function AttendeeDashboard() {
             </>
           ) : (
             <>
-              <div className="page-title"><div className="title-icon">⚙️</div><h1>Settings</h1></div>
+              <div className="page-title"><div className="title-icon"><FaCog /></div><h1>Settings</h1></div>
               <div className="settings-panel">
                 <div className="settings-group">
                   <h3>Email Preferences</h3>
@@ -521,7 +536,7 @@ export default function AttendeeDashboard() {
                   <h3>Notifications</h3>
                   <label><input type="checkbox" defaultChecked /> Push notifications</label>
                   <label><input type="checkbox" defaultChecked /> Email notifications</label>
-                  <label><input type="checkbox" /> SMS notifications</label>
+                  <label><input type="checkbox" /> Message notifications</label>
                 </div>
               </div>
             </>
@@ -533,10 +548,10 @@ export default function AttendeeDashboard() {
       {showQRModal && selectedTicket && (
         <div className="modal-overlay" onClick={() => setShowQRModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowQRModal(false)}>×</button>
+            <button className="modal-close" onClick={() => setShowQRModal(false)}><FaTimes /></button>
             <h3>Ticket QR Code & Share</h3>
             <div className="qr-display">
-              <div className="qr-code">📱 [QR Code for: {selectedTicket.smsCode}]</div>
+              <div className="qr-code"><FaQrcode /> [QR Code for: {selectedTicket.smsCode}]</div>
               <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '12px', color: '#6b7280' }}>
                 Code: <strong>{selectedTicket.smsCode}</strong>
               </p>
@@ -547,10 +562,10 @@ export default function AttendeeDashboard() {
                 onClick={() => {
                   const ticketLink = `${window.location.origin}/ticket/${selectedTicket._id}?code=${selectedTicket.smsCode}`;
                   navigator.clipboard.writeText(ticketLink);
-                  alert('✅ Ticket link copied to clipboard!');
+                  alert('Ticket link copied to clipboard!');
                 }}
               >
-                📋 Copy Ticket Link
+                <FaCopy /> Copy Ticket Link
               </button>
               <button 
                 className="btn-secondary" 
@@ -559,10 +574,10 @@ export default function AttendeeDashboard() {
                   window.open(ticketLink, '_blank');
                 }}
               >
-                🔗 Open Ticket in New Tab
+                <FaExternalLinkAlt /> Open Ticket in New Tab
               </button>
               <button className="btn-primary" onClick={() => downloadTicketPDF(selectedTicket)}>
-                📥 Download as PDF
+                <FaFilePdf /> Download as PDF
               </button>
             </div>
           </div>

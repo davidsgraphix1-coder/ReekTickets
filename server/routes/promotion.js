@@ -2,7 +2,7 @@
 router.post('/broadcast/send', auth, async (req, res) => {
   try {
     const { event, message, channel } = req.body;
-    // TODO: integrate with email/SMS provider
+    // TODO: integrate with messaging provider
     res.json({ message: 'Broadcast sent (mock)', event, channel });
   } catch (error) {
     res.status(500).json({ message: 'Could not send broadcast' });

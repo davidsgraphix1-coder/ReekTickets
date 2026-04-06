@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { fetchEvent } from '../services/api';
+import SEO from '../components/SEO';
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -22,8 +23,44 @@ export default function EventDetails() {
   if (error) return <div className="page"><p>{error}</p></div>;
   if (!event) return <div className="page"><p>Event not found</p></div>;
 
+  const eventSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: event.title,
+    startDate: new Date(event.date).toISOString(),
+    location: {
+      '@type': 'Place',
+      name: event.location || 'Accra Event Center',
+      address: 'Accra, Ghana',
+    },
+    image: [window.location.origin + (event.banner || '/public/banner.jpg')],
+    description: event.description || 'Buy tickets for this event on ReekTickets.',
+    offers: {
+      '@type': 'Offer',
+      price: String(event.ticketTypes?.[0]?.price || 0),
+      priceCurrency: 'GHS',
+      availability: 'https://schema.org/InStock',
+    },
+  };
+
   return (
     <div className="page event-details-page fade-in">
+      <SEO
+        title={`${event.title} | ReekTickets`}
+        description={`Buy tickets for ${event.title} in ${event.location}. Secure payments and instant ticket delivery.`}
+        keywords={`${event.title}, events Ghana, tickets Ghana, ${event.location}`}
+        ogTitle={`${event.title} – ReekTickets`}
+        ogDescription={event.description || 'Book tickets now on ReekTickets.'}
+        ogImage={event.banner || '/public/banner.jpg'}
+        jsonLd={eventSchema}
+      />
+      <nav aria-label="breadcrumb" className="breadcrumb">
+        <Link to="/">Home</Link>
+        <span>›</span>
+        <Link to="/events">Events</Link>
+        <span>›</span>
+        <span>{event.title}</span>
+      </nav>
       <div className="event-header">
         <div className="event-main">
           <h1>{event.title}</h1>

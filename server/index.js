@@ -7,7 +7,16 @@ const serverless = require('serverless-http');
 const connectDB = require('./config/db');
 const { initSocket } = require('./services/socket');
 
-dotenv.config();
+// Load environment variables from server/.env by default, fall back to root .env.
+const envPath = path.join(__dirname, '.env');
+const envResult = dotenv.config({ path: envPath });
+if (envResult.error) {
+  console.warn(`Could not load ${envPath}, falling back to default .env`);
+  dotenv.config();
+} else {
+  console.log(`Loaded environment from ${envPath}`);
+}
+
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));

@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { FaChartPie, FaMoneyBillWave, FaLink, FaDollarSign, FaMedal, FaBell, FaCog, FaChevronDown, FaUserCircle, FaTicketAlt, FaCalendarAlt, FaClock, FaChartLine, FaMousePointer, FaShareAlt, FaFilePdf, FaClipboard, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import axios from 'axios';
+import { withdrawFunds } from '../services/api';
 import './SalesAgentDashboard.css';
 
 export default function SalesAgentDashboard() {
@@ -174,13 +176,38 @@ export default function SalesAgentDashboard() {
     }
   };
 
-  const withdrawEarnings = () => {
-    alert('Withdrawal functionality coming soon! Integration with Paystack required.');
+  const withdrawEarnings = async () => {
+    if (!stats.availableBalance || stats.availableBalance <= 0) {
+      alert('No available balance to withdraw.');
+      return;
+    }
+
+    const amount = stats.availableBalance;
+    if (amount < 50) { // Minimum withdrawal amount
+      alert('Minimum withdrawal amount is GH₵50.');
+      return;
+    }
+
+    if (window.confirm(`Withdraw GH₵${amount.toFixed(2)} to your account?`)) {
+      try {
+        const result = await withdrawFunds(amount);
+        if (result.message && !result.message.includes('error')) {
+          alert('Withdrawal request submitted successfully! Funds will be processed within 24 hours.');
+          // Refresh stats
+          fetchStats();
+        } else {
+          alert(result.message || 'Withdrawal failed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Withdrawal error:', error);
+        alert('Network error. Please check your connection and try again.');
+      }
+    }
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return '↕️';
-    return sortConfig.direction === 'asc' ? '↑' : '↓';
+    if (sortConfig.key !== key) return <FaSort />;
+    return sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />;
   };
 
   const filteredSales = sales.filter(sale =>
@@ -222,8 +249,7 @@ export default function SalesAgentDashboard() {
     }
   };
 
-  const userAvatar = user?.avatarUrl || user?.profilePic ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'Agent')}&background=667eea&color=ffffff`;
+  const userAvatar = user?.avatarUrl || user?.profilePic || null;
 
   const formatCurrency = (amount) => {
     return `GH₵${amount?.toFixed(2) || '0.00'}`;
@@ -253,6 +279,15 @@ export default function SalesAgentDashboard() {
     }
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+  const greetingName = user?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'Agent';
+  const greetingText = `${getGreeting()}, ${greetingName}`;
+
   if (loading) {
     return (
       <div className="sales-agent-dashboard">
@@ -277,31 +312,31 @@ export default function SalesAgentDashboard() {
 
         <nav className="sidebar-nav">
           <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-            <span className="nav-icon">📊</span>
+            <span className="nav-icon"><FaChartPie /></span>
             <span className="nav-label">Dashboard</span>
           </div>
           <div className={`nav-item ${activeTab === 'sales' ? 'active' : ''}`} onClick={() => setActiveTab('sales')}>
-            <span className="nav-icon">💰</span>
+            <span className="nav-icon"><FaMoneyBillWave /></span>
             <span className="nav-label">My Sales</span>
           </div>
           <div className={`nav-item ${activeTab === 'referrals' ? 'active' : ''}`} onClick={() => setActiveTab('referrals')}>
-            <span className="nav-icon">🔗</span>
+            <span className="nav-icon"><FaLink /></span>
             <span className="nav-label">Referral Links</span>
           </div>
           <div className={`nav-item ${activeTab === 'earnings' ? 'active' : ''}`} onClick={() => setActiveTab('earnings')}>
-            <span className="nav-icon">💵</span>
+            <span className="nav-icon"><FaDollarSign /></span>
             <span className="nav-label">Earnings</span>
           </div>
           <div className={`nav-item ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('leaderboard')}>
-            <span className="nav-icon">🏆</span>
+            <span className="nav-icon"><FaMedal /></span>
             <span className="nav-label">Leaderboard</span>
           </div>
           <div className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>
-            <span className="nav-icon">🔔</span>
+            <span className="nav-icon"><FaBell /></span>
             <span className="nav-label">Notifications</span>
           </div>
           <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
-            <span className="nav-icon">⚙️</span>
+            <span className="nav-icon"><FaCog /></span>
             <span className="nav-label">Settings</span>
           </div>
         </nav>
@@ -314,12 +349,16 @@ export default function SalesAgentDashboard() {
           <div className="header-left">
             <h1 className="header-title">SALES AGENT DASHBOARD</h1>
           </div>
+          <div className="header-left">
+            <h2>{greetingText}</h2>
+            <p>Here is your agent workspace for commissions, referrals, and sales.</p>
+          </div>
           <div className="header-actions">
-            <div className="header-icon" onClick={() => setActiveTab('notifications')}>🔔</div>
+            <div className="header-icon" onClick={() => setActiveTab('notifications')}><FaBell /></div>
             <div className="user-dropdown" onClick={() => setActiveTab('settings')}>
               <img src={userAvatar} alt={user?.fullName || 'Agent'} className="dropdown-avatar" />
               <span className="dropdown-email">{user?.email || 'agent@reektickets.com'}</span>
-              <span className="dropdown-arrow">▼</span>
+              <span className="dropdown-arrow"><FaChevronDown /></span>
             </div>
           </div>
         </div>
@@ -391,9 +430,19 @@ export default function SalesAgentDashboard() {
               {/* Page Title */}
               <div className="page-title">
                 <div className="title-icon">
-                  <span>💰</span>
+                  <FaMoneyBillWave />
                 </div>
                 <h1>My Sales</h1>
+              </div>
+
+              {/* Sales Records/Report Summary */}
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ fontSize: '1.5rem', color: '#7c3aed' }}><FaClipboard /></div>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: '0 0 4px 0' }}>Sales Report</h3>
+                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>Total Sales: {sales.length} | Total Earnings: {formatCurrency(stats.totalEarnings)}</p>
+                </div>
+                <button style={{ background: '#7c3aed', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer' }}>Download Report</button>
               </div>
 
               {/* Table Container */}
@@ -584,7 +633,7 @@ export default function SalesAgentDashboard() {
             <div className="table-container">
               <div className="page-title">
                 <div className="title-icon">
-                  <span>🏆</span>
+                  <FaMedal />
                 </div>
                 <h1>Agent Leaderboard</h1>
               </div>
@@ -620,7 +669,7 @@ export default function SalesAgentDashboard() {
               <h3>Notifications</h3>
               {notifications.map((notification, index) => (
                 <div key={index} className="notification-item">
-                  <div className="notification-icon">💰</div>
+                  <div className="notification-icon"><FaBell /></div>
                   <div className="notification-content">
                     <div className="notification-title">{notification.title}</div>
                     <div className="notification-message">{notification.message}</div>
@@ -654,24 +703,48 @@ export default function SalesAgentDashboard() {
               {/* Stat Cards */}
               <div className="stats-grid">
                 <div className="stat-card">
-                  <div className="stat-card-icon">🎫</div>
+                  <div className="stat-card-icon"><FaTicketAlt /></div>
                   <div className="stat-card-title">Total Tickets Sold</div>
                   <div className="stat-card-value">{stats.totalTicketsSold}</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-card-icon">💰</div>
+                  <div className="stat-card-icon"><FaDollarSign /></div>
                   <div className="stat-card-title">Total Earnings</div>
                   <div className="stat-card-value">{formatCurrency(stats.totalEarnings)}</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-card-icon">📅</div>
+                  <div className="stat-card-icon"><FaCalendarAlt /></div>
                   <div className="stat-card-title">Active Events Promoting</div>
                   <div className="stat-card-value">{stats.activeEvents}</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-card-icon">👆</div>
+                  <div className="stat-card-icon"><FaMousePointer /></div>
                   <div className="stat-card-title">Total Clicks</div>
                   <div className="stat-card-value">{stats.totalClicks}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-icon"><FaClock /></div>
+                  <div className="stat-card-title">Pending Earnings</div>
+                  <div className="stat-card-value">{formatCurrency(stats.pendingEarnings)}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-icon"><FaChartLine /></div>
+                  <div className="stat-card-title">Commission Rate</div>
+                  <div className="stat-card-value">{agentProfile?.commission_rate ? (agentProfile.commission_rate * 100).toFixed(1) : '5'}%</div>
+                </div>
+              </div>
+
+              {/* Agent Profile Card */}
+              <div className="agent-profile-card" style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div className="profile-avatar" style={{ fontSize: '3rem' }}><FaUserCircle /></div>
+                <div className="profile-info" style={{ flex: 1 }}>
+                  <h3 style={{ marginBottom: '8px' }}>{user?.fullName || 'Sales Agent'}</h3>
+                  <p style={{ color: '#6b7280', marginBottom: '4px' }}>{user?.email || 'agent@reektickets.com'}</p>
+                  <p style={{ color: '#6b7280' }}>Available Balance: {formatCurrency(stats.availableBalance)} | Withdrawn: {formatCurrency(stats.withdrawnAmount)}</p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="action-btn" title="Share Link"><FaShareAlt /> Share</button>
+                  <button className="action-btn" title="Download Report"><FaFilePdf /> Report</button>
                 </div>
               </div>
 
@@ -692,7 +765,7 @@ export default function SalesAgentDashboard() {
               <div className="table-container">
                 <div className="page-title">
                   <div className="title-icon">
-                    <span>💰</span>
+                    <FaMoneyBillWave />
                   </div>
                   <h1>Recent Sales</h1>
                 </div>

@@ -11,8 +11,14 @@ export default function About() {
           <h3>Our Mission</h3>
           <p>
             ReekTickets is dedicated to revolutionizing the event ticketing experience in Ghana.
-            We connect event organizers with attendees, making it easier than ever to discover,
-            create, and attend amazing events across the country.
+            Our goal is to build a trusted, easy-to-use platform that helps organizers launch events,
+            empowers vendors to sell more, and gives attendees a seamless way to discover and join
+            unforgettable experiences.
+          </p>
+          <p>
+            We focus on local communities and on making ticketing faster, more secure, and more
+            reliable for every user. From concerts to conferences, we want every event to feel
+            effortless from start to finish.
           </p>
         </section>
 
@@ -41,14 +47,18 @@ export default function About() {
         <section className="about-section">
           <h3>Our Story</h3>
           <p>
-            Founded in 2024, ReekTickets emerged from a simple idea: make event ticketing in Ghana
-            as seamless as possible. We noticed that many event organizers struggled with outdated
-            ticketing systems, and attendees had difficulty finding and purchasing tickets for
-            local events.
+            Founded in 2024, ReekTickets began with a simple vision: make event ticketing in Ghana
+            seamless, affordable, and modern. We saw organizers struggling with manual workflows and
+            attendees frustrated by unclear event information.
           </p>
           <p>
-            Today, we're proud to serve thousands of users across Ghana, from Accra to Tamale,
-            helping bring communities together through memorable events.
+            Since then, our platform has grown to support a wide range of events, from music
+            festivals and workshops to corporate conferences and community meetups. We serve users
+            across Ghana, helping them create, market, and attend events with confidence.
+          </p>
+          <p>
+            Our journey continues as we listen to customer feedback, improve our product, and bring
+            new features that make event planning and ticketing easier for everyone.
           </p>
         </section>
 
@@ -71,9 +81,9 @@ export default function About() {
             Have questions or need support? Reach out to us at:
           </p>
           <div className="contact-info">
-            <p>📧 Email: support@reektickets.com</p>
-            <p>📱 Phone: +233 XX XXX XXXX</p>
-            <p>📍 Address: Accra, Ghana</p>
+            <p>📧 Email: reektickets@gmail.com</p>
+            <p>📱 Phone: +233 27 347 6701</p>
+            <p>📍 Address: Koforidua, Ghana</p>
           </div>
         </section>
       </div>

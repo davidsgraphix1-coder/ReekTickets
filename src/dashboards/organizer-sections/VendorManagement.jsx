@@ -1,19 +1,21 @@
+import { FaStore, FaSync, FaPlus, FaStar } from 'react-icons/fa';
+
 export default function VendorManagement({ vendors, onRefresh }) {
   const vendorList = vendors || [];
 
   return (
     <div className="section fade-in">
       <div className="dashboard-title" style={{ marginBottom: '30px' }}>
-        <div className="title-icon">🏪</div>
+        <div className="title-icon"><FaStore /></div>
         <h1>Vendor Management</h1>
       </div>
 
       <div style={{ marginBottom: '16px' }}>
         <button className="btn btn-primary" style={{ marginRight: '10px' }} onClick={onRefresh}>
-          🔄 Refresh Vendors
+          <FaSync /> Refresh Vendors
         </button>
         <button className="btn btn-primary">
-          ➕ Add Vendor
+          <FaPlus /> Add Vendor
         </button>
       </div>
 
@@ -40,7 +42,7 @@ export default function VendorManagement({ vendors, onRefresh }) {
                   <td><strong>{vendor.fullName || vendor.email}</strong></td>
                   <td>{vendor.company || 'Vendor'}</td>
                   <td>{vendor.eventsCount || 0}</td>
-                  <td>⭐ {vendor.rating || 'N/A'}</td>
+                  <td><FaStar /> {vendor.rating || 'N/A'}</td>
                   <td><span className="badge" style={{ 
                     backgroundColor: vendor.status === 'active' ? '#E6F4EA' : '#FFF3CD',
                     color: vendor.status === 'active' ? '#0D652D' : '#856404'

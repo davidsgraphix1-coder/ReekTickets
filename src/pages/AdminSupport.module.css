@@ -1,0 +1,219 @@
+/* Admin support dashboard styles */
+.adminSupportPage {
+  display: flex;
+  min-height: 80vh;
+  background: #18182a;
+  color: #fff;
+}
+.sidebar {
+  width: 280px;
+  background: rgba(34, 34, 60, 0.98);
+  border-right: 1.5px solid #2d2d4d;
+  padding: 1.5em 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+}
+.analytics {
+  display: flex;
+  gap: 1em;
+  font-size: 1em;
+  font-weight: 600;
+  color: #a855f7;
+  justify-content: space-between;
+}
+.filters {
+  display: flex;
+  gap: 0.5em;
+}
+.filters button {
+  background: none;
+  border: 1.5px solid #a855f7;
+  color: #fff;
+  border-radius: 1em;
+  padding: 0.3em 1em;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.15s, color 0.15s;
+}
+.filters .active, .filters button:hover {
+  background: #a855f7;
+  color: #fff;
+}
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  background: rgba(255,255,255,0.07);
+  border-radius: 1em;
+  padding: 0.3em 0.8em;
+}
+.searchBox input {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1em;
+  outline: none;
+  flex: 1;
+}
+.chatList {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.chatListItem {
+  background: rgba(255,255,255,0.06);
+  border-radius: 1em;
+  padding: 0.7em 1em;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s;
+}
+.chatListItem.selected, .chatListItem:hover {
+  background: linear-gradient(90deg, #a855f7 0%, #3b82f6 100%);
+  color: #fff;
+}
+.userName {
+  font-weight: 500;
+}
+.status {
+  font-size: 0.95em;
+  text-transform: capitalize;
+  padding: 0.2em 0.7em;
+  border-radius: 1em;
+  background: #22223c;
+  color: #fff;
+}
+.status.open { background: #10b981; color: #fff; }
+.status.closed { background: #ef4444; color: #fff; }
+.status.pending { background: #f59e42; color: #fff; }
+.chatPanel {
+  flex: 1;
+  padding: 2em 2em;
+  background: rgba(24,24,42,0.98);
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+.emptyState {
+  color: #bdbdf7;
+  font-size: 1.2em;
+  margin: auto;
+  text-align: center;
+}
+@media (max-width: 900px) {
+  .adminSupportPage { flex-direction: column; }
+  .sidebar { width: 100vw; border-right: none; border-bottom: 1.5px solid #2d2d4d; flex-direction: row; gap: 1em; }
+  .chatPanel { padding: 1em 0.5em; }
+}
+
+.adminChatWindow {
+  min-height: 260px;
+  max-height: 45vh;
+  overflow-y: auto;
+  background: rgba(34, 34, 60, 0.85);
+  border-radius: 1.2em;
+  box-shadow: 0 2px 16px rgba(80,0,120,0.10);
+  padding: 1.2em 1em 0.5em 1em;
+  margin-bottom: 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+}
+.adminMsg {
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.userMsg {
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.bubble {
+  background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+  color: #fff;
+  padding: 0.7em 1.1em;
+  border-radius: 1.2em 1.2em 0.3em 1.2em;
+  font-size: 1em;
+  max-width: 80vw;
+  box-shadow: 0 2px 8px rgba(80,0,120,0.10);
+  margin-bottom: 0.2em;
+  word-break: break-word;
+  animation: bubbleIn 0.18s;
+}
+.adminMsg .bubble {
+  background: linear-gradient(135deg, #22223c 0%, #a855f7 100%);
+  border-radius: 1.2em 1.2em 1.2em 0.3em;
+}
+@keyframes bubbleIn {
+  from { transform: scale(0.95); opacity: 0.5; }
+  to { transform: scale(1); opacity: 1; }
+}
+.timestamp {
+  font-size: 0.78em;
+  color: #bdbdf7;
+  opacity: 0.7;
+  margin: 0 0.2em 0.2em 0.2em;
+}
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.7em 1em;
+  background: rgba(30, 20, 50, 0.92);
+  border-top: 1px solid rgba(168,85,247,0.08);
+  border-radius: 1em;
+  margin-bottom: 1em;
+}
+.input {
+  flex: 1;
+  border: none;
+  border-radius: 1em;
+  padding: 0.7em 1em;
+  font-size: 1em;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  outline: none;
+  margin: 0 0.2em;
+}
+.sendBtn {
+  background: #a855f7;
+  border: none;
+  color: #fff;
+  font-size: 1em;
+  border-radius: 1em;
+  padding: 0.5em 1.2em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sendBtn:disabled {
+  background: #888;
+  cursor: not-allowed;
+}
+.adminControls {
+  display: flex;
+  gap: 1em;
+  margin-top: 1em;
+}
+.adminControls button {
+  background: #22223c;
+  color: #fff;
+  border: 1.5px solid #a855f7;
+  border-radius: 1em;
+  padding: 0.4em 1.2em;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.adminControls button:hover {
+  background: #a855f7;
+  color: #fff;
+}

@@ -14,14 +14,27 @@ import EventDetails from './pages/EventDetails';
 import Checkout from './pages/Checkout';
 import PaymentSuccess from './pages/PaymentSuccess';
 import About from './pages/About';
-import AttendeeDashboard from './dashboards/AttendeeDashboard';
+import Blog from './pages/Blog';
+import BlogArticle from './pages/BlogArticle';
+import CreateEvent from './pages/CreateEvent';
+import MyTickets from './pages/MyTickets';
+import Vendor from './pages/Vendor';
+import Admin from './pages/Admin';
+import VendorRegister from './pages/VendorRegister';
+import SalesAgents from './pages/SalesAgents';
+import AdminDashboard from './dashboards/AdminDashboard';
 import OrganizerDashboard from './dashboards/OrganizerDashboard';
 import VendorDashboard from './dashboards/VendorDashboard';
 import SalesAgentDashboard from './dashboards/SalesAgentDashboard';
-import AdminDashboard from './dashboards/AdminDashboard';
+import AttendeeDashboard from './dashboards/AttendeeDashboard';
+import GateEntryDashboard from './dashboards/GateEntryDashboard';
 import TicketView from './pages/TicketView';
+import AdminSupport from './pages/AdminSupport';
 import OrganizerSignup from './pages/OrganizerSignup';
+import VerifyOtp from './pages/VerifyOtp';
+import ForgotPassword from './pages/ForgotPassword';
 import Terms from './pages/Terms';
+import SupportChat from './components/SupportChat';
 
 function AppContent() {
   const [user, setUser] = useState(null);
@@ -38,7 +51,24 @@ function AppContent() {
     setUser(null);
   };
 
-  const PrivateRoute = ({ children }) => (user ? children : <Navigate to="/login" />);
+  const PrivateRoute = ({ children, allowedRoles }) => {
+    if (!user) return <Navigate to="/login" />;
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
+      const roleRoute = user.role === 'admin'
+        ? '/dashboard/admin'
+        : user.role === 'organizer'
+          ? '/dashboard/organizer'
+          : user.role === 'vendor'
+            ? '/dashboard/vendor'
+            : user.role === 'agent'
+              ? '/dashboard/agent'
+              : user.role === 'gate' || user.role === 'entry'
+                ? '/dashboard/gate'
+                : '/dashboard/attendee';
+      return <Navigate to={roleRoute} replace />;
+    }
+    return children;
+  };
 
   return (
     <div className="App">
@@ -48,26 +78,40 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Home events={[]} />} />
           <Route path="/login" element={<Login onLogin={setUser} />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<Signup onLogin={setUser} />} />
           <Route path="/signup/organizer" element={<OrganizerSignup onLogin={setUser} />} />
+          <Route path="/verify-email" element={<VerifyOtp onLogin={setUser} />} />
           <Route path="/events" element={<Events user={user} />} />
           <Route path="/about" element={<About />} />
+          <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/event/:id" element={<EventDetails />} />
           <Route path="/checkout/:eventId" element={<Checkout />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard user={user} /></PrivateRoute>} />
-          <Route path="/dashboard/attendee" element={<PrivateRoute><AttendeeDashboard /></PrivateRoute>} />
-          <Route path="/dashboard/organizer/*" element={<PrivateRoute><OrganizerDashboard /></PrivateRoute>} />
-          <Route path="/dashboard/vendor" element={<PrivateRoute><VendorDashboard /></PrivateRoute>} />
-          <Route path="/dashboard/agent" element={<PrivateRoute><SalesAgentDashboard /></PrivateRoute>} />
-          <Route path="/dashboard/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+          <Route path="/dashboard/attendee" element={<PrivateRoute allowedRoles={['attendee']}><AttendeeDashboard /></PrivateRoute>} />
+          <Route path="/dashboard/organizer/*" element={<PrivateRoute allowedRoles={['organizer']}><OrganizerDashboard /></PrivateRoute>} />
+          <Route path="/dashboard/vendor" element={<PrivateRoute allowedRoles={['vendor']}><VendorDashboard /></PrivateRoute>} />
+          <Route path="/dashboard/agent" element={<PrivateRoute allowedRoles={['agent']}><SalesAgentDashboard /></PrivateRoute>} />
+          <Route path="/dashboard/gate" element={<PrivateRoute allowedRoles={['gate','entry']}><GateEntryDashboard /></PrivateRoute>} />
+          <Route path="/dashboard/admin" element={<PrivateRoute allowedRoles={['admin']}><AdminDashboard /></PrivateRoute>} />
+          <Route path="/admin/support" element={<PrivateRoute allowedRoles={['admin']}><AdminSupport /></PrivateRoute>} />
           <Route path="/ticket/:id" element={<TicketView />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogArticle />} />
+          <Route path="/create-event" element={<CreateEvent />} />
+          <Route path="/my-tickets" element={<MyTickets />} />
+          <Route path="/vendor" element={<Vendor />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/vendor/register" element={<VendorRegister />} />
+          <Route path="/agents" element={<SalesAgents />} />
           <Route path="/admindavid" element={<AdminPortal />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
-      <Footer />
+      <SupportChat user={user} />
+      {location.pathname === '/' && <Footer />}
     </div>
   );
 }

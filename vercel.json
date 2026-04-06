@@ -2,11 +2,24 @@
   "version": 2,
   "buildCommand": "CI=false npm run build",
   "outputDirectory": "build",
+  "framework": "create-react-app",
   "env": {
     "DISABLE_ESLINT_PLUGIN": "true",
-    "CI": "false"
+    "CI": "false",
+    "GENERATE_SOURCEMAP": "false"
+  },
+  "build": {
+    "env": {
+      "DISABLE_ESLINT_PLUGIN": "true",
+      "CI": "false",
+      "GENERATE_SOURCEMAP": "false"
+    }
   },
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/handler"
+    },
     {
       "src": "/static/(.*)",
       "headers": {
@@ -15,7 +28,7 @@
       "dest": "/static/$1"
     },
     {
-      "src": "/(.*\\.(jpg|jpeg|png|gif|ico|svg|css|js|woff|woff2|ttf|eot))",
+      "src": "/(.*\\.(jpg|jpeg|png|gif|ico|svg|css|js|woff|woff2|ttf|eot|xml|txt))",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
       },

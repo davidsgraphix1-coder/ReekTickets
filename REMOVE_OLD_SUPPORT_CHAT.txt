@@ -1,0 +1,10 @@
+Remove the following old support chat files and their imports/usages:
+- src/components/SupportChat.jsx
+- src/components/ChatWindow.jsx
+- src/components/ChatButton.jsx
+- src/pages/AdminSupport.jsx
+- src/services/socket.js
+- src/components/SupportChat.css
+- src/pages/AdminSupport.css
+
+Replace with the new system as per the latest requirements.

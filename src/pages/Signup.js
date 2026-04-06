@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signup } from '../services/api';
+import { FaTicketAlt, FaCalendarAlt, FaStoreAlt, FaBriefcase, FaEye, FaEyeSlash, FaUserShield } from 'react-icons/fa';
+import { signup, sendNaloSms } from '../services/api';
+import SEO from '../components/SEO';
 
 export default function Signup({ onLogin }) {
   const [selectedRole, setSelectedRole] = useState('');
@@ -16,10 +18,14 @@ export default function Signup({ onLogin }) {
     address: '',
     zipCode: '',
     businessName: '',
+    businessEmail: '',
     contactNumber: '',
     agreeToTerms: false
   });
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [smsStatus, setSmsStatus] = useState('');
   const navigate = useNavigate();
 
   const roles = [
@@ -27,25 +33,31 @@ export default function Signup({ onLogin }) {
       id: 'attendee',
       name: 'Attendee',
       description: 'Buy and attend events',
-      icon: '🎫'
+      icon: <FaTicketAlt />
     },
     {
       id: 'organizer',
       name: 'Organizer',
       description: 'Create and manage events',
-      icon: '🎪'
+      icon: <FaCalendarAlt />
     },
     {
       id: 'vendor',
       name: 'Vendor',
       description: 'Sell at events',
-      icon: '🏪'
+      icon: <FaStoreAlt />
     },
     {
       id: 'agent',
       name: 'Sales Agent',
       description: 'Promote and earn commission',
-      icon: '💼'
+      icon: <FaBriefcase />
+    },
+    {
+      id: 'gate',
+      name: 'Gate Staff',
+      description: 'Scan and verify tickets at the event gate',
+      icon: <FaUserShield />
     }
   ];
 
@@ -84,11 +96,26 @@ export default function Signup({ onLogin }) {
     };
 
     const data = await signup(signupData);
-    if (data?.token) {
-      localStorage.setItem('reek_token', data.token);
-      localStorage.setItem('reek_user', JSON.stringify(data.user));
-      onLogin(data.user);
-      navigate('/dashboard');
+    if (data?.user) {
+      if (signupData.phone) {
+        await sendNaloSms({
+          to: signupData.phone,
+          message: `Your ReekTickets verification code is ${data.verificationCode}. Use it to complete signup.`,
+          userId: data.user._id,
+        }).then((smsResult) => {
+          if (smsResult?.message) {
+            setSmsStatus(smsResult.message);
+          }
+        }).catch(() => {
+          setSmsStatus('Could not send SMS verification right now.');
+        });
+      }
+      navigate('/verify-email', {
+        state: {
+          phone: signupData.phone,
+          verificationCode: data.verificationCode,
+        }
+      });
       return;
     }
     setError(data.message || 'Signup failed');
@@ -98,6 +125,12 @@ export default function Signup({ onLogin }) {
 
   return (
     <div className="signup-page">
+      <SEO
+        title="Signup – ReekTickets"
+        description="Create a ReekTickets account to buy tickets, create events, or become a vendor in Ghana."
+        ogTitle="Signup for ReekTickets"
+        ogDescription="Join ReekTickets for easy ticket discovery, event creation, and secure payments."
+      />
       <div className="signup-container">
         {/* Back Button */}
         <button className="back-btn" type="button" onClick={() => navigate('/') }>
@@ -131,6 +164,7 @@ export default function Signup({ onLogin }) {
         {selectedRole && (
           <form onSubmit={submit} className="signup-form">
             {error && <div className="error">{error}</div>}
+            {smsStatus && <div className="success-message">{smsStatus}</div>}
 
             {/* Basic Information */}
             <div className="form-section">
@@ -158,6 +192,13 @@ export default function Signup({ onLogin }) {
                   required
                 />
               </div>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="Email"
+                required
+              />
             </div>
 
             {/* Business Details - Only for Organizer/Vendor */}
@@ -193,10 +234,9 @@ export default function Signup({ onLogin }) {
                 />
                 <input
                   type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="Business Email"
-                  required
+                  value={form.businessEmail}
+                  onChange={(e) => setForm({ ...form, businessEmail: e.target.value })}
+                  placeholder="Business Email (optional)"
                 />
                 <input
                   value={form.businessName}
@@ -213,30 +253,41 @@ export default function Signup({ onLogin }) {
               </div>
             )}
 
-            {/* Email and Password - For all roles */}
-            {!showBusinessDetails && (
+            {/* Password only - Phone is the primary identifier for signup */}
+            <div className="password-field">
               <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="Email"
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Password"
                 required
               />
-            )}
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Password"
-              required
-            />
-            <input
-              type="password"
-              value={form.confirmPassword}
-              onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-              placeholder="Confirm Password"
-              required
-            />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+            <div className="password-field">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                placeholder="Confirm Password"
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+              >
+                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
 
             {/* Terms Checkbox */}
             <label className="terms-checkbox">

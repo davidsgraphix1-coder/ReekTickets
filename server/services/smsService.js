@@ -1,21 +1,101 @@
 /**
  * SMS Service for Node.js Backend
- * Sends SMS via direct API or Python backend
+ * Sends SMS via Python handler (SMSONLINEGH API)
  */
 
-const https = require('https');
-const http = require('http');
+const { spawn } = require('child_process');
+const path = require('path');
 
 const SMS_API_HOST = process.env.SMS_API_HOST || 'api.smsonlinegh.com';
-const SMS_API_KEY = process.env.SMS_API_KEY || process.env.API_KEY;
+const SMS_API_KEY = process.env.SMS_API_KEY || process.env.API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
 const SMS_SENDER_ID = process.env.SMS_SENDER_ID || process.env.SENDER_ID || 'ReekTickets';
 
 /**
- * Send SMS via direct HTTP GET to SMS API
+ * Send SMS via Python handler
+ */
+async function sendSMSViaPython(phone, message) {
+  return new Promise((resolve) => {
+    try {
+      const pythonScript = path.join(__dirname, '..', 'sms_handler.py');
+      const python = spawn('python3', [pythonScript]);
+      
+      let output = '';
+      let errorOutput = '';
+      
+      python.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+      
+      python.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+      });
+      
+      python.on('close', (code) => {
+        try {
+          if (errorOutput) {
+            console.error('[SMS] Python stderr:', errorOutput);
+          }
+          
+          const result = JSON.parse(output);
+          console.log(`[SMS] Python result: ${result.success ? 'SUCCESS' : 'FAILED'}`, result.message);
+          resolve(result);
+        } catch (parseError) {
+          console.error('[SMS] Failed to parse Python output:', output, parseError);
+          resolve({
+            success: false,
+            status: 500,
+            error: 'Failed to parse SMS handler response',
+            message: 'SMS handler error'
+          });
+        }
+      });
+      
+      python.on('error', (error) => {
+        console.error('[SMS] Python process error:', error.message);
+        resolve({
+          success: false,
+          status: 500,
+          error: error.message,
+          message: `SMS handler error: ${error.message}`
+        });
+      });
+      
+      // Send input to Python script
+      const inputData = JSON.stringify({ phone, message });
+      python.stdin.write(inputData);
+      python.stdin.end();
+      
+      // Timeout after 15 seconds
+      setTimeout(() => {
+        python.kill();
+        resolve({
+          success: false,
+          status: 504,
+          error: 'SMS handler timeout',
+          message: 'SMS request timed out'
+        });
+      }, 15000);
+      
+    } catch (error) {
+      console.error('[SMS] Error:', error.message);
+      resolve({
+        success: false,
+        status: 500,
+        error: error.message,
+        message: `Failed to send SMS: ${error.message}`
+      });
+    }
+  });
+}
+
+/**
+ * Fallback: Send SMS via direct API (if Python not available)
  */
 async function sendSMSDirectAPI(phone, message) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     try {
+      const https = require('https');
+      
       if (!SMS_API_KEY) {
         throw new Error('SMS_API_KEY not configured');
       }
@@ -30,7 +110,7 @@ async function sendSMSDirectAPI(phone, message) {
       const urlStr = `https://${SMS_API_HOST}/sms/send/?${queryString}`;
       const url = new URL(urlStr);
 
-      console.log(`[SMS] Sending to ${phone} via direct API`);
+      console.log(`[SMS] Sending to ${phone} via direct API (fallback)`);
 
       const options = {
         hostname: url.hostname,
@@ -49,7 +129,7 @@ async function sendSMSDirectAPI(phone, message) {
           try {
             const parsed = JSON.parse(body);
             const success = res.statusCode === 200;
-            console.log(`[SMS] Response ${res.statusCode}:`, parsed);
+            console.log(`[SMS] Direct API Response ${res.statusCode}:`, parsed);
             
             resolve({
               success: success,
@@ -91,7 +171,7 @@ async function sendSMSDirectAPI(phone, message) {
 
       req.end();
     } catch (error) {
-      console.error('[SMS] Error:', error.message);
+      console.error('[SMS] Fallback Error:', error.message);
       resolve({
         success: false,
         status: 500,
@@ -111,12 +191,16 @@ async function sendSMS(phone, message) {
       throw new Error('Phone and message are required');
     }
 
-    const cleanPhone = phone.replace(/\s/g, '');
-    if (!/^0\d{9}$/.test(cleanPhone) && !/^2[0-9]{8}$/.test(cleanPhone)) {
-      throw new Error('Invalid phone format. Use format like 0273476701');
+    // Try Python handler first
+    console.log('[SMS] Attempting to send via Python handler...');
+    let result = await sendSMSViaPython(phone, message);
+    
+    if (!result.success) {
+      console.warn('[SMS] Python handler failed, trying direct API fallback...');
+      result = await sendSMSDirectAPI(phone, message);
     }
-
-    return await sendSMSDirectAPI(cleanPhone, message);
+    
+    return result;
 
   } catch (error) {
     console.error('[SMS] sendSMS Error:', error.message);
@@ -141,7 +225,7 @@ async function sendOTP(phone, otp) {
  * Send ticket confirmation SMS
  */
 async function sendTicketConfirmation(phone, ticketCode) {
-  const ticketLink = `${process.env.REACT_APP_URL || 'https://reetickets.com'}/ticket/${ticketCode}`;
+  const ticketLink = `${process.env.REACT_APP_URL || 'https://reektickets.com'}/ticket/${ticketCode}`;
   const message = `Your ReekTickets ticket code: ${ticketCode}. View: ${ticketLink}`;
   return sendSMS(phone, message);
 }
@@ -150,7 +234,7 @@ async function sendTicketConfirmation(phone, ticketCode) {
  * Send booking confirmation SMS
  */
 async function sendBookingConfirmation(phone, eventName, ticketCode) {
-  const message = `Booking confirmed for ${eventName}. Ticket: ${ticketCode}. Visit reetickets.com for details.`;
+  const message = `Booking confirmed for ${eventName}. Ticket: ${ticketCode}. Visit reektickets.com for details.`;
   return sendSMS(phone, message);
 }
 

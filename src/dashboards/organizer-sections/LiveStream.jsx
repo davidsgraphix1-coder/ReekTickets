@@ -1,8 +1,10 @@
+import { FaVideo, FaClipboard } from 'react-icons/fa';
+
 export default function LiveStream({ events }) {
   return (
     <div className="section fade-in">
       <div className="dashboard-title" style={{ marginBottom: '30px' }}>
-        <div className="title-icon">📹</div>
+        <div className="title-icon"><FaVideo /></div>
         <h1>Live Stream</h1>
       </div>
 
@@ -37,7 +39,7 @@ export default function LiveStream({ events }) {
           </div>
 
           <div style={{ marginTop: '40px', padding: '20px', backgroundColor: '#f0f7ff', borderRadius: '8px' }}>
-            <h4>📋 Live Stream Setup Requirements</h4>
+            <h4><FaClipboard /> Live Stream Setup Requirements</h4>
             <ul style={{ fontSize: '14px', color: '#333', marginTop: '10px' }}>
               <li>Stable internet connection (5 Mbps minimum)</li>
               <li>Camera or streaming device</li>

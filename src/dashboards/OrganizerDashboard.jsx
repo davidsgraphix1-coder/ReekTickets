@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { FaChartPie, FaUser, FaTicketAlt, FaPlus, FaBullhorn, FaMoneyBillWave, FaBell, FaEnvelope, FaUsers, FaStore, FaVideo, FaCog, FaChevronDown } from 'react-icons/fa';
 import axios from 'axios';
 import './OrganizerDashboard.css';
 
@@ -41,9 +42,17 @@ export default function OrganizerDashboard() {
 
   const headers = { Authorization: `Bearer ${localStorage.getItem('reek_token')}` };
 
-  const organizerAvatar = organizer?.avatarUrl || organizer?.profilePic ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(organizer?.fullName || 'Organizer')}&background=667eea&color=ffffff`;
+  const organizerAvatar = organizer?.avatarUrl || organizer?.profilePic || null;
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const greetingName = organizer?.fullName?.split(' ')[0] || organizer?.email?.split('@')[0] || 'Organizer';
+  const greetingText = `${getGreeting()}, ${greetingName}`;
 
   const fetchData = async () => {
     try {
@@ -182,19 +191,19 @@ export default function OrganizerDashboard() {
   };
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'user', label: 'User Dashboard', icon: '👤' },
-    { id: 'complimentary', label: 'Complimentary Tickets', icon: '🎟️' },
-    { id: 'physical', label: 'Physical Tickets', icon: '🎫' },
-    { id: 'events', label: 'Event Creation', icon: '➕' },
-    { id: 'promotion', label: 'Event Promotion', icon: '📢' },
-    { id: 'transaction', label: 'Transaction', icon: '💳' },
-    { id: 'notification', label: 'Notification', icon: '🔔' },
-    { id: 'message', label: 'Message', icon: '💬' },
-    { id: 'users', label: 'User Management', icon: '👥' },
-    { id: 'vendors', label: 'Vendor Management', icon: '🏪' },
-    { id: 'stream', label: 'Live Stream', icon: '📹' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'dashboard', label: 'Dashboard', icon: <FaChartPie /> },
+    { id: 'user', label: 'User Dashboard', icon: <FaUser /> },
+    { id: 'complimentary', label: 'Complimentary Tickets', icon: <FaTicketAlt /> },
+    { id: 'physical', label: 'Physical Tickets', icon: <FaTicketAlt /> },
+    { id: 'events', label: 'Event Creation', icon: <FaPlus /> },
+    { id: 'promotion', label: 'Event Promotion', icon: <FaBullhorn /> },
+    { id: 'transaction', label: 'Transaction', icon: <FaMoneyBillWave /> },
+    { id: 'notification', label: 'Notification', icon: <FaBell /> },
+    { id: 'message', label: 'Message', icon: <FaEnvelope /> },
+    { id: 'users', label: 'User Management', icon: <FaUsers /> },
+    { id: 'vendors', label: 'Vendor Management', icon: <FaStore /> },
+    { id: 'stream', label: 'Live Stream', icon: <FaVideo /> },
+    { id: 'settings', label: 'Settings', icon: <FaCog /> },
   ];
 
   return (
@@ -202,7 +211,7 @@ export default function OrganizerDashboard() {
       {/* SIDEBAR */}
       <aside className="sidebar organizer-sidebar">
         <div className="sidebar-header">
-          <div className="logo">🎟️ ReekTickets</div>
+          <div className="logo"><FaTicketAlt /> ReekTickets</div>
         </div>
         <nav className="sidebar-nav">
           {menuItems.map(item => (
@@ -225,17 +234,21 @@ export default function OrganizerDashboard() {
         {/* TOP HEADER */}
         <header className="organizer-header">
           <div className="header-right">
-            <button className="icon-btn notification-btn">🔔</button>
+            <button className="icon-btn notification-btn"><FaBell /></button>
             <div className="user-profile">
               <img src={organizerAvatar} alt="User" className="avatar" />
               <span className="user-name">{organizer?.fullName || organizer?.email || 'Organizer'}</span>
-              <span className="dropdown-arrow">▼</span>
+              <span className="dropdown-arrow"><FaChevronDown /></span>
             </div>
           </div>
         </header>
 
         {/* CONTENT AREA */}
         <div className="organizer-content">
+          <div className="dashboard-greeting-panel">
+            <h2>{greetingText}</h2>
+            <p>Here is your organizer workspace for events, promotions, tickets, and reports.</p>
+          </div>
           <div className="report-panel" style={{ marginBottom: '16px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px' }}>
             <h4>Report a message to admin</h4>
             <textarea

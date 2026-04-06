@@ -11,10 +11,11 @@ export default function Footer() {
         <div className="footer-section">
           <h4>Quick Links</h4>
           <ul>
-            <li><Link to="/">Browse Events</Link></li>
+            <li><Link to="/events">Browse Events</Link></li>
             <li><Link to="/dashboard/organizer">Create Event</Link></li>
-            <li><Link to="/dashboard/vendor">Become a Vendor</Link></li>
-            <li><Link to="/dashboard/agent">Sales Agents</Link></li>
+            <li><Link to="/dashboard/attendee">My Tickets</Link></li>
+            <li><Link to="/dashboard">Organizer Dashboard</Link></li>
+            <li><Link to="/blog">Blog</Link></li>
           </ul>
         </div>
         <div className="footer-section">
@@ -22,11 +23,11 @@ export default function Footer() {
           <div className="contact-details">
             <div className="contact-item">
               <span className="contact-icon">📞</span>
-              <span className="contact-text">+233273476701</span>
+              <a className="contact-text" href="https://wa.me/233273476701" target="_blank" rel="noopener noreferrer">+233273476701</a>
             </div>
             <div className="contact-item">
               <span className="contact-icon">✉️</span>
-              <span className="contact-text">support@reektickets.com</span>
+              <a className="contact-text" href="mailto:reektickets@gmail.com">reektickets@gmail.com</a>
             </div>
           </div>
         </div>
@@ -42,8 +43,7 @@ export default function Footer() {
       </div>
       <div className="footer-bottom">
         <p>&copy; 2026 ReekTickets. All rights reserved.</p>
-        <div className="footer-about">
-        </div>
+        <Link to="/about" className="footer-about-btn">About Us</Link>
       </div>
     </footer>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchEvent } from '../services/api';
+import { fetchEvent, initPaystack } from '../services/api';
 
 export default function Checkout() {
   const { eventId } = useParams();
@@ -8,8 +8,17 @@ export default function Checkout() {
   const [quantities, setQuantities] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [paymentMessage, setPaymentMessage] = useState('');
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
+    const storedUser = localStorage.getItem('reek_user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {}
+    }
+
     fetchEvent(eventId).then((data) => {
       setEvent(data);
       const initialQuantities = {};
@@ -37,6 +46,44 @@ export default function Checkout() {
       total += quantities[index] * (type.price || 0);
     });
     return total;
+  };
+
+  const handleProceed = async () => {
+    setPaymentMessage('');
+    if (!user?.email) {
+      setPaymentMessage('Please log in before making a payment.');
+      return;
+    }
+
+    const selectedItems = (event?.ticketTypes || []).map((type, index) => ({
+      ticketType: type.type || 'General',
+      price: type.price || 0,
+      quantity: quantities[index] || 0,
+    })).filter((item) => item.quantity > 0);
+
+    if (selectedItems.length === 0) {
+      setPaymentMessage('Please select at least one ticket.');
+      return;
+    }
+
+    const amount = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    if (amount <= 0) {
+      setPaymentMessage('Your total amount must be greater than zero.');
+      return;
+    }
+
+    const res = await initPaystack({
+      eventId,
+      email: user.email,
+      amount,
+      items: selectedItems,
+    });
+
+    if (res.authorization_url) {
+      window.location.href = res.authorization_url;
+      return;
+    }
+    setPaymentMessage(res.message || 'Payment initialization failed.');
   };
 
   if (loading) return <div className="page"><p>Loading checkout...</p></div>;
@@ -79,7 +126,8 @@ export default function Checkout() {
           <div className="total">
             <strong>Total: GH₵ {calculateTotal()}</strong>
           </div>
-          <button className="btn btn-primary">Proceed to Payment</button>
+          <button className="btn btn-primary" onClick={handleProceed}>Proceed to Payment</button>
+          {paymentMessage && <div className="error" style={{ marginTop: '16px' }}>{paymentMessage}</div>}
         </div>
       </div>
     </div>

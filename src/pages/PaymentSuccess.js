@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { verifyPayment, sendNaloSms } from '../services/api';
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
@@ -8,9 +9,11 @@ export default function PaymentSuccess() {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [smsStatus, setSmsStatus] = useState('');
+  const [smsSent, setSmsSent] = useState(false);
 
   useEffect(() => {
-    const verifyPayment = async () => {
+    const checkPayment = async () => {
       try {
         if (!reference) {
           setError('No payment reference found');
@@ -18,10 +21,8 @@ export default function PaymentSuccess() {
           return;
         }
 
-        const res = await fetch(`https://reektickets-production.up.railway.app/api/payments/verify?reference=${reference}`);
-        const data = await res.json();
-
-        if (!res.ok || data.message === 'Payment not successful') {
+        const data = await verifyPayment(reference);
+        if (!data || data.message === 'Payment not successful') {
           setError('Payment verification failed');
           setLoading(false);
           return;
@@ -36,8 +37,32 @@ export default function PaymentSuccess() {
       }
     };
 
-    verifyPayment();
+    checkPayment();
   }, [reference]);
+
+  useEffect(() => {
+    const sendTicketSms = async () => {
+      if (smsSent || !ticket || !ticket.smsCode) return;
+      const phone = ticket.user?.phone || ticket.user?.phoneNumber || ticket.user?.msisdn;
+      if (!phone) {
+        setSmsStatus('No phone number available for SMS delivery.');
+        setSmsSent(true);
+        return;
+      }
+      const ticketLink = `${window.location.origin}/ticket/${ticket._id}?code=${ticket.smsCode}`;
+      const message = `Your ReekTickets ticket is ready. Code: ${ticket.smsCode}. View at: ${ticketLink}`;
+      const response = await sendNaloSms({
+        to: phone,
+        message,
+        ticketId: ticket._id,
+        userId: ticket.user?._id,
+      });
+      setSmsStatus(response.message || 'SMS delivery attempt completed.');
+      setSmsSent(true);
+    };
+
+    sendTicketSms();
+  }, [ticket, smsSent]);
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -134,6 +159,18 @@ export default function PaymentSuccess() {
           >
             Copy Link
           </button>
+          {smsStatus && (
+            <div style={{
+              marginTop: '16px',
+              padding: '12px',
+              borderRadius: '6px',
+              backgroundColor: '#eef6ff',
+              color: '#1d4ed8',
+              fontSize: '14px'
+            }}>
+              {smsStatus}
+            </div>
+          )}
         </div>
 
         <div style={{

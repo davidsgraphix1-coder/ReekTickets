@@ -87,7 +87,7 @@ export default function Navbar({ user, onLogout }) {
       {/* Mobile Sliding Menu */}
       <nav className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="mobile-menu-header">
-          <img src="/logo-section.jpg" alt="ReekTickets" className="mobile-menu-logo" />
+          <img src="/reektickets-actual-logo.png" alt="ReekTickets" className="mobile-menu-logo" />
           <button className="mobile-menu-close" onClick={closeMobileMenu} aria-label="Close menu">×</button>
         </div>
 

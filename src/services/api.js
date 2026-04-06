@@ -1,5 +1,10 @@
-const API_BASE = process.env.REACT_APP_API_BASE || 'https://reektickets-production.up.railway.app/api';
-const API_FALLBACK = process.env.REACT_APP_API_FALLBACK || 'http://localhost:5000/api';
+const normalizeApiUrl = (url) => {
+  if (!url) return url;
+  return url.endsWith('/api') ? url : `${url.replace(/\/+$/, '')}/api`;
+};
+
+const defaultApiOrigin = typeof window !== 'undefined' && window.location ? `${window.location.origin}/api` : '';
+const API_BASE = normalizeApiUrl(process.env.REACT_APP_API_BASE) || defaultApiOrigin;
 
 const safeJson = async (res) => {
   try {
@@ -18,16 +23,8 @@ const safeFetch = async (url, opts) => {
     }
     return await safeJson(res);
   } catch (error) {
-    if (url.startsWith(API_BASE) && API_FALLBACK && API_FALLBACK !== API_BASE) {
-      try {
-        const backupUrl = url.replace(API_BASE, API_FALLBACK);
-        const res = await fetch(backupUrl, opts);
-        return await safeJson(res);
-      } catch (e) {
-        return { message: 'Network error: could not reach primary or fallback API' };
-      }
-    }
-    return { message: 'Network error: could not reach API' };
+    console.error('Fetch error:', error);
+    return { message: 'Network error: Please check your connection' };
   }
 };
 
@@ -44,8 +41,48 @@ export async function signup(data) {
   });
 }
 
+export async function verifyOtp(data) {
+  return safeFetch(`${API_BASE}/auth/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function resendOtp(data) {
+  return safeFetch(`${API_BASE}/auth/resend-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
 export async function login(data) {
   return safeFetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function forgotPassword(data) {
+  return safeFetch(`${API_BASE}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function verifyResetCode(data) {
+  return safeFetch(`${API_BASE}/auth/verify-reset-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function resetPassword(data) {
+  return safeFetch(`${API_BASE}/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -73,18 +110,27 @@ export async function fetchEvent(id) {
   }
 }
 
-export async function fetchTicket(id) {
+export async function fetchTicket(id, code) {
   try {
     const token = localStorage.getItem('reek_token');
-    const res = await fetch(`${API_BASE}/tickets/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const query = code ? `?code=${encodeURIComponent(code)}` : '';
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await fetch(`${API_BASE}/tickets/${id}${query}`, { headers });
     if (!res.ok) throw new Error('Ticket not found');
     return await res.json();
   } catch (error) {
     throw error;
+  }
+}
+
+export async function fetchMyTickets() {
+  try {
+    const res = await fetch(`${API_BASE}/tickets`, {
+      headers: { ...getAuthHeader() },
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not fetch tickets' };
   }
 }
 
@@ -114,6 +160,54 @@ export async function initPaystack(payload) {
   }
 }
 
+export async function withdrawFunds(amount) {
+  try {
+    const res = await fetch(`${API_BASE}/payments/withdraw`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ amount }),
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not process withdrawal' };
+  }
+}
+
+export async function requestOrganizerPayout(amount, bankDetails) {
+  try {
+    const res = await fetch(`${API_BASE}/payments/organizer/payout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ amount, bankDetails }),
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not process payout request' };
+  }
+}
+
+export async function getOrganizerPayouts() {
+  try {
+    const res = await fetch(`${API_BASE}/payments/organizer/payouts`, {
+      headers: getAuthHeader(),
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not fetch payout history' };
+  }
+}
+
+export async function getPaymentSummary() {
+  try {
+    const res = await fetch(`${API_BASE}/payments/summary`, {
+      headers: getAuthHeader(),
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not fetch payment summary' };
+  }
+}
+
 export async function verifyPayment(reference) {
   try {
     const res = await fetch(`${API_BASE}/payments/verify?reference=${encodeURIComponent(reference)}`);
@@ -121,4 +215,78 @@ export async function verifyPayment(reference) {
   } catch {
     return { message: 'Network error: could not verify payment' };
   }
+}
+
+export async function sendNaloSms(payload) {
+  const { to, message } = payload || {};
+  if (!to || !message) {
+    return { message: 'Missing recipient phone number or message content.' };
+  }
+  
+  try {
+    // Use Node backend SMS endpoint
+    const res = await fetch(`${API_BASE}/sms/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phone: to,
+        message: message,
+      }),
+    });
+    
+    const result = await safeJson(res);
+    
+    if (result.success === false || !res.ok) {
+      console.warn('[SMS] Backend SMS failed');
+      return await sendSmsDirectSMSONLINEGH(to, message);
+    }
+    
+    return { 
+      message: result.message || 'SMS sent successfully',
+      success: true 
+    };
+  } catch (error) {
+    console.error('[SMS] Backend error:', error);
+    // Fallback to direct SMSONLINEGH API
+    return await sendSmsDirectSMSONLINEGH(to, message);
+  }
+}
+
+async function sendSmsDirectSMSONLINEGH(to, message) {
+  // Fallback: Direct SMSONLINEGH API call (bypasses Python backend)
+  const SMSONLINEGH_API_KEY = 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
+  const SMSONLINEGH_SENDER = 'ReekTickets';
+  const SMSONLINEGH_API_URL = 'https://api.smsonlinegh.com/send';
+  
+  try {
+    const res = await fetch(SMSONLINEGH_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        apikey: SMSONLINEGH_API_KEY,
+        to: to.replace(/^\+/, ''),
+        from: SMSONLINEGH_SENDER,
+        msg: message,
+        type: 0,
+      }),
+    });
+    const result = await safeJson(res);
+    return result.status === 'success' 
+      ? { message: 'SMS sent successfully', success: true } 
+      : { message: result.message || 'SMS delivery failed', success: false };
+  } catch (error) {
+    console.error('[SMS] Direct API error:', error);
+    return { message: 'Network error: could not send SMS', success: false };
+  }
+}
+
+export async function verifyTicketCode(ticketId, code) {
+  if (!ticketId || !code) {
+    throw new Error('Ticket ID and access code are required.');
+  }
+  return fetchTicket(ticketId, code);
 }

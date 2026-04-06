@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { login } from '../services/api';
+import SEO from '../components/SEO';
 
 export default function Login({ onLogin }) {
   const [form, setForm] = useState({ identifier: '', password: '', loginType: 'email', selectedRole: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -11,7 +14,8 @@ export default function Login({ onLogin }) {
     { id: 'attendee', name: 'Attendee' },
     { id: 'organizer', name: 'Organizer' },
     { id: 'vendor', name: 'Vendor' },
-    { id: 'agent', name: 'Sales Agent' }
+    { id: 'agent', name: 'Sales Agent' },
+    { id: 'gate', name: 'Gate Staff' }
   ];
 
   const handleSubmit = async (e) => {
@@ -29,6 +33,7 @@ export default function Login({ onLogin }) {
       else if (role === 'organizer') navigate('/dashboard/organizer');
       else if (role === 'vendor') navigate('/dashboard/vendor');
       else if (role === 'agent') navigate('/dashboard/agent');
+      else if (role === 'gate' || role === 'entry') navigate('/dashboard/gate');
       else navigate('/dashboard/attendee');
       return;
     }
@@ -37,6 +42,12 @@ export default function Login({ onLogin }) {
 
   return (
     <div className="login-page">
+      <SEO
+        title="Login – ReekTickets"
+        description="Log in to your ReekTickets account to access ticket purchases, event management, and dashboards."
+        ogTitle="Login to ReekTickets"
+        ogDescription="Securely access your ReekTickets account and manage your events, bookings, or sales."
+      />
       <div className="login-container">
         {/* Back Button */}
         <button className="back-btn" type="button" onClick={() => navigate('/signup')}>
@@ -114,13 +125,23 @@ export default function Login({ onLogin }) {
           )}
 
           {/* Password Input */}
-          <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            required
-          />
+          <div className="password-field">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((prev) => !prev)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
 
           {/* Extra Options */}
           <div className="login-options">
@@ -128,7 +149,7 @@ export default function Login({ onLogin }) {
               <input type="checkbox" />
               <span>Remember Me</span>
             </label>
-            <a href="#" className="forgot-password">Forgot Password?</a>
+            <button type="button" className="forgot-password" onClick={() => navigate('/forgot-password')}>Forgot Password?</button>
           </div>
 
           {/* Login Button */}

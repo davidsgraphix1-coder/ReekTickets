@@ -1,15 +1,17 @@
+import { FaBell, FaSync, FaInbox } from 'react-icons/fa';
+
 export default function Notifications({ notifications, onRefresh }) {
   const data = notifications || [];
 
   return (
     <div className="section fade-in">
       <div className="dashboard-title" style={{ marginBottom: '30px' }}>
-        <div className="title-icon">🔔</div>
+        <div className="title-icon"><FaBell /></div>
         <h1>Notifications</h1>
       </div>
 
       <div style={{ marginBottom: '16px', maxWidth: '600px', marginLeft: 'auto', marginRight: 'auto' }}>
-        <button className="btn btn-primary" onClick={onRefresh}>🔄 Refresh</button>
+        <button className="btn btn-primary" onClick={onRefresh}><FaSync /> Refresh</button>
       </div>
 
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -27,7 +29,7 @@ export default function Notifications({ notifications, onRefresh }) {
                 backgroundColor: notif.read ? '#fff' : '#f0f7ff',
               }}
             >
-              <div style={{ fontSize: '24px', marginTop: '2px' }}>📬</div>
+              <div style={{ fontSize: '24px', marginTop: '2px' }}><FaInbox /></div>
               <div style={{ flex: 1 }}>
                 <h4 style={{ margin: '0 0 4px 0' }}>{notif.title}</h4>
                 <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#666' }}>{notif.message}</p>

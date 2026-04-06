@@ -1,4 +1,5 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
 const Ticket = require('../models/Ticket');
 const Payment = require('../models/Payment');
@@ -7,6 +8,7 @@ const Event = require('../models/Event');
 const SalesAgent = require('../models/SalesAgent');
 const AgentSales = require('../models/AgentSales');
 const ReportMessage = require('../models/ReportMessage');
+const Announcement = require('../models/Announcement');
 
 const router = express.Router();
 
@@ -31,17 +33,42 @@ router.get('/tickets', auth, async (req, res) => {
 });
 
 // Get single ticket by id (for QR/OCR access)
-router.get('/tickets/:id', auth, async (req, res) => {
+router.get('/tickets/:id', async (req, res) => {
   try {
+    const authHeader = req.headers.authorization;
+    let requesterId = null;
+    let requesterRole = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey');
+        requesterId = decoded.id;
+        requesterRole = decoded.role;
+      } catch {
+        requesterId = null;
+        requesterRole = null;
+      }
+    }
+
     const ticket = await Ticket.findById(req.params.id).populate('event').populate('user', 'fullName email phone');
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
-    if (ticket.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden' });
+
+    const accessCode = req.query.code;
+    const codeValid = accessCode && ticket.smsCode === accessCode && (!ticket.smsCodeExpiry || new Date(ticket.smsCodeExpiry) > new Date());
+
+    if (codeValid) {
+      return res.json(ticket);
     }
-    res.json(ticket);
+
+    if (requesterId && (ticket.user._id.toString() === requesterId || requesterRole === 'admin')) {
+      return res.json(ticket);
+    }
+
+    return res.status(403).json({ message: 'Forbidden' });
   } catch (error) {
     res.status(500).json({ message: 'Could not fetch ticket' });
-  }
+  }``
 });
 
 
@@ -445,11 +472,64 @@ router.get('/admin/reports', auth, async (req, res) => {
     const admin = await User.findById(req.user.id);
     if (!admin || admin.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
 
-    const reports = await ReportMessage.find().sort({ createdAt: -1 });
+    const validRoles = ['attendee', 'organizer', 'vendor', 'agent', 'admin'];
+    const filter = {};
+    if (req.query.role && validRoles.includes(req.query.role)) {
+      filter.role = req.query.role;
+    }
+
+    const reports = await ReportMessage.find(filter).sort({ createdAt: -1 });
     res.json(reports);
   } catch (error) {
     console.error('Fetch reports failed:', error);
     res.status(500).json({ message: 'Could not fetch reports.' });
+  }
+});
+
+// Admin create announcement
+router.post('/admin/announcements', auth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.user.id);
+    if (!admin || admin.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    const { message, roles } = req.body;
+    if (!message || typeof message !== 'string' || !message.trim().length) {
+      return res.status(400).json({ message: 'Announcement message is required.' });
+    }
+
+    const validRoles = ['attendee', 'organizer', 'vendor', 'agent', 'admin'];
+    const targetRoles = Array.isArray(roles) && roles.length > 0
+      ? (roles.includes('all')
+        ? validRoles
+        : Array.from(new Set(roles.filter((role) => validRoles.includes(role)))))
+      : validRoles;
+
+    const announcement = new Announcement({
+      createdBy: admin._id,
+      createdByName: admin.fullName || admin.email,
+      roles: targetRoles,
+      message: message.trim(),
+    });
+
+    await announcement.save();
+    res.status(201).json({ message: 'Announcement sent successfully.' });
+  } catch (error) {
+    console.error('Create announcement failed:', error);
+    res.status(500).json({ message: 'Could not create announcement.' });
+  }
+});
+
+// Admin list announcements
+router.get('/admin/announcements', auth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.user.id);
+    if (!admin || admin.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    const announcements = await Announcement.find().sort({ createdAt: -1 });
+    res.json(announcements);
+  } catch (error) {
+    console.error('Fetch announcements failed:', error);
+    res.status(500).json({ message: 'Could not fetch announcements.' });
   }
 });
 

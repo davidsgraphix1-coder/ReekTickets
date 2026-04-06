@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { FaChartPie, FaCog, FaBell, FaChevronDown, FaStore, FaSmile, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import axios from 'axios';
 import './VendorDashboard.css';
 
@@ -91,8 +92,8 @@ export default function VendorDashboard() {
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return '↕️';
-    return sortConfig.direction === 'asc' ? '↑' : '↓';
+    if (sortConfig.key !== key) return <FaSort />;
+    return sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />;
   };
 
   const filteredApplications = applications.filter(app =>
@@ -129,8 +130,17 @@ export default function VendorDashboard() {
   const endIndex = startIndex + entriesPerPage;
   const currentApplications = sortedApplications.slice(startIndex, endIndex);
 
-  const userAvatar = user?.avatarUrl || user?.profilePic ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'Vendor')}&background=667eea&color=ffffff`;
+  const userAvatar = user?.avatarUrl || user?.profilePic || null;
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const greetingName = user?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'Vendor';
+  const greetingText = `${getGreeting()}, ${greetingName}`;
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -201,12 +211,12 @@ export default function VendorDashboard() {
         </div>
 
         <nav className="sidebar-nav">
-          <div className="nav-item active">
-            <span className="nav-icon">📊</span>
+          <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+            <span className="nav-icon"><FaChartPie /></span>
             <span className="nav-label">Dashboard</span>
           </div>
-          <div className="nav-item">
-            <span className="nav-icon">⚙️</span>
+          <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+            <span className="nav-icon"><FaCog /></span>
             <span className="nav-label">Settings</span>
           </div>
         </nav>
@@ -216,13 +226,17 @@ export default function VendorDashboard() {
       <div className="vendor-main">
         {/* Header */}
         <div className="vendor-header">
+          <div className="header-left">
+            <h2>{greetingText}</h2>
+            <p>Welcome to your vendor dashboard.</p>
+          </div>
           <div className="header-actions">
-            <div className="header-icon" onClick={() => setActiveTab('dashboard')}>🔔</div>
-            <div className="header-icon" onClick={() => setActiveTab('settings')}>⚙️</div>
+            <div className="header-icon" onClick={() => setActiveTab('dashboard')}><FaBell /></div>
+            <div className="header-icon" onClick={() => setActiveTab('settings')}><FaCog /></div>
             <div className="user-dropdown" onClick={() => setActiveTab('settings')}>
               <img src={userAvatar} alt={user?.fullName || 'Vendor'} className="dropdown-avatar" />
               <span className="dropdown-email">{user?.email || 'vendor@reektickets.com'}</span>
-              <span className="dropdown-arrow">▼</span>
+              <span className="dropdown-arrow"><FaChevronDown /></span>
             </div>
           </div>
         </div>
@@ -265,7 +279,7 @@ export default function VendorDashboard() {
               {/* Page Title */}
               <div className="page-title">
             <div className="title-icon">
-              <span>🏪</span>
+              <FaStore />
             </div>
             <h1>VENDOR DASHBOARD</h1>
           </div>
@@ -282,6 +296,20 @@ export default function VendorDashboard() {
             <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <button onClick={submitReport} className="btn btn-small">Send Report</button>
               {reportStatus && <span style={{ color: '#374151', fontSize: '0.9rem' }}>{reportStatus}</span>}
+            </div>
+          </div>
+
+          {/* Satisfaction Card */}
+          <div className="satisfaction-card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: '#fff', borderRadius: '12px', padding: '20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ fontSize: '2.5rem' }}><FaSmile /></div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ marginBottom: '4px' }}>How satisfied are you?</h3>
+              <p style={{ opacity: 0.9, marginBottom: '8px' }}>Help us improve by telling us about your experience with ReekTickets.</p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer' }}>Very Happy</button>
+                <button style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer' }}>Happy</button>
+                <button style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer' }}>Neutral</button>
+              </div>
             </div>
           </div>
 

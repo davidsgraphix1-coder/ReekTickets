@@ -543,3 +543,20 @@
     font-size: 14px;
   }
 }
+
+/* Keep vendor dashboard focused on nav, header and top cards only */
+.vendor-content {
+  max-height: calc(100vh - 180px);
+  overflow: hidden;
+}
+
+.vendor-content .settings-panel,
+.vendor-content .table-container,
+.vendor-content .table-controls,
+.vendor-content .data-table,
+.vendor-content .settings-fields,
+.vendor-content .form-group,
+.vendor-content .report-panel,
+.vendor-content .pagination {
+  display: none !important;
+}

@@ -35,6 +35,11 @@ export default function MobileMenuBar({ user, onLogout }) {
         <span></span>
         <span></span>
       </button>
+      {user && (
+        <button type="button" className="mobile-logout-button" onClick={handleLogout}>
+          Logout
+        </button>
+      )}
 
       {menuOpen && (
         <div className="mobile-menu-overlay" onClick={() => setMenuOpen(false)}>
@@ -52,7 +57,7 @@ export default function MobileMenuBar({ user, onLogout }) {
             {/* Mobile Banner */}
             <div className="mobile-banner">
               <img 
-                src="/banner.jpg" 
+                src="/public/banner.jpg" 
                 alt="ReekTickets Banner" 
                 className="mobile-banner-image"
               />
@@ -83,7 +88,7 @@ export default function MobileMenuBar({ user, onLogout }) {
               <div className="mobile-menu-user">
                 <div className="mobile-user-info">
                   <img 
-                    src={user.avatarUrl || user.profilePic || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || 'User')}&background=667eea&color=ffffff`}
+                    src={user.avatarUrl || user.profilePic || null}
                     alt="User avatar"
                     className="mobile-user-avatar"
                   />

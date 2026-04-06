@@ -14,17 +14,7 @@ export default function TicketView() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchTicket(id);
-        if (inputCode && data.smsCode !== inputCode) {
-          setError('Invalid or expired access code.');
-          setLoading(false);
-          return;
-        }
-        if (data.smsCodeExpiry && new Date(data.smsCodeExpiry) < new Date()) {
-          setError('The access code has expired.');
-          setLoading(false);
-          return;
-        }
+        const data = await fetchTicket(id, inputCode);
         setTicket(data);
       } catch (err) {
         setError('Could not load ticket.');
