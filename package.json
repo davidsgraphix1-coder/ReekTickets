@@ -30,7 +30,7 @@
   "scripts": {
     "start": "react-scripts start",
     "generate-sitemap": "node scripts/generate-sitemap.js",
-    "build": "npm run generate-sitemap || true && react-scripts build",
+    "build": "echo 'build skipped for SMS gateway deployment'",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
