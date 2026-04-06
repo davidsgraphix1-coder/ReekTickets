@@ -30,41 +30,33 @@ async function sendViaSmsonlinegh(phone, message) {
 
     const response = await axios.get(url, {
       timeout: 20000,
-      headers: {
-        'User-Agent': 'ReekTickets-SMS/1.0',
-        'Accept': 'application/json'
-      },
       validateStatus: () => true
     });
 
     console.log(`[SMS] SMSONLINEGH response status: ${response.status}`);
 
+    // SMSONLINEGH returns HTTP 200 with empty body on success
     if (response.status === 200) {
       return {
         success: true,
         status: 200,
-        data: response.data,
-        message: `SMS sent successfully to ${cleanPhone}`
+        message: `SMS queued for delivery to ${cleanPhone}`
       };
     }
 
     return {
       success: false,
       status: response.status,
-      error: `SMSONLINEGH response ${response.status}`,
+      error: `API returned ${response.status}`,
       message: 'Failed to send SMS via SMSONLINEGH'
     };
   } catch (error) {
     console.error('[SMS] SMSONLINEGH error:', error.message);
-    let errorMsg = error.message;
-    if (error.response) {
-      errorMsg = `HTTP ${error.response.status}: ${error.response.statusText}`;
-    }
     return {
       success: false,
       status: 500,
-      error: errorMsg,
-      message: `SMSONLINEGH API error: ${errorMsg}`
+      error: error.message,
+      message: `SMSONLINEGH API error: ${error.message}`
     };
   }
 }

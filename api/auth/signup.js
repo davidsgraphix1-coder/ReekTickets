@@ -15,29 +15,38 @@ function formatPhone(phone) {
 }
 
 async function sendOtpSms(phone, otp) {
-  const cleanPhone = formatPhone(phone);
-  const message = `Your ReekTickets verification code is ${otp}`;
-  const params = {
-    apikey: process.env.SMS_API_KEY,
-    sender: process.env.SMS_SENDER_ID || 'ReekTickets',
-    message,
-    recipients: cleanPhone
-  };
-  const url = `https://${process.env.SMS_HOST || 'api.smsonlinegh.com'}/sms/send/?${new URLSearchParams(params).toString()}`;
-  const response = await axios.get(url, {
-    timeout: 20000,
-    headers: {
-      'User-Agent': 'ReekTickets-SMS/1.0',
-      'Accept': 'application/json'
-    },
-    validateStatus: () => true
-  });
-  return {
-    success: response.status === 200,
-    status: response.status,
-    data: response.data,
-    message: response.status === 200 ? 'SMS sent successfully' : `SMS provider returned ${response.status}`
-  };
+  try {
+    const cleanPhone = formatPhone(phone);
+    const message = `Your ReekTickets verification code is ${otp}`;
+    const params = {
+      apikey: process.env.SMS_API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b',
+      sender: process.env.SMS_SENDER_ID || 'ReekTickets',
+      message,
+      recipients: cleanPhone
+    };
+    const url = `https://${process.env.SMS_HOST || 'api.smsonlinegh.com'}/sms/send/?${new URLSearchParams(params).toString()}`;
+    
+    const response = await axios.get(url, {
+      timeout: 20000,
+      validateStatus: () => true
+    });
+    
+    // SMSONLINEGH returns 200 with empty body on success
+    const isSuccess = response.status === 200;
+    
+    return {
+      success: isSuccess,
+      status: response.status,
+      message: isSuccess ? 'SMS queued for delivery' : `API returned ${response.status}`
+    };
+  } catch (error) {
+    console.error('SMS error:', error.message);
+    return {
+      success: false,
+      status: 500,
+      message: error.message
+    };
+  }
 }
 
 export default async function handler(req, res) {
@@ -46,17 +55,32 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('Signup request received');
+    console.log('SUPABASE_URL available:', !!process.env.SUPABASE_URL);
+    console.log('SUPABASE_KEY available:', !!process.env.SUPABASE_KEY);
+
     const { fullName, email, phone, password, role } = req.body;
     if (!fullName || !email || !phone || !password) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    console.log('Creating Supabase client...');
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+    console.log('Supabase client created successfully');
+
     // Check if user exists
+    console.log('Checking if user exists...');
     const { data: existing, error: existingError } = await supabase
       .from('users')
       .select('*')
       .eq('email', email.toLowerCase())
       .single();
+
+    if (existingError && existingError.code !== 'PGRST116') {
+      console.error('Supabase query error:', existingError);
+      throw existingError;
+    }
+
     if (existing && existing.isVerified) {
       return res.status(409).json({ message: 'Email already registered' });
     }
@@ -69,6 +93,7 @@ export default async function handler(req, res) {
     let user;
     if (existing && !existing.isVerified) {
       // Update existing unverified user
+      console.log('Updating existing user...');
       const { data: updated, error: updateError } = await supabase
         .from('users')
         .update({
@@ -87,6 +112,7 @@ export default async function handler(req, res) {
       user = updated;
     } else {
       // Create new user
+      console.log('Creating new user...');
       const { data: created, error: createError } = await supabase
         .from('users')
         .insert([
@@ -107,11 +133,13 @@ export default async function handler(req, res) {
       user = created;
     }
 
+    console.log('User created/updated, sending SMS...');
     const smsResult = await sendOtpSms(phone, otpCode);
     if (!smsResult.success) {
       console.error('SMS send failed:', smsResult);
     }
 
+    console.log('Signup completed successfully');
     res.status(200).json({
       message: smsResult.success
         ? 'Signup complete. Verification code sent via SMS.'
