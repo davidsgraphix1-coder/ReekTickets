@@ -11,7 +11,10 @@ router.post('/send', async (req, res) => {
   try {
     const { phone, message } = req.body;
 
+    console.log('[SMS Route] /send endpoint called with:', { phone, messageLength: message?.length });
+
     if (!phone || !message) {
+      console.log('[SMS Route] Missing required fields');
       return res.status(400).json({
         success: false,
         error: 'phone and message are required'
@@ -19,6 +22,7 @@ router.post('/send', async (req, res) => {
     }
 
     const response = await sendSMS(phone, message);
+    console.log('[SMS Route] sendSMS response:', response);
 
     if (response.success) {
       return res.status(200).json(response);
@@ -26,7 +30,7 @@ router.post('/send', async (req, res) => {
       return res.status(500).json(response);
     }
   } catch (error) {
-    console.error('SMS send error:', error);
+    console.error('[SMS Route] /send error:', error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -43,7 +47,10 @@ router.post('/send-otp', async (req, res) => {
   try {
     const { phone, otp } = req.body;
 
+    console.log('[SMS Route] /send-otp endpoint called with:', { phone });
+
     if (!phone || !otp) {
+      console.log('[SMS Route] Missing required fields for OTP');
       return res.status(400).json({
         success: false,
         error: 'phone and otp are required'
@@ -51,6 +58,7 @@ router.post('/send-otp', async (req, res) => {
     }
 
     const response = await sendOTP(phone, otp);
+    console.log('[SMS Route] sendOTP response:', response);
 
     if (response.success) {
       return res.status(200).json(response);
@@ -58,7 +66,7 @@ router.post('/send-otp', async (req, res) => {
       return res.status(500).json(response);
     }
   } catch (error) {
-    console.error('OTP send error:', error);
+    console.error('[SMS Route] /send-otp error:', error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -90,11 +98,42 @@ router.post('/send-ticket', async (req, res) => {
       return res.status(500).json(response);
     }
   } catch (error) {
-    console.error('Ticket SMS error:', error);
+    console.error('[SMS Route] /send-ticket error:', error);
     res.status(500).json({
       success: false,
       error: error.message,
       message: 'Failed to send ticket SMS'
+    });
+  }
+});
+
+/**
+ * POST /api/sms/test
+ * Test SMS endpoint - sends a test message
+ */
+router.post('/test', async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        error: 'phone is required'
+      });
+    }
+
+    console.log('[SMS Route] Test endpoint called for:', phone);
+    const testMessage = `Test SMS from ReekTickets. Timestamp: ${new Date().toISOString()}`;
+    const response = await sendSMS(phone, testMessage);
+
+    console.log('[SMS Route] Test response:', response);
+    return res.status(response.success ? 200 : 500).json(response);
+  } catch (error) {
+    console.error('[SMS Route] Test error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: 'Test SMS failed'
     });
   }
 });
@@ -107,7 +146,7 @@ router.get('/health', async (req, res) => {
   try {
     const health = await healthCheck();
     
-    if (health.status === 'healthy') {
+    if (health.success) {
       return res.status(200).json(health);
     } else {
       return res.status(503).json(health);
@@ -121,3 +160,4 @@ router.get('/health', async (req, res) => {
 });
 
 module.exports = router;
+

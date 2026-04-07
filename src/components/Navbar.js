@@ -14,8 +14,40 @@ export default function Navbar({ user, onLogout }) {
     setIsMobileMenuOpen(false);
   };
 
+  const isLoggedIn = Boolean(user); // Toggle auth state here for testing
+
+  const guestMenuItems = [
+    { label: 'Home', to: '/' },
+    { label: 'Browse Events', to: '/events' },
+    { label: 'Create Event', to: '/dashboard/organizer' },
+    { label: 'My Tickets', to: '/dashboard/attendee' },
+    { label: 'Vendor Registration', to: '/dashboard/vendor' },
+    { label: 'Vendor Login', to: '/login' },
+    { label: 'Sales Agents', to: '/dashboard/agent' },
+    { label: 'Sign Up', to: '/signup' },
+    { label: 'Login', to: '/login' },
+  ];
+
+  const loggedInMenuItems = [
+    { label: 'Home', to: '/' },
+    { label: 'Browse Events', to: '/events' },
+    { label: 'Dashboard', to: '/dashboard' },
+    { label: 'Create Event', to: '/dashboard/organizer' },
+    { label: 'My Tickets', to: '/dashboard/attendee' },
+    {
+      label: 'Logout',
+      type: 'button',
+      action: () => {
+        onLogout?.();
+        closeMobileMenu();
+      },
+    },
+  ];
+
+  const menuItems = isLoggedIn ? loggedInMenuItems : guestMenuItems;
+
   const handleOverlayClick = (e) => {
-    if (e.target.className === 'mobile-menu-overlay open') {
+    if (e.target === e.currentTarget) {
       closeMobileMenu();
     }
   };
@@ -84,37 +116,42 @@ export default function Navbar({ user, onLogout }) {
       {/* Mobile Menu Overlay */}
       <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={handleOverlayClick}></div>
 
-      {/* Mobile Sliding Menu */}
-      <nav className={`mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-        <div className="mobile-menu-header">
-          <img src="/reektickets-actual-logo.png" alt="ReekTickets" className="mobile-menu-logo" />
-          <button className="mobile-menu-close" onClick={closeMobileMenu} aria-label="Close menu">×</button>
-        </div>
-
-        {/* Search Bar in Mobile Menu */}
-        <form className="mobile-menu-search" onSubmit={handleSearch}>
-          <input 
-            type="text" 
-            className="mobile-search-input" 
-            placeholder="Search events..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Search for events"
-          />
-          <button type="submit" className="mobile-search-btn" aria-label="Search">
-            <img src="/search-icon.png" alt="Search" className="search-icon-image" />
-          </button>
-        </form>
-
-        <div className="mobile-menu-items">
-          <Link to="/" onClick={closeMobileMenu}>Home</Link>
-          <Link to="/signup" onClick={closeMobileMenu}>Sign up</Link>
-          <Link to="/login" onClick={closeMobileMenu}>Login</Link>
-          <Link to="/dashboard/organizer" onClick={closeMobileMenu}>Create Event</Link>
-          <Link to="/dashboard/vendor" onClick={closeMobileMenu}>Vendor Registration</Link>
-          <Link to="/login" onClick={closeMobileMenu}>Vendor Login</Link>
-          <Link to="/dashboard/agent" onClick={closeMobileMenu}>Sales Agents</Link>
-          <Link to="/dashboard/attendee" onClick={closeMobileMenu}>My Tickets</Link>
+      {/* Mobile Sliding Menu - Slide Down from Top */}
+      <nav className={`mobile-menu-dropdown ${isMobileMenuOpen ? 'open' : ''}`}>
+        <div className="mobile-menu-content">
+          <div className="mobile-menu-header">
+            <div className="mobile-menu-brand">
+              <div className="mobile-menu-logo">RT</div>
+              <span className="mobile-menu-title">ReekTickets</span>
+            </div>
+            <button className="mobile-menu-close" onClick={closeMobileMenu} aria-label="Close menu">
+              ×
+            </button>
+          </div>
+          <hr className="mobile-menu-divider" />
+          <div className="mobile-menu-items">
+            {menuItems.map((item) =>
+              item.type === 'button' ? (
+                <button
+                  key={item.label}
+                  className="mobile-menu-item mobile-menu-action"
+                  type="button"
+                  onClick={item.action}
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className="mobile-menu-item"
+                  onClick={closeMobileMenu}
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
+          </div>
         </div>
       </nav>
     </header>

@@ -1,8 +1,6 @@
 // SMS OTP endpoint for Vercel serverless
 
-const SMS_API_KEY = process.env.SMS_API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
-const SMS_SENDER_ID = process.env.SMS_SENDER_ID || 'ReekTickets';
-const SMS_HOST = process.env.SMS_HOST || 'api.smsonlinegh.com';
+const PYTHON_SMS_BACKEND = process.env.PYTHON_SMS_BACKEND;
 
 function formatPhone(phone) {
   let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
@@ -14,47 +12,66 @@ function formatPhone(phone) {
   return cleanPhone;
 }
 
-async function sendViaSmsonlinegh(phone, message) {
+async function sendViaPythonBackend(phone, message) {
+  if (!PYTHON_SMS_BACKEND) {
+    return {
+      success: false,
+      status: 500,
+      error: 'PYTHON_SMS_BACKEND is not configured',
+      message: 'Python backend configuration missing'
+    };
+  }
+
   try {
     const cleanPhone = formatPhone(phone);
-    const params = {
-      apikey: SMS_API_KEY,
-      sender: SMS_SENDER_ID,
-      message,
-      recipients: cleanPhone
-    };
+    const url = `${PYTHON_SMS_BACKEND}/api/send-sms`;
 
-    const url = `https://${SMS_HOST}/sms/send/?${new URLSearchParams(params).toString()}`;
-    console.log(`[SMS] SMSONLINEGH API call to ${cleanPhone}`);
-
+    console.log('[SMS] send-otp calling Python Zenoph backend:', url);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
     const response = await fetch(url, {
-      method: 'GET'
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: cleanPhone, message }),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
 
-    console.log(`[SMS] SMSONLINEGH response status: ${response.status}`);
+    const responseText = await response.text();
+    let responseBody;
+    try {
+      responseBody = JSON.parse(responseText);
+    } catch (_err) {
+      responseBody = responseText;
+    }
 
-    // SMSONLINEGH returns HTTP 200 with empty body on success
-    if (response.status === 200) {
+    console.log('[SMS] Python backend response status:', response.status, 'body:', responseBody);
+
+    if (response.status === 200 && responseBody.success) {
       return {
         success: true,
         status: 200,
-        message: `SMS queued for delivery to ${cleanPhone}`
+        message: `SMS queued for delivery to ${cleanPhone}`,
+        backend: 'python-zenoph',
+        backendBody: responseBody
       };
     }
 
     return {
       success: false,
       status: response.status,
-      error: `API returned ${response.status}`,
-      message: 'Failed to send SMS via SMSONLINEGH'
+      error: responseBody.error || 'Python backend returned an error',
+      message: 'Failed to send OTP',
+      backend: 'python-zenoph',
+      backendBody: responseBody
     };
   } catch (error) {
-    console.error('[SMS] SMSONLINEGH error:', error.message);
+    console.error('[SMS] Python backend error:', error.message);
     return {
       success: false,
       status: 500,
       error: error.message,
-      message: `SMSONLINEGH API error: ${error.message}`
+      message: error.message.includes('PYTHON_SMS_BACKEND') ? 'Python backend configuration missing' : 'Python backend unavailable'
     };
   }
 }
@@ -75,7 +92,7 @@ export default async function handler(req, res) {
     }
 
     const message = `Your ReekTickets verification code is ${otp}`;
-    const result = await sendViaSmsonlinegh(phone, message);
+    const result = await sendViaPythonBackend(phone, message);
 
     if (result.success) {
       res.status(200).json({

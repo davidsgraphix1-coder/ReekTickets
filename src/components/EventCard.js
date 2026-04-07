@@ -1,25 +1,67 @@
 export default function EventCard({ event, onBuy }) {
   const price = event?.ticketTypes?.[0]?.price || 0;
   const ticketType = event?.ticketTypes?.[0]?.type || 'General';
+
+  const handleCardClick = () => {
+    window.location.href = `/events/${event._id}`;
+  };
+
+  const handleBuyClick = (e) => {
+    e.stopPropagation();
+    onBuy(event, price, ticketType);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   return (
-    <div className="card event-card" onClick={() => window.location.href = `/events/${event._id}`}>
-      <div className="card-banner" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('${event.banner || '/public/banner.jpg'}')` }}>
-        <div className="event-tag">{event.category || 'All'}</div>
+    <div className="event-card-modern" onClick={handleCardClick}>
+      <div
+        className="event-card-image"
+        style={{
+          backgroundImage: `url('${event.banner || '/public/banner.jpg'}')`
+        }}
+      >
+        <div className="event-category-tag">{event.category || 'General'}</div>
       </div>
-      <div className="card-body">
-        <h3>{event.title}</h3>
-        <p>{event.description?.slice(0, 120) || 'Exciting event with top experiences.'}</p>
-        <div className="event-row">
-          <span>{new Date(event.date).toLocaleDateString()}</span>
+
+      <div className="event-card-content">
+        <h3 className="event-title">{event.title}</h3>
+
+        <div className="event-location">
+          <span className="location-icon">📍</span>
           <span>{event.location}</span>
         </div>
-        <div className="event-footer">
-          <div>
-            <small>{ticketType}</small>
-            <strong>GHS {price}</strong>
+
+        <div className="event-datetime">
+          <div className="event-date">
+            <span className="date-icon">📅</span>
+            <span>{formatDate(event.date)}</span>
           </div>
-          <button className="btn btn-small" onClick={(e) => { e.stopPropagation(); onBuy(event, price, ticketType); }}>Buy</button>
+          <div className="event-time">
+            <span className="time-icon">🕐</span>
+            <span>{formatTime(event.date)}</span>
+          </div>
         </div>
+
+        <button className="grab-ticket-btn" onClick={handleBuyClick}>
+          Grab your ticket
+        </button>
       </div>
     </div>
   );

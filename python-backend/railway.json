@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfile": "Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "gunicorn backend:app --bind 0.0.0.0:$PORT"
+  }
+}

@@ -220,29 +220,31 @@ export async function verifyPayment(reference) {
 export async function sendNaloSms(payload) {
   const { to, message } = payload || {};
   if (!to || !message) {
-    return { message: 'Missing recipient phone number or message content.' };
+    return { message: 'Missing recipient phone number or message content.', success: false };
   }
   
   try {
-    // Use backend SMS endpoint only
-    const res = await fetch(`${API_BASE}/sms/send-otp`, {
+    console.log('[SMS] Sending to', to);
+    // Use backend SMS send endpoint for messages
+    const res = await fetch(`${API_BASE}/sms/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         phone: to,
-        otp: message,
+        message: message,
       }),
     });
     
     const result = await safeJson(res);
+    console.log('[SMS] Response:', result);
     return result.success 
       ? { message: result.message || 'SMS sent successfully', success: true }
       : { message: result.message || 'SMS delivery failed', success: false };
   } catch (error) {
     console.error('[SMS] Backend error:', error);
-    return { message: 'Network error: could not send SMS', success: false };
+    return { message: `Network error: ${error.message}`, success: false };
   }
 }
 

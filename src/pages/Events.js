@@ -5,11 +5,43 @@ import EventCard from '../components/EventCard';
 
 export default function Events({ user }) {
   const [events, setEvents] = useState([]);
+  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
   const [msg, setMsg] = useState('');
 
+  const categories = ['All', 'Music', 'Business', 'Sports', 'Arts', 'Tech', 'Food', 'General'];
+
   useEffect(() => {
-    fetchEvents().then((data) => setEvents(Array.isArray(data) ? data : [])).catch(() => setEvents([]));
+    fetchEvents().then((data) => {
+      const eventArray = Array.isArray(data) ? data : [];
+      setEvents(eventArray);
+      setFilteredEvents(eventArray);
+    }).catch(() => {
+      setEvents([]);
+      setFilteredEvents([]);
+    });
   }, []);
+
+  useEffect(() => {
+    let filtered = events;
+
+    // Filter by category
+    if (activeCategory !== 'All') {
+      filtered = filtered.filter(event => event.category === activeCategory);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(event =>
+        event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.location?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    setFilteredEvents(filtered);
+  }, [events, activeCategory, searchQuery]);
 
   const handleBuy = async (event, price, ticketType) => {
     if (!user) {
@@ -25,7 +57,7 @@ export default function Events({ user }) {
   };
 
   return (
-    <div className="page event-page fade-in">
+    <div className="browse-events-page">
       <SEO
         title="Browse Events in Ghana | ReekTickets"
         description="Find upcoming concerts, parties, and ticketed events across Ghana. Book event tickets instantly on ReekTickets."
@@ -35,10 +67,55 @@ export default function Events({ user }) {
         ogImage="/public/banner.jpg"
         canonical="https://reektickets.com/events"
       />
-      <div className="page-head glass"><h2>Browse Events in Ghana</h2><p>Live events curated for you.</p></div>
-      {msg && <div className="error">{msg}</div>}
-      <div className="grid-3">
-        {events.map((event) => <EventCard key={event._id} event={event} onBuy={handleBuy} />)}
+
+      {/* Header Section */}
+      <div className="browse-header">
+        <h1 className="browse-title">
+          <span className="title-all">ALL</span>
+          <span className="title-events">events</span>
+        </h1>
+        <div className="title-underline"></div>
+      </div>
+
+      {/* Search and Filter Bar */}
+      <div className="search-filter-bar">
+        <div className="search-container">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search events..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="filter-buttons">
+          {categories.map(category => (
+            <button
+              key={category}
+              className={`filter-btn ${activeCategory === category ? 'active' : ''}`}
+              onClick={() => setActiveCategory(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {msg && <div className="error-message">{msg}</div>}
+
+      {/* Events Grid */}
+      <div className="events-grid">
+        {filteredEvents.length > 0 ? (
+          filteredEvents.map((event) => (
+            <EventCard key={event._id} event={event} onBuy={handleBuy} />
+          ))
+        ) : (
+          <div className="no-events">
+            <p>No events found matching your criteria.</p>
+          </div>
+        )}
       </div>
     </div>
   );

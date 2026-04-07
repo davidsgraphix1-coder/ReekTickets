@@ -5,8 +5,8 @@
 
 const axios = require('axios');
 
-const SMS_API_KEY = process.env.SMS_API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b';
-const SMS_SENDER_ID = process.env.SMS_SENDER_ID || 'ReekTickets';
+const SMS_API_KEY = process.env.SMS_API_KEY;
+const SMS_SENDER_ID = process.env.SMS_SENDER_ID;
 const SMS_HOST = process.env.SMS_HOST || 'api.smsonlinegh.com';
 
 // Use the public Render SMS gateway by default in production.

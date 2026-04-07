@@ -35,6 +35,7 @@ import VerifyOtp from './pages/VerifyOtp';
 import ForgotPassword from './pages/ForgotPassword';
 import Terms from './pages/Terms';
 import SupportChat from './components/SupportChat';
+import SmsTest from './pages/SmsTest';
 
 function AppContent() {
   const [user, setUser] = useState(null);
@@ -107,6 +108,7 @@ function AppContent() {
           <Route path="/agents" element={<SalesAgents />} />
           <Route path="/admindavid" element={<AdminPortal />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/sms-test" element={<SmsTest />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

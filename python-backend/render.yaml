@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: reektickets-sms-backend
+    runtime: python3
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn backend:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: API_HOST
+        value: api.smsonlinegh.com
+      - key: API_KEY
+        value: c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b
+      - key: SENDER_ID
+        value: ReekTickets
+      - key: FLASK_DEBUG
+        value: false

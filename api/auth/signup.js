@@ -17,36 +17,53 @@ async function sendOtpSms(phone, otp) {
   try {
     const cleanPhone = formatPhone(phone);
     const message = `Your ReekTickets verification code is ${otp}`;
-    const params = {
-      apikey: process.env.SMS_API_KEY || 'c6f61e914257462812deaff55c412a213cbf61a6388761016a1b2263d347948b',
-      sender: process.env.SMS_SENDER_ID || 'ReekTickets',
-      message,
-      recipients: cleanPhone
-    };
-    const url = `https://${process.env.SMS_HOST || 'api.smsonlinegh.com'}/sms/send/?${new URLSearchParams(params).toString()}`;
-    
-    console.log('[SMS] Sending to:', cleanPhone);
-    const response = await fetch(url, {
-      method: 'GET',
-      timeout: 20000
+    const pythonBackendUrl = process.env.PYTHON_SMS_BACKEND;
+
+    if (!pythonBackendUrl) {
+      throw new Error('PYTHON_SMS_BACKEND must be set in environment variables');
+    }
+
+    console.log('[SMS] Sending via Python Zenoph backend:', pythonBackendUrl);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    const response = await fetch(`${pythonBackendUrl}/api/send-sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: cleanPhone, message }),
+      signal: controller.signal
     });
-    
-    console.log('[SMS] Response status:', response.status);
-    
-    // SMSONLINEGH returns 200 with empty body on success
-    const isSuccess = response.status === 200;
-    
+    clearTimeout(timeout);
+
+    const responseText = await response.text();
+    let responseBody;
+    try {
+      responseBody = JSON.parse(responseText);
+    } catch (_err) {
+      responseBody = responseText;
+    }
+
+    console.log('[SMS] Python backend response status:', response.status, 'body:', responseBody);
+
+    if (response.status === 200 && responseBody.success) {
+      return {
+        success: true,
+        status: 200,
+        message: 'SMS queued for delivery via Python Zenoph'
+      };
+    }
+
     return {
-      success: isSuccess,
+      success: false,
       status: response.status,
-      message: isSuccess ? 'SMS queued for delivery' : `API returned ${response.status}`
+      message: responseBody.message || 'Python backend returned an error',
+      backendBody: responseBody
     };
   } catch (error) {
-    console.error('SMS error:', error.message);
+    console.error('[SMS] Error:', error.message);
     return {
       success: false,
       status: 500,
-      message: error.message
+      message: error.message.includes('PYTHON_SMS_BACKEND') ? 'SMS backend configuration missing' : error.message
     };
   }
 }
