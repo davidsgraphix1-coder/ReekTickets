@@ -152,23 +152,24 @@ export default async function handler(req, res) {
       user = created;
     }
 
-    console.log('User created/updated, sending SMS...');
-    const smsResult = await sendOtpSms(phone, otpCode);
-    if (!smsResult.success) {
-      console.error('SMS send failed:', smsResult);
-    }
+    console.log('User created/updated successfully');
+
+    // Don't send OTP automatically - admin will send manually
+    // const smsResult = await sendOtpSms(phone, otpCode);
+    // if (!smsResult.success) {
+    //   console.error('SMS send failed:', smsResult);
+    // }
 
     console.log('Signup completed successfully');
     res.status(200).json({
-      message: smsResult.success
-        ? 'Signup complete. Verification code sent via SMS.'
-        : 'Signup complete. SMS sending failed, please retry verification.',
+      message: 'Registration successful. Admin will send verification code shortly.',
       user: {
         id: user.id,
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        phone: user.phone
+        phone: user.phone,
+        isVerified: user.isVerified
       }
     });
   } catch (error) {

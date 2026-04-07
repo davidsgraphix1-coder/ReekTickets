@@ -51,17 +51,18 @@ export default function PaymentSuccess() {
       }
       const ticketLink = `${window.location.origin}/ticket/${ticket._id}?code=${ticket.smsCode}`;
       const message = `Your ReekTickets ticket is ready. Code: ${ticket.smsCode}. View at: ${ticketLink}`;
-      const response = await sendNaloSms({
-        to: phone,
-        message,
-        ticketId: ticket._id,
-        userId: ticket.user?._id,
-      });
-      setSmsStatus(response.message || 'SMS delivery attempt completed.');
+      // Don't send SMS automatically - admin will send manually
+      // const response = await sendNaloSms({
+      //   to: phone,
+      //   message,
+      //   ticketId: ticket._id,
+      //   userId: ticket.user?._id,
+      // });
+      setSmsStatus('Ticket created successfully. Admin will send access details.');
       setSmsSent(true);
     };
 
-    sendTicketSms();
+    // sendTicketSms(); // Disabled for manual admin sending
   }, [ticket, smsSent]);
 
   const copyToClipboard = (text) => {

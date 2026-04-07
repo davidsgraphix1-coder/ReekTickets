@@ -80,13 +80,26 @@ export default function Navbar({ user, onLogout }) {
 
       {/* Desktop Navigation */}
       <nav className="nav-items desktop-nav">
-        <Link className="active" to="/">Home</Link>
-        <Link to="/dashboard/organizer">Organizer Login</Link>
-        <Link to="/dashboard/vendor">Vendor Registration</Link>
-        <Link to="/login">Vendor Login</Link>
-        <Link to="/dashboard/agent">Sales Agents</Link>
-        <Link to="/dashboard/organizer">Create Event</Link>
-        <Link to="/dashboard/attendee">My Tickets</Link>
+        {menuItems.map((item) =>
+          item.type === 'button' ? (
+            <button
+              key={item.label}
+              className="nav-link nav-action"
+              type="button"
+              onClick={item.action}
+            >
+              {item.label}
+            </button>
+          ) : (
+            <Link
+              key={item.label}
+              to={item.to}
+              className="nav-link"
+            >
+              {item.label}
+            </Link>
+          )
+        )}
       </nav>
 
       {/* Desktop Search Bar */}

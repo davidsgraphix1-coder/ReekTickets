@@ -28,6 +28,8 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState([]);
   const [revenue, setRevenue] = useState(0);
   const [userActivityLogs, setUserActivityLogs] = useState([]);
+  const [pendingVerifications, setPendingVerifications] = useState([]);
+  const [pendingTickets, setPendingTickets] = useState([]);
   const [selectedUserDetails, setSelectedUserDetails] = useState(null);
 
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,12 @@ export default function AdminDashboard() {
       setTickets(t.data || []);
       setPayments(p.data || []);
       setReports(r.data || []);
+
+      // Set pending data
+      setPendingVerifications((u.data || []).filter(user => !user.isVerified));
+      setPendingTickets((t.data || [])); // All tickets are pending SMS for now
+
+      // Update stats
 
       // Update stats
       setStats({
@@ -219,6 +227,8 @@ export default function AdminDashboard() {
           {[
             { id: 'dashboard', label: 'Dashboard', icon: <FaChartPie /> },
             { id: 'users', label: 'Users', icon: <FaUsers /> },
+            { id: 'pending-verifications', label: 'Pending Verifications', icon: <FaUserPlus /> },
+            { id: 'pending-tickets', label: 'Pending Tickets', icon: <FaTicketAlt /> },
             { id: 'admins', label: 'Admins', icon: <FaUserShield /> },
             { id: 'events', label: 'Events', icon: <FaCalendarAlt /> },
             { id: 'payments', label: 'Payments', icon: <FaMoneyBillWave /> },
@@ -944,6 +954,90 @@ export default function AdminDashboard() {
                       </table>
                     </div>
                   )}
+                </section>
+              )}
+
+              {/* PENDING VERIFICATIONS TAB */}
+              {activeTab === 'pending-verifications' && (
+                <section className="section">
+                  <h2>Pending User Verifications</h2>
+                  <div className="table-container">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Phone</th>
+                          <th>Role</th>
+                          <th>Registered</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingVerifications.map(user => (
+                          <tr key={user.id}>
+                            <td>{user.fullName}</td>
+                            <td>{user.email}</td>
+                            <td>{user.phone}</td>
+                            <td><span className="badge">{user.role}</span></td>
+                            <td>{formatDate(user.createdAt)}</td>
+                            <td>
+                              <button 
+                                className="action-btn send-btn"
+                                onClick={() => runAction('/api/admin/send-otp', 'post', { userId: user.id })}
+                              >
+                                Send OTP
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              )}
+
+              {/* PENDING TICKETS TAB */}
+              {activeTab === 'pending-tickets' && (
+                <section className="section">
+                  <h2>Pending Ticket SMS</h2>
+                  <div className="table-container">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Ticket ID</th>
+                          <th>User</th>
+                          <th>Event</th>
+                          <th>Code</th>
+                          <th>Purchased</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingTickets.map(ticket => {
+                          const ticketUser = users.find(u => u.id === ticket.user || u._id === ticket.user);
+                          const ticketEvent = events.find(e => e.id === ticket.event || e._id === ticket.event);
+                          return (
+                            <tr key={ticket.id}>
+                              <td>{ticket.id}</td>
+                              <td>{ticketUser?.fullName || 'Unknown'}</td>
+                              <td>{ticketEvent?.title || 'Unknown'}</td>
+                              <td>{ticket.smsCode}</td>
+                              <td>{formatDate(ticket.createdAt)}</td>
+                              <td>
+                                <button 
+                                  className="action-btn send-btn"
+                                  onClick={() => runAction('/api/admin/send-ticket', 'post', { ticketId: ticket.id })}
+                                >
+                                  Send SMS
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </section>
               )}
 
