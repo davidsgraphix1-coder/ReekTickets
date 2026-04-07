@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -110,20 +111,24 @@ export default async function handler(req, res) {
     const hashed = await bcrypt.hash(password, 10);
 
     let user;
+    const isAdmin = role === 'admin';
+    const userRecord = {
+      fullName,
+      email: email.toLowerCase(),
+      phone,
+      password: hashed,
+      role: role || 'attendee',
+      otpCode,
+      otpExpiry,
+      isVerified: isAdmin
+    };
+
     if (existing && !existing.isVerified) {
       // Update existing unverified user
       console.log('Updating existing user...');
       const { data: updated, error: updateError } = await supabase
         .from('users')
-        .update({
-          fullName,
-          phone,
-          password: hashed,
-          role: role || 'attendee',
-          otpCode,
-          otpExpiry,
-          isVerified: false
-        })
+        .update(userRecord)
         .eq('id', existing.id)
         .select()
         .single();
@@ -134,18 +139,7 @@ export default async function handler(req, res) {
       console.log('Creating new user...');
       const { data: created, error: createError } = await supabase
         .from('users')
-        .insert([
-          {
-            fullName,
-            email: email.toLowerCase(),
-            phone,
-            password: hashed,
-            role: role || 'attendee',
-            otpCode,
-            otpExpiry,
-            isVerified: false
-          }
-        ])
+        .insert([userRecord])
         .select()
         .single();
       if (createError) throw createError;
@@ -154,15 +148,10 @@ export default async function handler(req, res) {
 
     console.log('User created/updated successfully');
 
-    // Don't send OTP automatically - admin will send manually
-    // const smsResult = await sendOtpSms(phone, otpCode);
-    // if (!smsResult.success) {
-    //   console.error('SMS send failed:', smsResult);
-    // }
-
-    console.log('Signup completed successfully');
-    res.status(200).json({
-      message: 'Registration successful. Admin will send verification code shortly.',
+    const responseBody = {
+      message: isAdmin
+        ? 'Admin account created successfully. Redirecting to dashboard.'
+        : 'Signup complete. Verification code sent via SMS.',
       user: {
         id: user.id,
         fullName: user.fullName,
@@ -171,7 +160,25 @@ export default async function handler(req, res) {
         phone: user.phone,
         isVerified: user.isVerified
       }
-    });
+    };
+
+    if (!isAdmin) {
+      console.log('Sending user OTP SMS...');
+      const smsResult = await sendOtpSms(phone, otpCode);
+      if (!smsResult.success) {
+        console.error('SMS send failed:', smsResult);
+        responseBody.message = 'Signup complete. OTP verification required, but SMS could not be sent.';
+      }
+    } else {
+      const token = jwt.sign(
+        { id: user.id, role: user.role, email: user.email },
+        process.env.JWT_SECRET || 'supersecretjwtkey',
+        { expiresIn: '7d' }
+      );
+      responseBody.token = token;
+    }
+
+    res.status(200).json(responseBody);
   } catch (error) {
     console.error('Signup error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });

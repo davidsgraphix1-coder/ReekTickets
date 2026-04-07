@@ -97,8 +97,12 @@ export default function Signup({ onLogin }) {
 
     const data = await signup(signupData);
     if (data?.user) {
-      setSmsStatus('Registration successful. Admin will send verification code shortly.');
-      // Don't navigate to verify - admin will handle
+      navigate('/verify-email', {
+        state: {
+          phone: signupData.phone,
+          method: 'sms'
+        }
+      });
       return;
     }
     setError(data.message || 'Signup failed');
