@@ -10,11 +10,16 @@ function resolveField(record, camel, snake) {
 
 function formatPhone(phone) {
   let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
+
+  // If starts with 0, replace 0 with 233
   if (cleanPhone.startsWith('0')) {
     cleanPhone = '233' + cleanPhone.substring(1);
-  } else if (!cleanPhone.startsWith('233')) {
+  }
+  // If doesn't start with 233, add 233 prefix
+  if (!cleanPhone.startsWith('233')) {
     cleanPhone = '233' + cleanPhone;
   }
+
   return cleanPhone;
 }
 
