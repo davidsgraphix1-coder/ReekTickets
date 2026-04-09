@@ -52,6 +52,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/support', require('./routes/support'));
+app.use('/support', require('./routes/support'));
 app.use('/api/sms', require('./routes/sms'));
 app.use('/api', require('./routes/extras'));
 app.use('/api/upload', require('./routes/upload'));

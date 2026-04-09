@@ -4,6 +4,10 @@ import jwt from 'jsonwebtoken';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+function resolveField(record, camel, snake) {
+  return record?.[camel] ?? record?.[snake];
+}
+
 function formatPhone(phone) {
   let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
   if (cleanPhone.startsWith('0')) {
@@ -15,58 +19,96 @@ function formatPhone(phone) {
 }
 
 async function sendOtpSms(phone, otp) {
-  try {
-    const cleanPhone = formatPhone(phone);
-    const message = `Your ReekTickets verification code is ${otp}`;
-    const pythonBackendUrl = process.env.PYTHON_SMS_BACKEND;
+  const cleanPhone = formatPhone(phone);
+  const message = `Your ReekTickets verification code is ${otp}`;
+  const pythonBackendUrl = process.env.PYTHON_SMS_BACKEND;
+  const smsApiKey = process.env.SMS_API_KEY;
+  const smsSenderId = process.env.SMS_SENDER_ID;
+  const smsHost = process.env.SMS_API_HOST || 'api.smsonlinegh.com';
 
-    if (!pythonBackendUrl) {
-      throw new Error('PYTHON_SMS_BACKEND must be set in environment variables');
-    }
+  async function tryPythonBackend() {
+    if (!pythonBackendUrl) return null;
 
-    console.log('[SMS] Sending via Python Zenoph backend:', pythonBackendUrl);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
-    const response = await fetch(`${pythonBackendUrl}/api/send-sms`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: cleanPhone, message }),
-      signal: controller.signal
-    });
-    clearTimeout(timeout);
-
-    const responseText = await response.text();
-    let responseBody;
     try {
-      responseBody = JSON.parse(responseText);
-    } catch (_err) {
-      responseBody = responseText;
+      console.log('[SMS] Sending via Python backend:', pythonBackendUrl);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25000);
+      const response = await fetch(`${pythonBackendUrl}/api/send-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanPhone, message }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+
+      const text = await response.text();
+      let body;
+      try {
+        body = JSON.parse(text);
+      } catch (_err) {
+        body = text;
+      }
+
+      if (response.ok && body?.success) {
+        return { success: true, message: 'SMS queued for delivery via Python Zenoph', backend: 'python' };
+      }
+
+      console.warn('[SMS] Python backend failed:', response.status, body);
+      return null;
+    } catch (error) {
+      console.error('[SMS] Python backend error:', error.message);
+      return null;
     }
-
-    console.log('[SMS] Python backend response status:', response.status, 'body:', responseBody);
-
-    if (response.status === 200 && responseBody.success) {
-      return {
-        success: true,
-        status: 200,
-        message: 'SMS queued for delivery via Python Zenoph'
-      };
-    }
-
-    return {
-      success: false,
-      status: response.status,
-      message: responseBody.message || 'Python backend returned an error',
-      backendBody: responseBody
-    };
-  } catch (error) {
-    console.error('[SMS] Error:', error.message);
-    return {
-      success: false,
-      status: 500,
-      message: error.message.includes('PYTHON_SMS_BACKEND') ? 'SMS backend configuration missing' : error.message
-    };
   }
+
+  async function trySmsonlinegh() {
+    if (!smsApiKey || !smsSenderId) {
+      return { success: false, message: 'SMSONLINEGH credentials are not configured' };
+    }
+
+    try {
+      console.log('[SMS] Sending via SMSONLINEGH');
+      const params = {
+        apikey: smsApiKey,
+        sender: smsSenderId,
+        message,
+        recipients: cleanPhone
+      };
+      const url = `https://${smsHost}/sms/send/?${new URLSearchParams(params).toString()}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'User-Agent': 'ReekTickets-SMS/1.0', 'Accept': 'application/json' }
+      });
+      const text = await response.text();
+      let body;
+      try {
+        body = JSON.parse(text);
+      } catch (_err) {
+        body = text;
+      }
+
+      if (response.ok) {
+        return { success: true, message: `SMS sent successfully to ${cleanPhone}`, backend: 'smsonlinegh', data: body };
+      }
+
+      console.warn('[SMS] SMSONLINEGH failed:', response.status, body);
+      return { success: false, message: 'Failed to send SMS via SMSONLINEGH', backend: 'smsonlinegh', data: body };
+    } catch (error) {
+      console.error('[SMS] SMSONLINEGH error:', error.message);
+      return { success: false, message: error.message || 'SMSONLINEGH API error', backend: 'smsonlinegh' };
+    }
+  }
+
+  const pythonResult = await tryPythonBackend();
+  if (pythonResult?.success) return pythonResult;
+  const smsResult = await trySmsonlinegh();
+  if (smsResult.success) return smsResult;
+
+  return {
+    success: false,
+    message: pythonResult?.message || smsResult?.message || 'No SMS backend configured',
+    backend: pythonResult?.backend || smsResult?.backend || 'none'
+  };
 }
 
 export default async function handler(req, res) {
@@ -88,12 +130,13 @@ export default async function handler(req, res) {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
     console.log('Supabase client created successfully');
 
-    // Check if user exists
+    // Check if user exists by email or phone
     console.log('Checking if user exists...');
+    const normalizedPhone = formatPhone(phone);
     const { data: existing, error: existingError } = await supabase
       .from('users')
       .select('*')
-      .eq('email', email.toLowerCase())
+      .or(`email.eq.${email.toLowerCase()},phone.eq.${normalizedPhone}`)
       .single();
 
     if (existingError && existingError.code !== 'PGRST116') {
@@ -101,7 +144,8 @@ export default async function handler(req, res) {
       throw existingError;
     }
 
-    if (existing && existing.isVerified) {
+    const existingVerified = existing && resolveField(existing, 'isVerified', 'is_verified');
+    if (existingVerified) {
       return res.status(409).json({ message: 'Email already registered' });
     }
 
@@ -113,17 +157,18 @@ export default async function handler(req, res) {
     let user;
     const isAdmin = role === 'admin';
     const userRecord = {
-      fullName,
+      full_name: fullName.trim(),
       email: email.toLowerCase(),
-      phone,
+      phone: normalizedPhone,
       password: hashed,
       role: role || 'attendee',
-      otpCode,
-      otpExpiry,
-      isVerified: isAdmin
+      otp_code: otpCode,
+      otp_expiry: otpExpiry,
+      is_verified: isAdmin,
+      status: isAdmin ? 'active' : 'pending'
     };
 
-    if (existing && !existing.isVerified) {
+    if (existing && !existingVerified) {
       // Update existing unverified user
       console.log('Updating existing user...');
       const { data: updated, error: updateError } = await supabase
@@ -151,14 +196,15 @@ export default async function handler(req, res) {
     const responseBody = {
       message: isAdmin
         ? 'Admin account created successfully. Redirecting to dashboard.'
-        : 'Signup complete. Verification code sent via SMS.',
+        : 'Signup complete. Verification pending, OTP verification is required.',
       user: {
         id: user.id,
-        fullName: user.fullName,
+        fullName: resolveField(user, 'fullName', 'full_name'),
         email: user.email,
         role: user.role,
         phone: user.phone,
-        isVerified: user.isVerified
+        isVerified: resolveField(user, 'isVerified', 'is_verified'),
+        status: user.status
       }
     };
 

@@ -10,7 +10,7 @@ export default function Events({ user }) {
   const [activeCategory, setActiveCategory] = useState('All');
   const [msg, setMsg] = useState('');
 
-  const categories = ['All', 'Music', 'Business', 'Sports', 'Arts', 'Tech', 'Food', 'General'];
+  const categories = ['All'];
 
   useEffect(() => {
     fetchEvents().then((data) => {

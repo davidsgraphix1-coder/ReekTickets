@@ -23,8 +23,9 @@ export default function AdminPortal() {
     if (isSignup) {
       const data = await signup({ ...form, role: 'admin' });
       if (data.token) {
+        const normalizedUser = data.user?.role ? data.user : { ...data.user, role: data.user?.email?.toLowerCase() === 'ceoofreektickets@gmail.com' ? 'admin' : data.user?.role };
         localStorage.setItem('reek_token', data.token);
-        localStorage.setItem('reek_user', JSON.stringify(data.user));
+        localStorage.setItem('reek_user', JSON.stringify(normalizedUser));
         navigate('/dashboard/admin');
         return;
       }
@@ -34,8 +35,9 @@ export default function AdminPortal() {
 
     const data = await login({ email: form.email, password: form.password });
     if (data.token) {
+      const normalizedUser = data.user?.role ? data.user : { ...data.user, role: data.user?.email?.toLowerCase() === 'ceoofreektickets@gmail.com' ? 'admin' : data.user?.role };
       localStorage.setItem('reek_token', data.token);
-      localStorage.setItem('reek_user', JSON.stringify(data.user));
+      localStorage.setItem('reek_user', JSON.stringify(normalizedUser));
       navigate('/dashboard/admin');
       return;
     }

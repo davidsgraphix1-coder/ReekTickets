@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useState } from 'react';
 import { FaPlus, FaTimes } from 'react-icons/fa';
+import API_BASE from '../../config/api';
 
 export default function EventCreation({ events, headers, onEventCreated }) {
   const [showForm, setShowForm] = useState(false);
@@ -60,7 +61,7 @@ export default function EventCreation({ events, headers, onEventCreated }) {
       form.append('ticketTypes', JSON.stringify(formData.ticketTypes));
       if (formData.banner) form.append('banner', formData.banner);
 
-      await axios.post('https://reektickets-production.up.railway.app/api/events', form, {
+      await axios.post(`${API_BASE}/events`, form, {
         headers: { ...headers, 'Content-Type': 'multipart/form-data' },
       });
 

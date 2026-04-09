@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { FaChartPie, FaCog, FaBell, FaChevronDown, FaStore, FaSmile, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
+import { FaChartPie, FaCog, FaBell, FaChevronDown, FaStore, FaSmile, FaSort, FaSortUp, FaSortDown, FaBars, FaTimes as FaClose } from 'react-icons/fa';
 import axios from 'axios';
+import API_BASE from '../config/api';
 import './VendorDashboard.css';
 
 export default function VendorDashboard() {
@@ -19,6 +20,7 @@ export default function VendorDashboard() {
   const [settingsMessage, setSettingsMessage] = useState('');
   const [reportMessage, setReportMessage] = useState('');
   const [reportStatus, setReportStatus] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${localStorage.getItem('reek_token')}`
@@ -26,7 +28,7 @@ export default function VendorDashboard() {
 
   const fetchUserData = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/auth/me', { headers });
+      const res = await axios.get(`${API_BASE}/auth/me`, { headers });
       setUser(res.data);
       setUserData({
         fullName: res.data.fullName || '',
@@ -44,7 +46,7 @@ export default function VendorDashboard() {
     try {
       setLoading(true);
       setError('');
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/vendor/applications', { headers });
+      const res = await axios.get(`${API_BASE}/vendor/applications`, { headers });
       const results = Array.isArray(res.data) ? res.data : [];
       setApplications(results);
       setError('');
@@ -80,7 +82,7 @@ export default function VendorDashboard() {
     setSettingsError('');
     setSettingsMessage('');
     try {
-      const res = await axios.patch('https://reektickets-production.up.railway.app/api/vendor/profile', userData, { headers });
+      const res = await axios.patch(`${API_BASE}/vendor/profile`, userData, { headers });
       setSettingsMessage('Profile settings updated successfully.');
       setUser(res.data);
     } catch (err) {
@@ -179,7 +181,7 @@ export default function VendorDashboard() {
     }
     setReportStatus('Sending report...');
     try {
-      await axios.post('https://reektickets-production.up.railway.app/api/report', { message: reportMessage.trim() }, { headers });
+      await axios.post(`${API_BASE}/report`, { message: reportMessage.trim() }, { headers });
       setReportMessage('');
       setReportStatus('Report submitted successfully.');
     } catch (err) {
@@ -199,7 +201,7 @@ export default function VendorDashboard() {
   return (
     <div className="vendor-dashboard">
       {/* Sidebar */}
-      <div className="vendor-sidebar">
+      <div className={`vendor-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <div className="user-avatar">
             <img src={userAvatar} alt={user?.fullName || 'Vendor'} />
@@ -211,22 +213,37 @@ export default function VendorDashboard() {
         </div>
 
         <nav className="sidebar-nav">
-          <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+          <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaChartPie /></span>
             <span className="nav-label">Dashboard</span>
           </div>
-          <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+          <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaCog /></span>
             <span className="nav-label">Settings</span>
           </div>
         </nav>
       </div>
 
+      {/* MOBILE MENU OVERLAY */}
+      {mobileMenuOpen && (
+        <div
+          className="mobile-menu-overlay"
+          onClick={() => setMobileMenuOpen(false)}
+        ></div>
+      )}
+
       {/* Main Content */}
       <div className="vendor-main">
         {/* Header */}
         <div className="vendor-header">
           <div className="header-left">
+            <button
+              className="mobile-menu-toggle"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              title="Toggle Menu"
+            >
+              {mobileMenuOpen ? <FaClose /> : <FaBars />}
+            </button>
             <h2>{greetingText}</h2>
             <p>Welcome to your vendor dashboard.</p>
           </div>

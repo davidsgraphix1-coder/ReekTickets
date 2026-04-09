@@ -6,18 +6,18 @@ The SMS system now uses a Python backend (Zenoph SDK) to send SMS via SMSONLINEG
 ## Frontend Configuration (Vercel)
 
 ### Environment Variables
-The frontend files have been updated with production URLs:
+The API routes use a server-side environment variable for the Python SMS backend URL.
 
-**`.env.production`** (for Vercel builds):
+**`.env.production`** (for Vercel builds / serverless functions):
 ```
 REACT_APP_API_BASE="https://reektickets.com/api"
-REACT_APP_PYTHON_SMS_BACKEND="https://reektickets-sms-backend-production.up.railway.app"
+PYTHON_SMS_BACKEND="https://reektickets-sms-backend-production.up.railway.app"
 ```
 
 **`.env`** (local development):
 ```
 REACT_APP_API_BASE=https://reektickets.com/api
-REACT_APP_PYTHON_SMS_BACKEND=https://reektickets-sms-backend-production.up.railway.app
+PYTHON_SMS_BACKEND=https://reektickets-sms-backend-production.up.railway.app
 ```
 
 ## Python Backend Deployment (Railway)
@@ -104,7 +104,7 @@ npm run build
 
 This will:
 - Use `.env.production` environment variables
-- Set `REACT_APP_PYTHON_SMS_BACKEND` to Railway URL
+- Set `PYTHON_SMS_BACKEND` to Railway URL
 - Build optimized production bundle
 
 ### Deploy to Vercel

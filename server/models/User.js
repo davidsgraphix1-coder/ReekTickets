@@ -8,6 +8,13 @@ const getUserByEmail = async (email) => {
 	return data || null;
 };
 
+const getUserByPhone = async (phone) => {
+	const supabase = await connectDB();
+	const { data, error } = await supabase.from('users').select('*').eq('phone', phone).single();
+	if (error && error.code !== 'PGRST116') throw error;
+	return data || null;
+};
+
 const createUser = async (userData) => {
 	const supabase = await connectDB();
 	const { data, error } = await supabase.from('users').insert(userData).select().single();
@@ -22,6 +29,13 @@ const updateUser = async (id, updates) => {
 	return data;
 };
 
+const getUserById = async (id) => {
+	const supabase = await connectDB();
+	const { data, error } = await supabase.from('users').select('*').eq('id', id).single();
+	if (error && error.code !== 'PGRST116') throw error;
+	return data || null;
+};
+
 const deleteUser = async (id) => {
 	const supabase = await connectDB();
 	const { error } = await supabase.from('users').delete().eq('id', id);
@@ -29,9 +43,19 @@ const deleteUser = async (id) => {
 	return true;
 };
 
+const getAllUsers = async () => {
+	const supabase = await connectDB();
+	const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+	if (error) throw error;
+	return data || [];
+};
+
 module.exports = {
 	getUserByEmail,
+	getUserByPhone,
 	createUser,
 	updateUser,
+	getUserById,
 	deleteUser,
+	getAllUsers,
 };

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaChartPie, FaUser, FaTicketAlt, FaPlus, FaBullhorn, FaMoneyBillWave, FaBell, FaEnvelope, FaUsers, FaStore, FaVideo, FaCog, FaChevronDown } from 'react-icons/fa';
 import axios from 'axios';
+import API_BASE from '../config/api';
 import './OrganizerDashboard.css';
 
 // Sub-components
@@ -58,13 +59,13 @@ export default function OrganizerDashboard() {
     try {
       setLoading(true);
       const [eventsRes, ticketsRes, usersRes, vendorsRes, paymentsRes, notificationsRes, messagesRes] = await Promise.all([
-        axios.get('https://reektickets-production.up.railway.app/api/events', { headers }).catch(() => ({ data: [] })),
-        axios.get('https://reektickets-production.up.railway.app/api/tickets', { headers }).catch(() => ({ data: [] })),
-        axios.get('https://reektickets-production.up.railway.app/api/users', { headers }).catch(() => ({ data: [] })),
-        axios.get('https://reektickets-production.up.railway.app/api/vendors', { headers }).catch(() => ({ data: [] })),
-        axios.get('https://reektickets-production.up.railway.app/api/payments', { headers }).catch(() => ({ data: [] })),
-        axios.get('https://reektickets-production.up.railway.app/api/notifications', { headers }).catch(() => ({ data: [] })),
-        axios.get('https://reektickets-production.up.railway.app/api/messages', { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/events`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/tickets`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/users`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/vendors`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/payments`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/notifications`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/messages`, { headers }).catch(() => ({ data: [] })),
       ]);
 
       const allEvents = eventsRes.data || [];
@@ -124,7 +125,7 @@ export default function OrganizerDashboard() {
 
     setReportStatus('Sending report...');
     try {
-      await axios.post('https://reektickets-production.up.railway.app/api/report', { message: reportMessage.trim() }, { headers });
+      await axios.post(`${API_BASE}/report`, { message: reportMessage.trim() }, { headers });
       setReportMessage('');
       setReportStatus('Report submitted successfully.');
     } catch (err) {

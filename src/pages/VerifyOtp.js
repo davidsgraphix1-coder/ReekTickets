@@ -14,7 +14,7 @@ export default function VerifyOtp({ onLogin }) {
   const [resendMessage, setResendMessage] = useState('');
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [otpSent, setOtpSent] = useState(true); // OTP was sent during signup
-  const phone = location.state?.phone || '';
+  const phone = location.state?.phone || location.state?.email || '';
 
   const handleDigitChange = (index, value) => {
     if (!/^\d?$/.test(value)) return;
@@ -72,11 +72,15 @@ export default function VerifyOtp({ onLogin }) {
     setLoading(true);
     try {
       const data = await verifyOtp({ phone: phone.trim(), otpCode });
-      if (data?.token) {
+      if (data?.token && data?.user) {
+        const normalizedUser = data.user.role ? data.user : {
+          ...data.user,
+          role: data.user.email?.toLowerCase() === 'ceoofreektickets@gmail.com' ? 'admin' : data.user.role || 'attendee'
+        };
         localStorage.setItem('reek_token', data.token);
-        localStorage.setItem('reek_user', JSON.stringify(data.user));
-        onLogin(data.user);
-        const role = data.user.role;
+        localStorage.setItem('reek_user', JSON.stringify(normalizedUser));
+        onLogin(normalizedUser);
+        const role = normalizedUser.role;
         if (role === 'admin') navigate('/dashboard/admin');
         else if (role === 'organizer') navigate('/dashboard/organizer');
         else if (role === 'vendor') navigate('/dashboard/vendor');

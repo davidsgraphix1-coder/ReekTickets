@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import ChatButton from './ChatButton';
 import ChatWindow from './ChatWindow';
 import styles from './SupportChat.module.css';
 import { FaInfoCircle, FaTicketAlt, FaCreditCard, FaUsers, FaStore, FaUserShield, FaUserCircle, FaUndo, FaExclamationTriangle } from 'react-icons/fa';
 import { socket } from '../services/socket';
+import API_BASE from '../config/api';
 
 const SUPPORT_CATEGORIES = [
   { key: 'event', label: 'Event Inquiry & Information', icon: FaInfoCircle, color: '#a855f7' },
@@ -24,6 +25,52 @@ const AUTO_REPLIES = {
   account: 'For login or signup issues, try resetting your password. If you still have trouble, contact support with your email address.'
 };
 
+const EMOJI_SET = ['😊', '👍', '🙏', '🎟️', '💬', '📎', '⚠️', '💳', '🔒', '💡', '🙌', '🎉', '✨', '🔥', '🙌🏾', '💯', '🛠️', '📌', '📝', '🚀', '👀', '💬', '🤝', '🔔', '🎫', '👍🏾', '🥳', '💥'];
+
+const createMessage = ({ sender, text = '', fileUrl = null, emoji = null }) => ({
+  id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  sender,
+  text,
+  fileUrl,
+  emoji,
+  timestamp: new Date().toISOString(),
+});
+
+const buildSupportUrl = (path) => {
+  const cleanedBase = API_BASE.replace(/\/+/g, '/').replace(/\/$/, '');
+  const cleanedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${cleanedBase}${cleanedPath}`;
+};
+
+const buildSupportFallbackUrl = (path) => {
+  const cleanedBase = API_BASE.replace(/\/api$/, '').replace(/\/+$/, '');
+  const cleanedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${cleanedBase}${cleanedPath}`;
+};
+
+const supportFetch = async (path, options) => {
+  const endpoints = [
+    buildSupportUrl(path),
+    buildSupportFallbackUrl(path),
+    `/api${path}`,
+    path,
+  ];
+  let lastError = null;
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, options);
+      if (response.status === 404 || response.status === 405) {
+        lastError = new Error(`Request failed at ${endpoint} (${response.status})`);
+        continue;
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('Support API request failed');
+};
+
 export default function SupportChat({ user }) {
   const [open, setOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -32,80 +79,175 @@ export default function SupportChat({ user }) {
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [chatError, setChatError] = useState('');
 
   const currentUser = user || (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('reek_user') || 'null') : null);
+  const authToken = typeof window !== 'undefined' ? localStorage.getItem('reek_token') : null;
+  const isAuthenticated = Boolean(currentUser && authToken);
+  const headers = useMemo(() => ({
+    'Content-Type': 'application/json',
+    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+  }), [authToken]);
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 700 : false;
-  // Use real avatar if available
   const userAvatar = currentUser?.avatarUrl || currentUser?.profilePic || 'https://i.pravatar.cc/120?img=12';
 
-  const handleSend = (msg) => {
+  const addMessage = (message) => {
+    setMessages(prev => {
+      const exists = prev.some((m) => m.id && message.id && m.id === message.id);
+      return exists ? prev : [...prev, message];
+    });
+  };
+
+  const handleSend = async (msg) => {
     if (!chatId || !msg.trim()) return;
-    const messageObj = { text: msg, timestamp: Date.now() };
-    setMessages(prev => [...prev, { sender: 'user', ...messageObj }]);
+
+    const messageObj = createMessage({ sender: 'user', text: msg.trim() });
+    addMessage(messageObj);
     setInput('');
-    socket.emit('userMessage', { chatId, message: messageObj });
-    setTyping(true);
-    // Auto-reply for certain categories
+
+    try {
+      const response = await supportFetch(`/support/chat/${chatId}/message`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ text: messageObj.text, fileUrl: messageObj.fileUrl, emoji: messageObj.emoji, id: messageObj.id }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `Failed to send support message (${response.status})`);
+      }
+      setChatError('');
+    } catch (error) {
+      console.error('Failed to send support message', error);
+      setChatError('Unable to send support message. Please try again.');
+    }
+
+    if (socket && socket.connected) {
+      socket.emit('userMessage', { chatId, message: messageObj });
+    }
+
     if (AUTO_REPLIES[selectedCategory]) {
+      setTyping(true);
       setTimeout(() => {
-        setMessages(prev => [...prev, { sender: 'admin', text: AUTO_REPLIES[selectedCategory], timestamp: Date.now() }]);
+        const autoMessage = createMessage({ sender: 'admin', text: AUTO_REPLIES[selectedCategory] });
+        addMessage(autoMessage);
         setTyping(false);
       }, 900);
     }
   };
 
-  // Handle file upload from chat
   const handleFile = async (e) => {
     const file = e.target.files[0];
     if (!file || !chatId) return;
+
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if (data.url) {
-      const messageObj = { text: '', fileUrl: data.url, timestamp: Date.now() };
-      setMessages(prev => [...prev, { sender: 'user', ...messageObj }]);
-      socket.emit('userMessage', { chatId, message: messageObj });
+    try {
+      const res = await supportFetch('/upload', { method: 'POST', body: formData });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.url) {
+        const messageObj = createMessage({ sender: 'user', text: '', fileUrl: data.url });
+        addMessage(messageObj);
+        try {
+          const messageResponse = await supportFetch(`/support/chat/${chatId}/message`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ text: messageObj.text, fileUrl: messageObj.fileUrl, emoji: messageObj.emoji, id: messageObj.id }),
+          });
+          if (!messageResponse.ok) {
+            const errorData = await messageResponse.json().catch(() => null);
+            throw new Error(errorData?.message || `Failed to send support file message (${messageResponse.status})`);
+          }
+        } catch (error) {
+          console.error('Failed to send file support message', error);
+          setChatError('Unable to attach file to support chat. Please try again.');
+        }
+
+        if (socket && socket.connected) {
+          socket.emit('userMessage', { chatId, message: messageObj });
+        }
+      } else {
+        throw new Error(data?.message || 'File upload failed');
+      }
+    } catch (error) {
+      console.error('File upload failed', error);
+      setChatError('File upload failed. Please try again.');
     }
   };
 
-  // Connect to socket and join chat room
   useEffect(() => {
-    if (!open || !selectedCategory || !currentUser) return;
-    // Fetch or create chat
-    fetch('/api/support/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser._id || currentUser.id },
-      body: JSON.stringify({ category: selectedCategory })
-    })
-      .then(res => res.json())
-      .then(chat => {
-        setChatId(chat._id);
+    if (!open || !selectedCategory || !isAuthenticated) {
+      if (open && selectedCategory && currentUser && !authToken) {
+        setChatError('Please log in to start a support chat.');
+      }
+      return;
+    }
+
+    let active = true;
+    const initChat = async () => {
+      try {
+        const response = await supportFetch('/support/chat', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ category: selectedCategory }),
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(data?.message || `Failed to start support chat (${response.status})`);
+        }
+        const chat = data;
+        if (!active) return;
+        const id = chat.id || chat._id;
+        setChatId(id);
         setMessages(chat.messages || []);
-        socket.connect();
-        socket.emit('join', chat._id);
+        if (socket && !socket.connected) {
+          socket.connect();
+          socket.once('connect', () => socket.emit('join', id));
+        } else if (socket) {
+          socket.emit('join', id);
+        }
         setConnected(true);
-      });
+        setChatError('');
+      } catch (error) {
+        console.error('Failed to initialize support chat', error);
+        setChatError(error.message || 'Unable to start support chat. Please try again.');
+      }
+    };
+
+    initChat();
+
     return () => {
-      socket.disconnect();
+      active = false;
+      if (socket) {
+        socket.off('newMessage');
+        if (socket.connected) socket.disconnect();
+      }
       setConnected(false);
     };
-  }, [open, selectedCategory, currentUser]);
+  }, [open, selectedCategory, currentUser, headers]);
 
-  // Listen for new messages
   useEffect(() => {
-    if (!connected) return;
-    socket.on('newMessage', msg => {
-      setMessages(m => [...m, msg]);
+    if (!connected || !chatId) return;
+
+    const handleNewMessage = (msg) => {
+      if (!msg || !msg.id) {
+        addMessage({ ...msg, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` });
+      } else {
+        addMessage(msg);
+      }
       setTyping(false);
-    });
-    return () => {
-      socket.off('newMessage');
     };
-  }, [connected]);
+
+    socket.on('newMessage', handleNewMessage);
+    return () => {
+      socket.off('newMessage', handleNewMessage);
+    };
+  }, [connected, chatId]);
+
+  const handleEmojiSelect = (emoji) => {
+    setInput((prev) => `${prev || ''}${emoji}`);
+    setEmojiOpen(false);
+  };
 
   return (
     <>
@@ -118,7 +260,7 @@ export default function SupportChat({ user }) {
           <div className={isMobile ? styles.mobilePanel : styles.panel}>
             <button
               className={styles.closeBtn}
-              onClick={e => {
+              onClick={(e) => {
                 e.stopPropagation();
                 setOpen(false);
               }}
@@ -127,7 +269,6 @@ export default function SupportChat({ user }) {
               style={{ zIndex: 10000 }}
             >×</button>
             <div className={styles.panelContent}>
-              {/* Top Section */}
               <div className={styles.topSection}>
                 <div className={styles.bannerBg}>
                   <div className={styles.gradientOverlay}></div>
@@ -141,7 +282,7 @@ export default function SupportChat({ user }) {
                   </div>
                 </div>
               </div>
-              {!currentUser ? (
+              {!isAuthenticated ? (
                 <div className={styles.authNotice}>
                   <p>Please log in to start a support chat. Your account information is required to continue.</p>
                 </div>
@@ -150,14 +291,17 @@ export default function SupportChat({ user }) {
                   <div className={styles.categoriesSection}>
                     <h4 className={styles.categoriesTitle}>How can we help?</h4>
                     <div className={styles.categoriesGrid}>
-                      {SUPPORT_CATEGORIES.map(cat => {
+                      {SUPPORT_CATEGORIES.map((cat) => {
                         const Icon = cat.icon;
                         return (
                           <button
                             key={cat.key}
-                            className={styles.categoryBtn + (selectedCategory === cat.key ? ' ' + styles.selected : '')}
+                            className={styles.categoryBtn + (selectedCategory === cat.key ? ` ${styles.selected}` : '')}
                             style={{ '--cat-color': cat.color }}
-                            onClick={() => setSelectedCategory(cat.key)}
+                            onClick={() => {
+                              setSelectedCategory(cat.key);
+                              setEmojiOpen(false);
+                            }}
                             aria-label={cat.label}
                           >
                             <span className={styles.categoryIcon} style={{ background: cat.color }}>
@@ -171,12 +315,17 @@ export default function SupportChat({ user }) {
                   </div>
                   {selectedCategory && (
                     <div className={styles.chatSection}>
+                      {chatError && <div className={styles.errorNotice}>{chatError}</div>}
                       <ChatWindow
                         messages={messages}
                         onSend={handleSend}
                         input={input}
                         setInput={setInput}
                         onFile={handleFile}
+                        onEmojiToggle={() => setEmojiOpen((prev) => !prev)}
+                        emojiOpen={emojiOpen}
+                        emojiOptions={EMOJI_SET}
+                        onEmojiSelect={handleEmojiSelect}
                         typing={typing}
                         disabled={false}
                       />

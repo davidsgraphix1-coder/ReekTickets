@@ -2,4 +2,3 @@ Flask==2.3.3
 Flask-Cors==1.0.0
 python-dotenv==1.0.1
 gunicorn==21.2.0
--e ./zenoph-sdk

@@ -1,5 +1,5 @@
 const { Server } = require('socket.io');
-const SupportChat = require('../models/SupportChat');
+const { getSupportChatById, updateSupportChat } = require('../models/SupportChat');
 
 let io;
 
@@ -15,10 +15,11 @@ function initSocket(server) {
 
     socket.on('userMessage', async ({ chatId, message }) => {
       try {
-        const chat = await SupportChat.findById(chatId);
+        const chat = await getSupportChatById(chatId);
         if (chat) {
-          chat.messages.push({ sender: 'user', text: message.text, fileUrl: message.fileUrl, timestamp: message.timestamp });
-          await chat.save();
+          const messages = Array.isArray(chat.messages) ? chat.messages : [];
+          messages.push({ sender: 'user', text: message.text || '', fileUrl: message.fileUrl || null, emoji: message.emoji || null, timestamp: message.timestamp || new Date().toISOString() });
+          await updateSupportChat(chat.id, { messages, updatedAt: new Date().toISOString() });
         }
       } catch (error) {
         console.error('Socket userMessage save error:', error);
@@ -28,10 +29,11 @@ function initSocket(server) {
 
     socket.on('adminMessage', async ({ chatId, message }) => {
       try {
-        const chat = await SupportChat.findById(chatId);
+        const chat = await getSupportChatById(chatId);
         if (chat) {
-          chat.messages.push({ sender: 'admin', text: message.text, fileUrl: message.fileUrl, timestamp: message.timestamp });
-          await chat.save();
+          const messages = Array.isArray(chat.messages) ? chat.messages : [];
+          messages.push({ sender: 'admin', text: message.text || '', fileUrl: message.fileUrl || null, emoji: message.emoji || null, timestamp: message.timestamp || new Date().toISOString() });
+          await updateSupportChat(chat.id, { messages, updatedAt: new Date().toISOString() });
         }
       } catch (error) {
         console.error('Socket adminMessage save error:', error);

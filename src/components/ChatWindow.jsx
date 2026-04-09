@@ -8,6 +8,10 @@ export default function ChatWindow({
   input,
   setInput,
   onFile,
+  onEmojiToggle,
+  emojiOpen,
+  emojiOptions = [],
+  onEmojiSelect,
   typing,
   disabled
 }) {
@@ -24,10 +28,13 @@ export default function ChatWindow({
       <div className={styles.messages}>
         {messages.map((msg, i) => (
           <div
-            key={i}
+            key={msg.id || i}
             className={msg.sender === 'user' ? styles.userMsg : styles.adminMsg}
           >
-            <div className={styles.bubble}>{msg.text}</div>
+            <div className={styles.bubble}>
+              {msg.text}
+              {msg.emoji && <span style={{ marginLeft: 6 }}>{msg.emoji}</span>}
+            </div>
             {msg.fileUrl && (
               <div className={styles.filePreview}>
                 <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer">
@@ -58,12 +65,28 @@ export default function ChatWindow({
           if (input.trim()) onSend(input);
         }}
       >
-        <button type="button" className={styles.emojiBtn} tabIndex={-1} title="Emoji" disabled={disabled}>
-          <FaSmile />
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button type="button" className={styles.emojiBtn} onClick={onEmojiToggle} title="Emoji" disabled={disabled}>
+            <FaSmile />
+          </button>
+          {emojiOpen && (
+            <div className={styles.emojiPicker}>
+              {emojiOptions.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  className={styles.emojiOption}
+                  onClick={() => onEmojiSelect(emoji)}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button type="button" className={styles.fileBtn} tabIndex={-1} title="Attach file" disabled={disabled}>
           <FaPaperclip />
-          <input type="file" className={styles.fileInput} onChange={onFile} disabled={disabled} />
+          <input type="file" accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className={styles.fileInput} onChange={onFile} disabled={disabled} />
         </button>
         <input
           className={styles.input}

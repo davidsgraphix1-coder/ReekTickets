@@ -90,12 +90,14 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (user.isVerified) {
+    const isVerified = user.isVerified ?? user.is_verified;
+    const otpCode = user.otpCode ?? user.otp_code;
+    if (isVerified) {
       return res.status(400).json({ message: 'User already verified' });
     }
 
     // Send OTP
-    const smsResult = await sendOtpSms(user.phone, user.otpCode);
+    const smsResult = await sendOtpSms(user.phone, otpCode);
     if (!smsResult.success) {
       return res.status(500).json({ message: 'Failed to send OTP SMS' });
     }

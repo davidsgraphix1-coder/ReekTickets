@@ -25,10 +25,11 @@ export default function Login({ onLogin }) {
       : { phone: form.identifier, password: form.password };
     const data = await login(loginData);
     if (data?.token) {
-        localStorage.setItem('reek_token', data.token);
-      localStorage.setItem('reek_user', JSON.stringify(data.user));
-      onLogin(data.user);
-      const role = data.user.role;
+      const normalizedUser = data.user?.role ? data.user : { ...data.user, role: data.user?.email?.toLowerCase() === 'ceoofreektickets@gmail.com' ? 'admin' : data.user?.role };
+      localStorage.setItem('reek_token', data.token);
+      localStorage.setItem('reek_user', JSON.stringify(normalizedUser));
+      onLogin(normalizedUser);
+      const role = normalizedUser.role;
       if (role === 'admin') navigate('/dashboard/admin');
       else if (role === 'organizer') navigate('/dashboard/organizer');
       else if (role === 'vendor') navigate('/dashboard/vendor');

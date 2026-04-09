@@ -20,10 +20,10 @@ if API_KEY is None or len(API_KEY.strip()) == 0:
 try:
     from Zenoph.Notify.Request.AuthRequest import AuthRequest
     from Zenoph.Notify.Request.SMSRequest import SMSRequest
+    ZENOPH_AVAILABLE = True
 except ImportError as e:
-    print(f"ERROR: Failed to import Zenoph SDK: {e}", file=sys.stderr)
-    print(f"Python path: {sys.path}", file=sys.stderr)
-    raise
+    print(f"WARNING: Failed to import Zenoph SDK: {e}", file=sys.stderr)
+    ZENOPH_AVAILABLE = False
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -59,6 +59,9 @@ def create_auth_profile():
 def send_sms():
     """Send SMS via Zenoph SDK"""
     try:
+        if not ZENOPH_AVAILABLE:
+            return jsonify({"success": False, "error": "Zenoph SDK not available"}), 500
+
         data = request.get_json(force=True)
 
         phone = data.get("phone")
@@ -116,7 +119,8 @@ def api_health():
         "status": "healthy",
         "service": "SMS Backend",
         "host": API_HOST,
-        "sender_id": SENDER_ID
+        "sender_id": SENDER_ID,
+        "zenoph_available": ZENOPH_AVAILABLE
     }), 200
 
 

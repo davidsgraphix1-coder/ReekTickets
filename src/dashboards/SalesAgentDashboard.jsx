@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { FaChartPie, FaMoneyBillWave, FaLink, FaDollarSign, FaMedal, FaBell, FaCog, FaChevronDown, FaUserCircle, FaTicketAlt, FaCalendarAlt, FaClock, FaChartLine, FaMousePointer, FaShareAlt, FaFilePdf, FaClipboard, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
+import { FaChartPie, FaMoneyBillWave, FaLink, FaDollarSign, FaMedal, FaBell, FaCog, FaChevronDown, FaUserCircle, FaTicketAlt, FaCalendarAlt, FaClock, FaChartLine, FaMousePointer, FaShareAlt, FaFilePdf, FaClipboard, FaSort, FaSortUp, FaSortDown, FaBars, FaTimes as FaClose } from 'react-icons/fa';
 import axios from 'axios';
+import API_BASE from '../config/api';
 import { withdrawFunds } from '../services/api';
 import './SalesAgentDashboard.css';
 
@@ -33,6 +34,7 @@ export default function SalesAgentDashboard() {
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsError, setSettingsError] = useState('');
   const [settingsMessage, setSettingsMessage] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${localStorage.getItem('reek_token')}`
@@ -40,7 +42,7 @@ export default function SalesAgentDashboard() {
 
   const fetchUserData = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/auth/me', { headers });
+      const res = await axios.get(`${API_BASE}/auth/me`, { headers });
       setUser(res.data);
     } catch (err) {
       console.error('Failed to fetch user data:', err);
@@ -50,7 +52,7 @@ export default function SalesAgentDashboard() {
 
   const fetchAgentProfile = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/agent/profile', { headers });
+      const res = await axios.get(`${API_BASE}/agent/profile`, { headers });
       setAgentProfile(res.data);
     } catch (err) {
       console.error('Failed to fetch agent profile:', err);
@@ -60,7 +62,7 @@ export default function SalesAgentDashboard() {
 
   const fetchSales = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/agent/sales-detailed', { headers });
+      const res = await axios.get(`${API_BASE}/agent/sales-detailed`, { headers });
       setSales(res.data || []);
     } catch (err) {
       console.error('Failed to fetch sales:', err);
@@ -70,7 +72,7 @@ export default function SalesAgentDashboard() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/agent/stats', { headers });
+      const res = await axios.get(`${API_BASE}/agent/stats`, { headers });
       setStats(res.data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
@@ -79,7 +81,7 @@ export default function SalesAgentDashboard() {
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/agent/leaderboard', { headers });
+      const res = await axios.get(`${API_BASE}/agent/leaderboard`, { headers });
       setLeaderboard(res.data || []);
     } catch (err) {
       console.error('Failed to fetch leaderboard:', err);
@@ -88,7 +90,7 @@ export default function SalesAgentDashboard() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/agent/notifications', { headers });
+      const res = await axios.get(`${API_BASE}/agent/notifications`, { headers });
       setNotifications(res.data || []);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
@@ -129,7 +131,7 @@ export default function SalesAgentDashboard() {
     setSettingsError('');
     setSettingsMessage('');
     try {
-      const res = await axios.patch('https://reektickets-production.up.railway.app/api/agent/profile', agentProfile, { headers });
+      const res = await axios.patch(`${API_BASE}/agent/profile`, agentProfile, { headers });
       setSettingsMessage('Profile settings updated successfully.');
       setAgentProfile(res.data);
     } catch (err) {
@@ -161,7 +163,7 @@ export default function SalesAgentDashboard() {
 
   const generateReferralLink = async (eventId) => {
     try {
-      const res = await axios.post('https://reektickets-production.up.railway.app/api/agent/referral-link', { eventId }, { headers });
+      const res = await axios.post(`${API_BASE}/agent/referral-link`, { eventId }, { headers });
       const newLink = {
         eventId,
         eventName: 'Event Name', // This would come from the event data
@@ -270,7 +272,7 @@ export default function SalesAgentDashboard() {
     }
     setReportStatus('Sending report...');
     try {
-      await axios.post('https://reektickets-production.up.railway.app/api/report', { message: reportMessage.trim() }, { headers });
+      await axios.post(`${API_BASE}/report`, { message: reportMessage.trim() }, { headers });
       setReportMessage('');
       setReportStatus('Report sent successfully.');
     } catch (err) {
@@ -299,7 +301,7 @@ export default function SalesAgentDashboard() {
   return (
     <div className="sales-agent-dashboard">
       {/* Sidebar */}
-      <div className="agent-sidebar">
+      <div className={`agent-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <div className="user-avatar">
             <img src={userAvatar} alt={user?.fullName || 'Agent'} />
@@ -311,42 +313,57 @@ export default function SalesAgentDashboard() {
         </div>
 
         <nav className="sidebar-nav">
-          <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+          <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaChartPie /></span>
             <span className="nav-label">Dashboard</span>
           </div>
-          <div className={`nav-item ${activeTab === 'sales' ? 'active' : ''}`} onClick={() => setActiveTab('sales')}>
+          <div className={`nav-item ${activeTab === 'sales' ? 'active' : ''}`} onClick={() => { setActiveTab('sales'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaMoneyBillWave /></span>
             <span className="nav-label">My Sales</span>
           </div>
-          <div className={`nav-item ${activeTab === 'referrals' ? 'active' : ''}`} onClick={() => setActiveTab('referrals')}>
+          <div className={`nav-item ${activeTab === 'referrals' ? 'active' : ''}`} onClick={() => { setActiveTab('referrals'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaLink /></span>
             <span className="nav-label">Referral Links</span>
           </div>
-          <div className={`nav-item ${activeTab === 'earnings' ? 'active' : ''}`} onClick={() => setActiveTab('earnings')}>
+          <div className={`nav-item ${activeTab === 'earnings' ? 'active' : ''}`} onClick={() => { setActiveTab('earnings'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaDollarSign /></span>
             <span className="nav-label">Earnings</span>
           </div>
-          <div className={`nav-item ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('leaderboard')}>
+          <div className={`nav-item ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => { setActiveTab('leaderboard'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaMedal /></span>
             <span className="nav-label">Leaderboard</span>
           </div>
-          <div className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>
+          <div className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => { setActiveTab('notifications'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaBell /></span>
             <span className="nav-label">Notifications</span>
           </div>
-          <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+          <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaCog /></span>
             <span className="nav-label">Settings</span>
           </div>
         </nav>
       </div>
 
+      {/* MOBILE MENU OVERLAY */}
+      {mobileMenuOpen && (
+        <div
+          className="mobile-menu-overlay"
+          onClick={() => setMobileMenuOpen(false)}
+        ></div>
+      )}
+
       {/* Main Content */}
       <div className="agent-main">
         {/* Header */}
         <div className="agent-header">
           <div className="header-left">
+            <button
+              className="mobile-menu-toggle"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              title="Toggle Menu"
+            >
+              {mobileMenuOpen ? <FaClose /> : <FaBars />}
+            </button>
             <h1 className="header-title">SALES AGENT DASHBOARD</h1>
           </div>
           <div className="header-left">

@@ -23,7 +23,8 @@ export default async function handler(req, res) {
     if (userError || !user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-    if (!user.isVerified) {
+    const isVerified = user.isVerified ?? user.is_verified;
+    if (!isVerified) {
       return res.status(403).json({ message: 'Account not verified. Please verify your account.' });
     }
 
@@ -45,7 +46,7 @@ export default async function handler(req, res) {
       token,
       user: {
         id: user.id,
-        fullName: user.fullName,
+        fullName: user.fullName ?? user.full_name,
         email: user.email,
         role: user.role,
         phone: user.phone

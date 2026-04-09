@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { FaChartPie, FaTicketAlt, FaClock, FaCalendarAlt, FaRegCalendarAlt, FaHeart, FaRegHeart, FaBell, FaCog, FaRegFileAlt, FaChevronDown, FaSun, FaMoon, FaMapMarkerAlt, FaShareAlt, FaCopy, FaExternalLinkAlt, FaFilePdf, FaQrcode, FaSort, FaSortUp, FaSortDown, FaTimes } from 'react-icons/fa';
+import { FaChartPie, FaTicketAlt, FaClock, FaCalendarAlt, FaRegCalendarAlt, FaHeart, FaRegHeart, FaBell, FaCog, FaRegFileAlt, FaChevronDown, FaSun, FaMoon, FaMapMarkerAlt, FaShareAlt, FaCopy, FaExternalLinkAlt, FaFilePdf, FaQrcode, FaSort, FaSortUp, FaSortDown, FaTimes, FaBars, FaTimes as FaClose } from 'react-icons/fa';
 import axios from 'axios';
+import API_BASE from '../config/api';
 import './AttendeeDashboard.css';
 
 export default function AttendeeDashboard() {
@@ -14,6 +15,7 @@ export default function AttendeeDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
@@ -29,7 +31,7 @@ export default function AttendeeDashboard() {
 
   const fetchUserData = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/auth/me', { headers });
+      const res = await axios.get(`${API_BASE}/auth/me`, { headers });
       setUser(res.data);
     } catch (err) {
       console.error('Failed to fetch user data:', err);
@@ -39,7 +41,7 @@ export default function AttendeeDashboard() {
 
   const fetchTickets = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/tickets', { headers });
+      const res = await axios.get(`${API_BASE}/tickets`, { headers });
       setTickets(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to fetch tickets:', err);
@@ -49,7 +51,7 @@ export default function AttendeeDashboard() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const res = await axios.get('https://reektickets-production.up.railway.app/api/notifications', { headers });
+      const res = await axios.get(`${API_BASE}/notifications`, { headers });
       setNotifications(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
@@ -168,7 +170,7 @@ export default function AttendeeDashboard() {
     }
     setReportStatus('Sending report...');
     try {
-      await axios.post('https://reektickets-production.up.railway.app/api/report', { message: reportMessage.trim() }, { headers });
+      await axios.post(`${API_BASE}/report`, { message: reportMessage.trim() }, { headers });
       setReportMessage('');
       setReportStatus('Report submitted successfully.');
     } catch (err) {
@@ -188,7 +190,7 @@ export default function AttendeeDashboard() {
   return (
     <div className={`attendee-dashboard ${darkMode ? 'dark-mode' : ''}`}>
       {/* Sidebar */}
-      <div className="attendee-sidebar">
+      <div className={`attendee-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <div className="user-avatar">
             <img src={userAvatar} alt={user?.fullName} />
@@ -200,35 +202,35 @@ export default function AttendeeDashboard() {
         </div>
 
         <nav className="sidebar-nav">
-          <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+          <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaChartPie /></span>
             <span className="nav-label">Dashboard</span>
           </div>
-          <div className={`nav-item ${activeTab === 'tickets' ? 'active' : ''}`} onClick={() => setActiveTab('tickets')}>
+          <div className={`nav-item ${activeTab === 'tickets' ? 'active' : ''}`} onClick={() => { setActiveTab('tickets'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaTicketAlt /></span>
             <span className="nav-label">My Tickets</span>
           </div>
-          <div className={`nav-item ${activeTab === 'upcoming' ? 'active' : ''}`} onClick={() => setActiveTab('upcoming')}>
+          <div className={`nav-item ${activeTab === 'upcoming' ? 'active' : ''}`} onClick={() => { setActiveTab('upcoming'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaClock /></span>
             <span className="nav-label">Upcoming Events</span>
           </div>
-          <div className={`nav-item ${activeTab === 'past' ? 'active' : ''}`} onClick={() => setActiveTab('past')}>
+          <div className={`nav-item ${activeTab === 'past' ? 'active' : ''}`} onClick={() => { setActiveTab('past'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaRegCalendarAlt /></span>
             <span className="nav-label">Past Events</span>
           </div>
-          <div className={`nav-item ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => setActiveTab('saved')}>
+          <div className={`nav-item ${activeTab === 'saved' ? 'active' : ''}`} onClick={() => { setActiveTab('saved'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaHeart /></span>
             <span className="nav-label">Saved Events</span>
           </div>
-          <div className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>
+          <div className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => { setActiveTab('notifications'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaBell /></span>
             <span className="nav-label">Notifications</span>
           </div>
-          <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+          <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaCog /></span>
             <span className="nav-label">Settings</span>
           </div>
-          <div className={`nav-item ${activeTab === 'report' ? 'active' : ''}`} onClick={() => setActiveTab('report')}>
+          <div className={`nav-item ${activeTab === 'report' ? 'active' : ''}`} onClick={() => { setActiveTab('report'); setMobileMenuOpen(false); }}>
             <span className="nav-icon"><FaRegFileAlt /></span>
             <span className="nav-label">Report</span>
           </div>
@@ -241,11 +243,26 @@ export default function AttendeeDashboard() {
         </div>
       </div>
 
+      {/* MOBILE MENU OVERLAY */}
+      {mobileMenuOpen && (
+        <div
+          className="mobile-menu-overlay"
+          onClick={() => setMobileMenuOpen(false)}
+        ></div>
+      )}
+
       {/* Main Content */}
       <div className="attendee-main">
         {/* Header */}
         <div className="attendee-header">
           <div className="header-left">
+            <button
+              className="mobile-menu-toggle"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              title="Toggle Menu"
+            >
+              {mobileMenuOpen ? <FaClose /> : <FaBars />}
+            </button>
             <h1 className="header-title">EVENT ATTENDEE PORTAL</h1>
             <p className="dashboard-greeting">{greetingText}</p>
           </div>

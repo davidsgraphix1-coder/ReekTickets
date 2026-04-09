@@ -57,6 +57,7 @@ try {
   app.use('/events', require('../server/routes/events'));
   app.use('/payments', require('../server/routes/payments'));
   app.use('/support', require('../server/routes/support'));
+  app.use('/api/support', require('../server/routes/support'));
   const extrasRouter = require('../server/routes/extras');
   app.use('/', extrasRouter);
   app.use('/upload', require('../server/routes/upload'));

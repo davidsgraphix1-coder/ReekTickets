@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import axios from 'axios';
+import API_BASE from '../../config/api';
 
 export default function ComplementaryTickets({ tickets, events, headers, onRefresh }) {
   const [showForm, setShowForm] = useState(false);
@@ -43,7 +44,7 @@ export default function ComplementaryTickets({ tickets, events, headers, onRefre
         recipientPhone: formData.recipientPhone,
       };
 
-      await axios.post('https://reektickets-production.up.railway.app/api/tickets/complimentary', ticketData, { headers });
+      await axios.post(`${API_BASE}/tickets/complimentary`, ticketData, { headers });
 
       setFormData({
         eventId: '',

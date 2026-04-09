@@ -4,21 +4,12 @@ const jwt = require('jsonwebtoken');
 const { sendEmail } = require('../utils/email');
 const { connectDB } = require('../config/db');
 const { sendOTP } = require('../services/smsService');
-const { getUserByEmail, updateUser, getUserById } = require('../models/User');
+const auth = require('../middleware/auth');
+const { getUserByEmail, getUserByPhone, updateUser, getUserById, createUser } = require('../models/User');
 
 const router = express.Router();
 
 const useSupabase = process.env.DB_PROVIDER === 'supabase';
-
-const createUser = async (data) => {
-  if (useSupabase) {
-    const supabase = await connectDB();
-    const { data: created, error } = await supabase.from('users').insert(data).select().single();
-    if (error) throw error;
-    return created;
-  }
-  return null;
-};
 
 function sendOtpSms(phone, otpCode) {
   return new Promise(async (resolve, reject) => {
@@ -62,22 +53,23 @@ router.post('/signup', async (req, res) => {
     const allowedRoles = ['attendee', 'organizer', 'vendor', 'admin', 'gate'];
     const safeRole = allowedRoles.includes(role) ? role : 'attendee';
     const userData = {
-      fullName,
-      firstName,
-      lastName,
+      full_name: fullName,
+      first_name: firstName,
+      last_name: lastName,
       email: email.toLowerCase(),
       phone,
       password: hashed,
       role: safeRole,
-      businessName,
-      contactNumber,
-      businessPartners: businessPartners || [],
+      business_name: businessName,
+      contact_number: contactNumber,
+      business_partners: businessPartners || [],
       business_details: business_details || { country: 'Ghana' },
-      termsAccepted: termsAccepted || false,
-      otpCode,
-      otpExpiry,
-      isVerified: false,
-      createdAt: new Date(),
+      terms_accepted: termsAccepted || false,
+      otp_code: otpCode,
+      otp_expiry: otpExpiry.toISOString(),
+      is_verified: false,
+      status: 'pending',
+      created_at: new Date().toISOString(),
     };
 
     let user;
@@ -87,20 +79,21 @@ router.post('/signup', async (req, res) => {
         return res.status(409).json({ message: 'Email already registered' });
       }
       const updates = {
-        fullName,
-        firstName,
-        lastName,
+        full_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
         phone,
         password: hashed,
         role: safeRole,
-        businessName,
-        contactNumber,
-        businessPartners: businessPartners || [],
+        business_name: businessName,
+        contact_number: contactNumber,
+        business_partners: businessPartners || [],
         business_details: business_details || { country: 'Ghana' },
-        termsAccepted: termsAccepted || false,
-        otpCode,
-        otpExpiry,
-        isVerified: false,
+        terms_accepted: termsAccepted || false,
+        otp_code: otpCode,
+        otp_expiry: otpExpiry.toISOString(),
+        is_verified: false,
+        status: 'pending',
       };
       console.log('Updating existing user:', updates);
       user = await updateUser(existing.id || existing._id, updates);
@@ -110,17 +103,10 @@ router.post('/signup', async (req, res) => {
       user = await createUser(userData);
       console.log('Created user:', user);
     }
-    // Send OTP via SMS using Python handler
-    try {
-      await sendOtpSms(phone, otpCode);
-      console.log('OTP SMS sent to', phone);
-    } catch (smsError) {
-      console.error('SMS sending error:', smsError);
-      // Optionally, you can return an error or proceed
-    }
+    
     const responseData = {
-      message: 'Signup complete. Verification code sent via SMS.',
-      user: { id: user.id || user._id, fullName: user.fullName, email: user.email, role: user.role, phone: user.phone }
+      message: 'Signup complete. User created as pending verification.',
+      user: { id: user.id || user._id, fullName: user.full_name, email: user.email, role: user.role, phone: user.phone }
     };
     console.log('Signup response:', responseData);
     return res.json(responseData);
@@ -155,10 +141,10 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-    if (user.isVerified === false) return res.status(403).json({ message: 'Account not verified. Please verify your email.' });
+    if (user.is_verified === false) return res.status(403).json({ message: 'Account not verified. Please verify your email.' });
 
     // Check if account is locked
-    if (user.lockUntil && user.lockUntil > Date.now()) {
+    if (user.lock_until && user.lock_until > Date.now()) {
       return res.status(423).json({ message: 'Account temporarily locked due to too many failed attempts' });
     }
 
@@ -168,8 +154,8 @@ router.post('/login', async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
       // Increment failed attempts
-      const failedAttempts = (user.failedAttempts || 0) + 1;
-      const lockUntil = failedAttempts >= 5 ? Date.now() + 2 * 60 * 60 * 1000 : user.lockUntil;
+      const failedAttempts = (user.failed_attempts || 0) + 1;
+      const lockUntil = failedAttempts >= 5 ? Date.now() + 2 * 60 * 60 * 1000 : user.lock_until;
 
       if (useSupabase) {
         await updateUser(user, { failedAttempts, lastFailedAttempt: new Date(), lockUntil });
@@ -204,28 +190,95 @@ router.post('/login', async (req, res) => {
 router.post('/verify-otp', async (req, res) => {
   try {
     const { email, phone, otpCode } = req.body;
-    if (!email || !otpCode) return res.status(400).json({ message: 'Email and verification code are required' });
-
-    const user = await getUserByEmail(email);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    if (user.isVerified) return res.status(400).json({ message: 'User already verified' });
-    if (user.otpCode !== otpCode) return res.status(400).json({ message: 'Invalid verification code' });
-    if (!user.otpExpiry || new Date(user.otpExpiry) < new Date()) return res.status(400).json({ message: 'Verification code has expired' });
-
-    const updatePayload = { isVerified: true, otpCode: null, otpExpiry: null };
-    if (useSupabase) {
-      await updateUser(user, updatePayload);
-    } else {
-      user.isVerified = true;
-      user.otpCode = undefined;
-      user.otpExpiry = undefined;
-      await user.save();
+    
+    if (!otpCode || (!email && !phone)) {
+      return res.status(400).json({ message: 'Email or phone and verification code are required' });
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role, email: user.email }, process.env.JWT_SECRET || 'supersecretjwtkey', { expiresIn: '7d' });
-    return res.json({ token, user: { id: user._id, fullName: user.fullName, email: user.email, role: user.role, phone: user.phone } });
+    // Trim the OTP code to remove any whitespace
+    const trimmedOtpCode = String(otpCode).trim();
+    
+    let user = null;
+    if (email) {
+      user = await getUserByEmail(email);
+    }
+    if (!user && phone) {
+      user = await getUserByPhone(phone);
+    }
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'User already verified' });
+    }
+    
+    // Compare OTP codes as strings, both trimmed
+    const storedOtpCode = String(user.otp_code || '').trim();
+    
+    if (storedOtpCode !== trimmedOtpCode) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+    
+    // Check if OTP has expired
+    if (!user.otp_expiry) {
+      return res.status(400).json({ message: 'Verification code not available' });
+    }
+    
+    const otpExpiryTime = new Date(user.otp_expiry);
+    if (otpExpiryTime < new Date()) {
+      return res.status(400).json({ message: 'Verification code has expired' });
+    }
+
+    // Mark user as verified and clear OTP fields
+    const updatePayload = { is_verified: true, otp_code: null, otp_expiry: null };
+    await updateUser(user.id || user._id, updatePayload);
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id || user._id, role: user.role, email: user.email }, 
+      process.env.JWT_SECRET || 'supersecretjwtkey', 
+      { expiresIn: '7d' }
+    );
+    
+    return res.json({ 
+      token, 
+      user: { 
+        id: user.id || user._id, 
+        fullName: user.full_name, 
+        email: user.email, 
+        role: user.role, 
+        phone: user.phone 
+      } 
+    });
   } catch (error) {
-    console.error(error);
+    console.error('Verify OTP error:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await getUserById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    return res.json(user);
+  } catch (error) {
+    console.error('Fetch current user error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.patch('/me/avatar', auth, async (req, res) => {
+  try {
+    const { avatarUrl } = req.body;
+    if (!avatarUrl) return res.status(400).json({ message: 'Avatar URL is required' });
+    const user = await getUserById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const updated = await updateUser(user.id, { avatarUrl });
+    return res.json(updated);
+  } catch (error) {
+    console.error('Update avatar error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 });

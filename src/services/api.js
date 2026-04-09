@@ -1,10 +1,4 @@
-const normalizeApiUrl = (url) => {
-  if (!url) return url;
-  return url.endsWith('/api') ? url : `${url.replace(/\/+$/, '')}/api`;
-};
-
-const defaultApiOrigin = typeof window !== 'undefined' && window.location ? `${window.location.origin}/api` : '';
-const API_BASE = normalizeApiUrl(process.env.REACT_APP_API_BASE) || defaultApiOrigin;
+import API_BASE from '../config/api';
 
 const safeJson = async (res) => {
   try {

@@ -23,3 +23,14 @@ CREATE TABLE users (
   terms_accepted BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Create support_chats table
+CREATE TABLE support_chats (
+  id SERIAL PRIMARY KEY,
+  userId INTEGER NOT NULL REFERENCES users(id),
+  category TEXT,
+  messages JSONB DEFAULT '[]'::jsonb,
+  status TEXT DEFAULT 'open',
+  createdAt TIMESTAMP DEFAULT NOW(),
+  updatedAt TIMESTAMP DEFAULT NOW()
+);

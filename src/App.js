@@ -38,12 +38,27 @@ import SupportChat from './components/SupportChat';
 import SmsTest from './pages/SmsTest';
 
 function AppContent() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(undefined);
+  const [authChecked, setAuthChecked] = useState(false);
   const location = useLocation();
+
+  const normalizeUserRole = (userObj) => {
+    if (!userObj) return userObj;
+    const email = userObj.email?.toLowerCase();
+    if (!userObj.role && email === 'ceoofreektickets@gmail.com') {
+      return { ...userObj, role: 'admin' };
+    }
+    return userObj;
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem('reek_user');
-    if (saved) setUser(JSON.parse(saved));
+    if (saved) {
+      setUser(normalizeUserRole(JSON.parse(saved)));
+    } else {
+      setUser(null);
+    }
+    setAuthChecked(true);
   }, []);
 
   const logout = () => {
@@ -53,7 +68,8 @@ function AppContent() {
   };
 
   const PrivateRoute = ({ children, allowedRoles }) => {
-    if (!user) return <Navigate to="/login" />;
+    if (!authChecked) return null;
+    if (!user) return <Navigate to="/login" replace />;
     if (allowedRoles && !allowedRoles.includes(user.role)) {
       const roleRoute = user.role === 'admin'
         ? '/dashboard/admin'

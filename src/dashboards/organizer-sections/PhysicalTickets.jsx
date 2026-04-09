@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import axios from 'axios';
+import API_BASE from '../../config/api';
 
 export default function PhysicalTickets({ tickets, events, headers, onRefresh }) {
   const [showForm, setShowForm] = useState(false);
@@ -45,7 +46,7 @@ export default function PhysicalTickets({ tickets, events, headers, onRefresh })
         pickupDate: formData.pickupDate,
       };
 
-      await axios.post('https://reektickets-production.up.railway.app/api/tickets/physical', ticketData, { headers });
+      await axios.post(`${API_BASE}/tickets/physical`, ticketData, { headers });
 
       setFormData({
         eventId: '',

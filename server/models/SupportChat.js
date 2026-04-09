@@ -15,6 +15,22 @@ const createSupportChat = async (chatData) => {
   return data;
 };
 
+const findSupportChatByUser = async (userId, status = 'open') => {
+  const supabase = await connectDB();
+  let query = supabase.from('support_chats').select('*').eq('userId', userId);
+  if (status) query = query.eq('status', status);
+  const { data, error } = await query.limit(1).single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
+};
+
+const getAllSupportChats = async () => {
+  const supabase = await connectDB();
+  const { data, error } = await supabase.from('support_chats').select('*').order('createdAt', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
 const updateSupportChat = async (id, updates) => {
   const supabase = await connectDB();
   const { data, error } = await supabase.from('support_chats').update(updates).eq('id', id).select().single();
