@@ -196,7 +196,7 @@ export default function ComplementaryTickets({ tickets, events, headers, onRefre
               </thead>
               <tbody>
                 {complimentaryTickets.map((ticket) => (
-                  <tr key={ticket._id} className="table-row-hover">
+                  <tr key={ticket.id || ticket._id} className="table-row-hover">
                     <td>{ticket.event?.title || 'N/A'}</td>
                     <td>{ticket.ticketType || 'Complimentary'}</td>
                     <td>{ticket.user?.fullName || ticket.user?.email || 'Guest'}</td>

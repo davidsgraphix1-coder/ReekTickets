@@ -11,6 +11,14 @@ export default function Checkout() {
   const [paymentMessage, setPaymentMessage] = useState('');
   const [user, setUser] = useState(null);
 
+  // Fee structure
+  const SERVICE_FEES = {
+    standard: 0.05,  // 5%
+    gold: 0.075,     // 7.5%
+    platinum: 0.10   // 10%
+  };
+  const TRANSACTION_FEE = 0.025; // 2.5%
+
   useEffect(() => {
     const storedUser = localStorage.getItem('reek_user');
     if (storedUser) {
@@ -46,6 +54,21 @@ export default function Checkout() {
       total += quantities[index] * (type.price || 0);
     });
     return total;
+  };
+
+  const calculateFees = () => {
+    const subtotal = calculateTotal();
+    const serviceTier = event?.serviceTier || 'standard';
+    const serviceFee = subtotal * SERVICE_FEES[serviceTier];
+    const transactionFee = subtotal * TRANSACTION_FEE;
+    const totalFees = serviceFee + transactionFee;
+    return {
+      subtotal,
+      serviceFee,
+      transactionFee,
+      totalFees,
+      grandTotal: subtotal + totalFees
+    };
   };
 
   const handleProceed = async () => {
@@ -90,6 +113,8 @@ export default function Checkout() {
   if (error) return <div className="page"><p>{error}</p></div>;
   if (!event) return <div className="page"><p>Event not found</p></div>;
 
+  const fees = calculateFees();
+
   return (
     <div className="page checkout-page fade-in">
       <div className="checkout-header">
@@ -123,8 +148,36 @@ export default function Checkout() {
               <span>GH₵ {quantities[index] * (type.price || 0)}</span>
             </div>
           ))}
-          <div className="total">
-            <strong>Total: GH₵ {calculateTotal()}</strong>
+          
+          {/* Fee Breakdown */}
+          {calculateTotal() > 0 && (
+            <div style={{ borderTop: '1px solid #ddd', marginTop: '12px', paddingTop: '12px' }}>
+              <div className="summary-item" style={{ fontSize: '0.9rem', color: '#666' }}>
+                <span>Subtotal</span>
+                <span>GH₵ {fees.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="summary-item" style={{ fontSize: '0.9rem', color: '#666' }}>
+                <span>Service Fee ({(SERVICE_FEES[event?.serviceTier || 'standard'] * 100).toFixed(1)}%)</span>
+                <span>GH₵ {fees.serviceFee.toFixed(2)}</span>
+              </div>
+              <div className="summary-item" style={{ fontSize: '0.9rem', color: '#666' }}>
+                <span>Transaction Fee (2.5%)</span>
+                <span>GH₵ {fees.transactionFee.toFixed(2)}</span>
+              </div>
+              <div className="summary-item" style={{ fontSize: '0.85rem', color: '#999', marginBottom: '8px' }}>
+                <span>Total Fees</span>
+                <span>GH₵ {fees.totalFees.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+          
+          <div className="total" style={{ marginTop: '14px' }}>
+            <strong>Grand Total: GH₵ {fees.grandTotal.toFixed(2)}</strong>
+            {calculateTotal() > 0 && (
+              <p style={{ fontSize: '0.8rem', color: '#999', margin: '4px 0 0 0' }}>
+                You will be charged GH₵ {fees.grandTotal.toFixed(2)}
+              </p>
+            )}
           </div>
           <button className="btn btn-primary" onClick={handleProceed}>Proceed to Payment</button>
           {paymentMessage && <div className="error" style={{ marginTop: '16px' }}>{paymentMessage}</div>}

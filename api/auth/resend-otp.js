@@ -17,7 +17,7 @@ function formatPhone(phone) {
 
 async function sendOtpSms(phone, otp) {
   const cleanPhone = formatPhone(phone);
-  const message = `Your ReekTickets verification code is ${otp}`;
+  const message = `Welcome to ReekTickets! Your verification code is ${otp}. Happy ticketing!`;
   const pythonBackendUrl = process.env.PYTHON_SMS_BACKEND;
   const smsApiKey = process.env.SMS_API_KEY;
   const smsSenderId = process.env.SMS_SENDER_ID;

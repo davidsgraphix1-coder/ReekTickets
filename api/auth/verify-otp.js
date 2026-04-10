@@ -17,7 +17,7 @@ function formatPhone(phone) {
   if (!clean.startsWith('233')) {
     clean = `233${clean}`;
   }
-  return `+${clean}`;
+  return clean;
 }
 
 async function sendOtpSms(phone, otp) {
@@ -26,7 +26,7 @@ async function sendOtpSms(phone, otp) {
   }
 
   const cleanPhone = formatPhone(phone);
-  const message = `Your ReekTickets verification code is ${otp}`;
+  const message = `Welcome to ReekTickets! Your verification code is ${otp}. Happy ticketing!`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 25000);
 

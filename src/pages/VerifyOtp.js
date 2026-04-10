@@ -3,6 +3,19 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { verifyOtp, resendOtp } from '../services/api';
 import SEO from '../components/SEO';
 
+function normalizePhone(phone) {
+  if (!phone) return '';
+  let clean = phone.toString().trim();
+  clean = clean.replace(/\s+/g, '').replace(/^\+/, '');
+  if (clean.startsWith('0')) {
+    clean = `233${clean.slice(1)}`;
+  }
+  if (!clean.startsWith('233')) {
+    clean = `233${clean}`;
+  }
+  return clean;
+}
+
 export default function VerifyOtp({ onLogin }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -12,16 +25,22 @@ export default function VerifyOtp({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
-  const [otpSent, setOtpSent] = useState(true); // OTP was sent during signup
+  const [timeLeft, setTimeLeft] = useState(300);
+  const [otpSent, setOtpSent] = useState(true);
   const phone = location.state?.phone || location.state?.email || '';
+  const phoneDisplay = phone.startsWith('+') ? phone : phone ? `+${phone}` : '';
+  const normalizedPhone = normalizePhone(phone);
+
+  useEffect(() => {
+    inputRefs.current[0]?.focus();
+  }, []);
 
   const handleDigitChange = (index, value) => {
     if (!/^\d?$/.test(value)) return;
     const newDigits = [...digits];
     newDigits[index] = value;
     setDigits(newDigits);
-    
+
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -33,25 +52,20 @@ export default function VerifyOtp({ onLogin }) {
     }
   };
 
-  // Format time as MM:SS
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Timer countdown
   useEffect(() => {
     if (!otpSent || timeLeft <= 0) return;
-
     const timer = setInterval(() => {
       setTimeLeft((prev) => prev - 1);
     }, 1000);
-
     return () => clearInterval(timer);
   }, [otpSent, timeLeft]);
 
-  // Expire OTP when time runs out
   useEffect(() => {
     if (timeLeft === 0 && otpSent) {
       setOtpSent(false);
@@ -71,7 +85,7 @@ export default function VerifyOtp({ onLogin }) {
 
     setLoading(true);
     try {
-      const data = await verifyOtp({ phone: phone.trim(), otpCode });
+      const data = await verifyOtp({ phone: normalizedPhone, otpCode });
       if (data?.token && data?.user) {
         const normalizedUser = data.user.role ? data.user : {
           ...data.user,
@@ -98,7 +112,7 @@ export default function VerifyOtp({ onLogin }) {
 
   const handleResendOtp = async (e) => {
     e.preventDefault();
-    if (!phone) {
+    if (!normalizedPhone) {
       setError('Phone number not available.');
       return;
     }
@@ -108,14 +122,13 @@ export default function VerifyOtp({ onLogin }) {
     setError('');
 
     try {
-      const data = await resendOtp({ phone: phone.trim() });
+      const data = await resendOtp({ phone: normalizedPhone });
       if (data?.message) {
         setResendMessage(data.message);
         setTimeLeft(300);
         setOtpSent(true);
         setDigits(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
-        // Clear success message after 3 seconds
         setTimeout(() => setResendMessage(''), 3000);
       } else {
         setError('Failed to resend OTP. Please try again.');
@@ -136,19 +149,15 @@ export default function VerifyOtp({ onLogin }) {
         ogDescription="Complete your signup by verifying your phone number on ReekTickets."
       />
       <div className="verify-otp-container">
-        <button className="verify-back-btn" type="button" onClick={() => navigate('/signup')}>
-          ← Back
-        </button>
-
-        <div className="verify-logo">
-          <img src="/logo-section.jpg" alt="ReekTickets" />
-        </div>
-
         <div className="verify-card">
-          <h2 className="verify-title">Verify Your Phone</h2>
-          <p className="verify-subtitle">We've sent a 6-digit code to {phone}</p>
+          <div className="verify-logo">
+            <img src="/logo-section.jpg" alt="ReekTickets logo" />
+          </div>
 
-        <form onSubmit={handleSubmit} className="verify-form">
+          <h2 className="verify-title">Verify Phone</h2>
+          <p className="verify-subtitle">Enter the code sent to {phoneDisplay || 'your phone number'}</p>
+
+          <form onSubmit={handleSubmit} className="verify-form">
             <div className="otp-inputs">
               {digits.map((digit, index) => (
                 <input
@@ -166,46 +175,39 @@ export default function VerifyOtp({ onLogin }) {
               ))}
             </div>
 
-          {/* Test code display removed for production */}
-          
-          <div className="verify-timer">
-            <span className={`timer-text ${timeLeft < 60 ? 'timer-warning' : ''}`}>
-              Time remaining: <strong>{formatTime(timeLeft)}</strong>
-            </span>
-          </div>
-          
-          {error && <div className="verify-error">{error}</div>}
-
-          <button className="verify-btn" type="submit" disabled={loading || digits.join('').length !== 6 || !otpSent}>
-            {loading ? 'Verifying...' : 'Verify Code'}
-          </button>
-
-          <div className="verify-footer">
-            <p>Didn't receive a code?</p>
-            <button
-              type="button"
-              className="resend-btn"
-              onClick={handleResendOtp}
-              disabled={resendLoading}
-            >
-              {resendLoading ? 'Sending...' : 'Resend OTP'}
-            </button>
-          </div>
-
-          {resendMessage && (
-            <div className="verify-success" style={{ 
-              marginTop: '1rem', 
-              padding: '0.75rem', 
-              background: '#dcfce7', 
-              border: '1px solid #22c55e', 
-              borderRadius: '8px', 
-              color: '#166534',
-              fontSize: '0.95rem',
-              textAlign: 'center'
-            }}>
-              ✓ {resendMessage}
+            <div className="verify-timer">
+              <span className={`timer-text ${timeLeft < 60 ? 'timer-warning' : ''}`}>
+                Time remaining: <strong>{formatTime(timeLeft)}</strong>
+              </span>
             </div>
-          )}
+
+            {error && <div className="verify-error">{error}</div>}
+
+            <button className="verify-btn" type="submit" disabled={loading || digits.join('').length !== 6 || !otpSent}>
+              {loading ? 'Verifying...' : 'Verify & Create Account'}
+            </button>
+
+            <div className="verify-actions-row">
+              <button type="button" className="verify-link" onClick={() => navigate('/signup')}>
+                ← Back
+              </button>
+              <button type="button" className="resend-link" onClick={handleResendOtp} disabled={resendLoading}>
+                {resendLoading ? 'Resend Code...' : 'Resend Code'}
+              </button>
+            </div>
+
+            <div className="verify-login-row">
+              <span>Already have an account? </span>
+              <button type="button" className="login-link" onClick={() => navigate('/login')}>
+                Login
+              </button>
+            </div>
+
+            {resendMessage && (
+              <div className="verify-success">
+                ✓ {resendMessage}
+              </div>
+            )}
           </form>
         </div>
       </div>

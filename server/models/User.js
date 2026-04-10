@@ -1,5 +1,19 @@
 const { connectDB } = require('../config/db');
 
+// Normalize phone number to standard format (233 + 9 digits)
+const normalizePhone = (phone) => {
+	if (!phone) return '';
+	let clean = String(phone).trim();
+	clean = clean.replace(/\s+/g, '').replace(/^\+/, '');
+	if (clean.startsWith('0')) {
+		clean = `233${clean.slice(1)}`;
+	}
+	if (!clean.startsWith('233')) {
+		clean = `233${clean}`;
+	}
+	return clean;
+};
+
 // Helper functions for Supabase 'users' table
 const getUserByEmail = async (email) => {
 	const supabase = await connectDB();
@@ -10,9 +24,19 @@ const getUserByEmail = async (email) => {
 
 const getUserByPhone = async (phone) => {
 	const supabase = await connectDB();
-	const { data, error } = await supabase.from('users').select('*').eq('phone', phone).single();
-	if (error && error.code !== 'PGRST116') throw error;
-	return data || null;
+	const normalizedPhone = normalizePhone(phone);
+	
+	// Try exact match first
+	let { data, error } = await supabase.from('users').select('*').eq('phone', normalizedPhone).single();
+	if (!error) return data;
+	
+	// If no exact match, try to find user by checking variations
+	// This handles cases where the phone was stored in a different format
+	const { data: allUsers, error: allError } = await supabase.from('users').select('*');
+	if (allError) throw allError;
+	
+	const user = allUsers?.find(u => normalizePhone(u.phone) === normalizedPhone);
+	return user || null;
 };
 
 const createUser = async (userData) => {

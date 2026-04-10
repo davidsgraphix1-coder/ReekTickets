@@ -82,9 +82,9 @@ export default function GateEntryDashboard() {
             <p><strong>Date:</strong> {new Date(ticket.event?.date).toLocaleString()}</p>
             <p><strong>Holder:</strong> {ticket.user?.fullName || ticket.user?.name || 'Guest'}</p>
             <p><strong>Access Code:</strong> {ticket.smsCode}</p>
-            <p><strong>Reference:</strong> {ticket.reference || ticket._id}</p>
+            <p><strong>Reference:</strong> {ticket.reference || ticket.id || ticket._id}</p>
             <div className="ticket-qr" style={{ marginTop: '24px' }}>
-              <QRCode value={ticket.reference || ticket._id || `${ticketId}:${accessCode}`} size={180} />
+              <QRCode value={ticket.reference || ticket.id || ticket._id || `${ticketId}:${accessCode}`} size={180} />
             </div>
           </div>
         )}

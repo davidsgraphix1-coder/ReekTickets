@@ -436,21 +436,51 @@ router.post('/tickets/complimentary', auth, async (req, res) => {
       return res.status(403).json({ message: 'Event not found or access denied' });
     }
 
+    const supabase = await connectDB();
+
     // Create complimentary tickets (one per quantity)
     const tickets = [];
     for (let i = 0; i < quantity; i++) {
-      const ticket = await Ticket.create({
+      const smsCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const ticketData = {
         user: req.user.id, // Organizer creates it, but it's for the recipient
         event,
         ticketType,
         price: 0,
-        smsCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        smsCode,
         status: 'active',
         recipientName,
         recipientEmail,
         recipientPhone,
-      });
+        created_at: new Date().toISOString(),
+      };
+
+      const { data: ticket, error } = await supabase
+        .from('tickets')
+        .insert(ticketData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating complimentary ticket:', error);
+        continue;
+      }
+
       tickets.push(ticket);
+
+      // Send SMS automatically for complimentary tickets
+      if (recipientPhone) {
+        try {
+          const ticketLink = `${process.env.FRONTEND_URL || 'https://reektickets.com'}/ticket/${ticket.id}?code=${ticket.smsCode}`;
+          const message = `Your complimentary ReekTickets ticket is ready. Code: ${ticket.smsCode}. View at: ${ticketLink}`;
+          const { sendOTP } = require('../services/smsService');
+          await sendOTP(recipientPhone, message);
+          console.log(`Complimentary ticket SMS sent to ${recipientPhone} for ticket ${ticket.id}`);
+        } catch (smsError) {
+          console.error('Failed to send complimentary ticket SMS:', smsError);
+          // Don't fail the ticket creation if SMS fails
+        }
+      }
     }
 
     res.json({ message: `${quantity} complimentary ticket(s) created successfully`, tickets });
@@ -471,23 +501,53 @@ router.post('/tickets/physical', auth, async (req, res) => {
       return res.status(403).json({ message: 'Event not found or access denied' });
     }
 
+    const supabase = await connectDB();
+
     // Create physical tickets (one per quantity)
     const tickets = [];
     for (let i = 0; i < quantity; i++) {
-      const ticket = await Ticket.create({
+      const smsCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const ticketData = {
         user: req.user.id,
         event,
         ticketType,
         price: 0,
-        smsCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        smsCode,
         status: 'active',
         recipientName,
         recipientEmail,
         recipientPhone,
         pickupLocation,
-        pickupDate: pickupDate ? new Date(pickupDate) : null,
-      });
+        pickupDate: pickupDate ? new Date(pickupDate).toISOString() : null,
+        created_at: new Date().toISOString(),
+      };
+
+      const { data: ticket, error } = await supabase
+        .from('tickets')
+        .insert(ticketData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating physical ticket:', error);
+        continue;
+      }
+
       tickets.push(ticket);
+
+      // Send SMS automatically for physical tickets
+      if (recipientPhone) {
+        try {
+          const ticketLink = `${process.env.FRONTEND_URL || 'https://reektickets.com'}/ticket/${ticket.id}?code=${ticket.smsCode}`;
+          const message = `Your physical ReekTickets ticket is ready. Code: ${ticket.smsCode}. View at: ${ticketLink}. Pickup: ${pickupLocation || 'TBA'}`;
+          const { sendOTP } = require('../services/smsService');
+          await sendOTP(recipientPhone, message);
+          console.log(`Physical ticket SMS sent to ${recipientPhone} for ticket ${ticket.id}`);
+        } catch (smsError) {
+          console.error('Failed to send physical ticket SMS:', smsError);
+          // Don't fail the ticket creation if SMS fails
+        }
+      }
     }
 
     res.json({ message: `${quantity} physical ticket(s) created successfully`, tickets });

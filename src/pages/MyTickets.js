@@ -66,7 +66,7 @@ export default function MyTickets() {
         ) : (
           <div className="ticket-list">
             {tickets.map((ticket) => (
-              <div key={ticket._id || ticket.id} className="ticket-card compact">
+              <div key={ticket.id || ticket._id || ticket.id} className="ticket-card compact">
                 <div className="ticket-card-header">
                   <h3>{ticket.event?.title || 'Event ticket'}</h3>
                   <span className={`status-badge status-${ticket.status?.toLowerCase() || 'active'}`}>
@@ -77,7 +77,7 @@ export default function MyTickets() {
                 <p>{ticket.ticketType || 'Ticket'} • GH₵ {ticket.price?.toFixed(2) || '0.00'}</p>
                 <p>Access code: <strong>{ticket.smsCode || 'N/A'}</strong></p>
                 <div className="ticket-actions">
-                  <Link to={`/ticket/${ticket._id}?code=${encodeURIComponent(ticket.smsCode || '')}`} className="btn btn-primary">
+                  <Link to={`/ticket/${ticket.id || ticket._id}?code=${encodeURIComponent(ticket.smsCode || '')}`} className="btn btn-primary">
                     View Ticket
                   </Link>
                 </div>

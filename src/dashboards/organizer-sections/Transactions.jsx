@@ -5,7 +5,7 @@ import { requestOrganizerPayout, getOrganizerPayouts, getPaymentSummary } from '
 export default function Transactions({ payments, tickets }) {
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
-  const [bankDetails, setBankDetails] = useState({ accountNumber: '', bankCode: '', accountName: '' });
+  const [paystackEmail, setPaystackEmail] = useState('');
   const [payoutHistory, setPayoutHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState({
@@ -31,19 +31,19 @@ export default function Transactions({ payments, tickets }) {
       return;
     }
 
-    if (!bankDetails.accountNumber || !bankDetails.bankCode || !bankDetails.accountName) {
-      alert('Please provide complete bank details');
+    if (!paystackEmail || !paystackEmail.includes('@')) {
+      alert('Please provide a valid Paystack email address');
       return;
     }
 
     setLoading(true);
     try {
-      const result = await requestOrganizerPayout(parseFloat(payoutAmount), bankDetails);
+      const result = await requestOrganizerPayout(parseFloat(payoutAmount), paystackEmail);
       if (result.message && !result.message.includes('error')) {
-        alert('Payout request submitted successfully! You will receive funds within 3-5 business days.');
+        alert('Payout request submitted successfully! Admin will process it shortly. Funds typically arrive within 1-2 business days.');
         setShowPayoutModal(false);
         setPayoutAmount('');
-        setBankDetails({ accountNumber: '', bankCode: '', accountName: '' });
+        setPaystackEmail('');
         // Refresh payout history
         fetchPayoutHistory();
       } else {
@@ -120,7 +120,7 @@ export default function Transactions({ payments, tickets }) {
       {/* Payout Section */}
       <div className="payout-section" style={{ marginBottom: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>
         <h3>Request Payout</h3>
-        <p>Withdraw your available earnings to your bank account</p>
+        <p>Withdraw your available earnings via Paystack. Admin approval required.</p>
         <button
           className="btn btn-primary"
           onClick={() => setShowPayoutModal(true)}
@@ -218,43 +218,14 @@ export default function Transactions({ payments, tickets }) {
               </div>
 
               <div className="form-group">
-                <label>Account Number</label>
+                <label>Paystack Email</label>
                 <input
-                  type="text"
-                  value={bankDetails.accountNumber}
-                  onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
-                  placeholder="Enter account number"
+                  type="email"
+                  value={paystackEmail}
+                  onChange={(e) => setPaystackEmail(e.target.value)}
+                  placeholder="Enter Paystack account email"
                 />
-              </div>
-
-              <div className="form-group">
-                <label>Bank Code</label>
-                <select
-                  value={bankDetails.bankCode}
-                  onChange={(e) => setBankDetails({...bankDetails, bankCode: e.target.value})}
-                >
-                  <option value="">Select Bank</option>
-                  <option value="030100">Ecobank Ghana</option>
-                  <option value="030200">Stanbic Bank Ghana</option>
-                  <option value="030300">GT Bank Ghana</option>
-                  <option value="030400">Republic Bank Ghana</option>
-                  <option value="030500">Fidelity Bank Ghana</option>
-                  <option value="030600">Prudential Bank Ghana</option>
-                  <option value="030700">Zenith Bank Ghana</option>
-                  <option value="030800">CalBank</option>
-                  <option value="030900">Societe Generale Ghana</option>
-                  <option value="031000">National Investment Bank</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Account Name</label>
-                <input
-                  type="text"
-                  value={bankDetails.accountName}
-                  onChange={(e) => setBankDetails({...bankDetails, accountName: e.target.value})}
-                  placeholder="Enter account name"
-                />
+                <small>The email linked to your Paystack account</small>
               </div>
             </div>
             <div className="modal-footer">

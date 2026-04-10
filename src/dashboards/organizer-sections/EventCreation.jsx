@@ -10,6 +10,7 @@ export default function EventCreation({ events, headers, onEventCreated }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    aboutUs: '',
     date: '',
     location: '',
     serviceTier: 'standard',
@@ -55,6 +56,7 @@ export default function EventCreation({ events, headers, onEventCreated }) {
       const form = new FormData();
       form.append('title', formData.title);
       form.append('description', formData.description);
+      form.append('aboutUs', formData.aboutUs);
       form.append('date', formData.date);
       form.append('location', formData.location);
       form.append('serviceTier', formData.serviceTier);
@@ -68,6 +70,7 @@ export default function EventCreation({ events, headers, onEventCreated }) {
       setFormData({
         title: '',
         description: '',
+        aboutUs: '',
         date: '',
         location: '',
         serviceTier: 'standard',
@@ -123,6 +126,17 @@ export default function EventCreation({ events, headers, onEventCreated }) {
               placeholder="Describe your event..."
               rows="4"
               required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>About Us</label>
+            <textarea
+              name="aboutUs"
+              value={formData.aboutUs}
+              onChange={handleInputChange}
+              placeholder="Tell attendees about your organization or team."
+              rows="3"
             />
           </div>
 

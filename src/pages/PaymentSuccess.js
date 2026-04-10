@@ -49,20 +49,23 @@ export default function PaymentSuccess() {
         setSmsSent(true);
         return;
       }
-      const ticketLink = `${window.location.origin}/ticket/${ticket._id}?code=${ticket.smsCode}`;
+      const ticketLink = `${window.location.origin}/ticket/${ticket.id || ticket._id}?code=${ticket.smsCode}`;
       const message = `Your ReekTickets ticket is ready. Code: ${ticket.smsCode}. View at: ${ticketLink}`;
-      // Don't send SMS automatically - admin will send manually
-      // const response = await sendNaloSms({
-      //   to: phone,
-      //   message,
-      //   ticketId: ticket._id,
-      //   userId: ticket.user?._id,
-      // });
-      setSmsStatus('Ticket created successfully. Admin will send access details.');
+      
+      const response = await sendNaloSms({
+        to: phone,
+        message
+      });
+      
+      if (response.success) {
+        setSmsStatus('Ticket SMS sent successfully!');
+      } else {
+        setSmsStatus(`SMS failed: ${response.message}`);
+      }
       setSmsSent(true);
     };
 
-    // sendTicketSms(); // Disabled for manual admin sending
+    sendTicketSms();
   }, [ticket, smsSent]);
 
   const copyToClipboard = (text) => {
@@ -74,7 +77,7 @@ export default function PaymentSuccess() {
   if (error) return <div className="page"><p style={{ color: 'red' }}>{error}</p></div>;
   if (!ticket) return <div className="page"><p>No ticket found</p></div>;
 
-  const ticketLink = `${window.location.origin}/ticket/${ticket._id}?code=${ticket.smsCode}`;
+  const ticketLink = `${window.location.origin}/ticket/${ticket.id || ticket._id}?code=${ticket.smsCode}`;
 
   return (
     <div className="page payment-success fade-in">

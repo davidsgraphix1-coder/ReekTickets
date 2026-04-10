@@ -60,26 +60,26 @@ export async function login(data) {
 }
 
 export async function forgotPassword(data) {
-  return safeFetch(`${API_BASE}/auth/forgot-password`, {
+  return safeFetch(`${API_BASE}/auth/password-reset`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify({ action: 'request-reset', ...data }),
   });
 }
 
 export async function verifyResetCode(data) {
-  return safeFetch(`${API_BASE}/auth/verify-reset-code`, {
+  return safeFetch(`${API_BASE}/auth/password-reset`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify({ action: 'verify-code', ...data }),
   });
 }
 
 export async function resetPassword(data) {
-  return safeFetch(`${API_BASE}/auth/reset-password`, {
+  return safeFetch(`${API_BASE}/auth/password-reset`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify({ action: 'reset-password', ...data }),
   });
 }
 
@@ -167,16 +167,39 @@ export async function withdrawFunds(amount) {
   }
 }
 
-export async function requestOrganizerPayout(amount, bankDetails) {
+export async function requestOrganizerPayout(amount, paystackEmail) {
   try {
     const res = await fetch(`${API_BASE}/payments/organizer/payout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ amount, bankDetails }),
+      body: JSON.stringify({ amount, paystackEmail }),
     });
     return await safeJson(res);
   } catch {
     return { message: 'Network error: could not process payout request' };
+  }
+}
+
+export async function getAdminPendingPayouts() {
+  try {
+    const res = await fetch(`${API_BASE}/payments/admin/pending-payouts`, {
+      headers: getAuthHeader(),
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not fetch pending payouts' };
+  }
+}
+
+export async function processAdminPayout(payoutId) {
+  try {
+    const res = await fetch(`${API_BASE}/payments/admin/process-payout/${payoutId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not process payout' };
   }
 }
 
@@ -247,4 +270,52 @@ export async function verifyTicketCode(ticketId, code) {
     throw new Error('Ticket ID and access code are required.');
   }
   return fetchTicket(ticketId, code);
+}
+
+// Admin Revenue & Withdrawals Functions
+export async function getAdminRevenueSummary() {
+  try {
+    const res = await fetch(`${API_BASE}/payments/admin/revenue-summary`, {
+      headers: getAuthHeader(),
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not fetch revenue summary' };
+  }
+}
+
+export async function requestAdminWithdrawal(amount, paystackEmail) {
+  try {
+    const res = await fetch(`${API_BASE}/payments/admin/request-withdrawal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ amount, paystackEmail }),
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not request withdrawal' };
+  }
+}
+
+export async function getAdminWithdrawals() {
+  try {
+    const res = await fetch(`${API_BASE}/payments/admin/withdrawals`, {
+      headers: getAuthHeader(),
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not fetch withdrawals' };
+  }
+}
+
+export async function processAdminWithdrawal(withdrawalId) {
+  try {
+    const res = await fetch(`${API_BASE}/payments/admin/process-withdrawal/${withdrawalId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+    });
+    return await safeJson(res);
+  } catch {
+    return { message: 'Network error: could not process withdrawal' };
+  }
 }

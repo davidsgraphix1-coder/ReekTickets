@@ -3,6 +3,8 @@ import { FaChartPie, FaUsers, FaUserShield, FaCalendarAlt, FaTicketAlt, FaMoneyB
 import axios from 'axios';
 import API_BASE from '../config/api';
 import './AdminDashboard.css';
+import AdminPayoutManagement from '../pages/AdminPayoutManagement';
+import AdminRevenueManagement from '../pages/AdminRevenueManagement';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -591,6 +593,8 @@ export default function AdminDashboard() {
             { id: 'admins', label: 'Admins', icon: <FaUserShield /> },
             { id: 'events', label: 'Events', icon: <FaCalendarAlt /> },
             { id: 'payments', label: 'Payments', icon: <FaMoneyBillWave /> },
+            { id: 'payouts', label: 'Payouts', icon: <FaDollarSign /> },
+            { id: 'admin-revenue', label: 'Revenue', icon: <FaChartPie /> },
             { id: 'tickets', label: 'Tickets', icon: <FaTicketAlt /> },
             { id: 'reports', label: 'Reports', icon: <FaFileAlt /> },
             { id: 'settings', label: 'Settings', icon: <FaCog /> }
@@ -1916,6 +1920,16 @@ export default function AdminDashboard() {
                     </table>
                   </div>
                 </section>
+              )}
+
+              {/* PAYOUTS TAB */}
+              {activeTab === 'payouts' && (
+                <AdminPayoutManagement />
+              )}
+
+              {/* ADMIN REVENUE & WITHDRAWALS TAB */}
+              {activeTab === 'admin-revenue' && (
+                <AdminRevenueManagement />
               )}
 
               {/* SETTINGS TAB */}

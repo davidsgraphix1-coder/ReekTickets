@@ -25,7 +25,7 @@ function formatPhone(phone) {
 
 async function sendOtpSms(phone, otp) {
   const cleanPhone = formatPhone(phone);
-  const message = `Your ReekTickets verification code is ${otp}`;
+  const message = `Welcome to ReekTickets! Your verification code is ${otp}. Happy ticketing!`;
   const pythonBackendUrl = process.env.PYTHON_SMS_BACKEND;
   const smsApiKey = process.env.SMS_API_KEY;
   const smsSenderId = process.env.SMS_SENDER_ID;
@@ -144,12 +144,15 @@ export default async function handler(req, res) {
       .or(`email.eq.${email.toLowerCase()},phone.eq.${normalizedPhone}`)
       .single();
 
-    if (existingError && existingError.code !== 'PGRST116') {
-      console.error('Supabase query error:', existingError);
-      throw existingError;
+    if (existingError) {
+      const noRows = existingError.code === 'PGRST116' || existingError.status === 406;
+      if (!noRows) {
+        console.error('Supabase query error:', existingError);
+        throw existingError;
+      }
     }
 
-    const existingVerified = existing && resolveField(existing, 'isVerified', 'is_verified');
+    const  existingVerified = existing && resolveField(existing, 'isVerified', 'is_verified');
     if (existingVerified) {
       return res.status(409).json({ message: 'Email already registered' });
     }
@@ -159,20 +162,22 @@ export default async function handler(req, res) {
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     const hashed = await bcrypt.hash(password, 10);
 
-    let user;
-    const isAdmin = role === 'admin';
+    const allowedRoles = ['attendee', 'organizer', 'vendor', 'admin', 'gate'];
+    const safeRole = allowedRoles.includes(role) ? role : 'attendee';
+    const isAdmin = safeRole === 'admin';
     const userRecord = {
       full_name: fullName.trim(),
       email: email.toLowerCase(),
       phone: normalizedPhone,
       password: hashed,
-      role: role || 'attendee',
+      role: safeRole,
       otp_code: otpCode,
       otp_expiry: otpExpiry,
-      is_verified: isAdmin,
-      status: isAdmin ? 'active' : 'pending'
+      is_verified: true, // Always verified after signup
+      status: 'active' // Always active after signup
     };
 
+    let user;
     if (existing && !existingVerified) {
       // Update existing unverified user
       console.log('Updating existing user...');
@@ -201,7 +206,7 @@ export default async function handler(req, res) {
     const responseBody = {
       message: isAdmin
         ? 'Admin account created successfully. Redirecting to dashboard.'
-        : 'Signup complete. Verification pending, OTP verification is required.',
+        : 'Account created successfully! Welcome to ReekTickets.',
       user: {
         id: user.id,
         fullName: resolveField(user, 'fullName', 'full_name'),
@@ -214,11 +219,12 @@ export default async function handler(req, res) {
     };
 
     if (!isAdmin) {
-      console.log('Sending user OTP SMS...');
+      console.log('Sending welcome OTP SMS...');
       const smsResult = await sendOtpSms(phone, otpCode);
       if (!smsResult.success) {
         console.error('SMS send failed:', smsResult);
-        responseBody.message = 'Signup complete. OTP verification required, but SMS could not be sent.';
+        // Don't block signup if SMS fails - user is still active
+        responseBody.message = 'Account created successfully! Welcome to ReekTickets.';
       }
     } else {
       const token = jwt.sign(

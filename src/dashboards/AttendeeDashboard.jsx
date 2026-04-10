@@ -389,7 +389,7 @@ export default function AttendeeDashboard() {
                         <tr><td colSpan="8" style={{ textAlign: 'center', padding: '40px' }}>No tickets found</td></tr>
                       ) : (
                         currentTickets.map((ticket, idx) => (
-                          <tr key={ticket._id || idx}>
+                          <tr key={ticket.id || ticket._id || idx}>
                             <td>{startIndex + idx + 1}</td>
                             <td><strong>{ticket.event?.title || 'N/A'}</strong></td>
                             <td>{ticket.type || 'Standard'}</td>
@@ -403,7 +403,7 @@ export default function AttendeeDashboard() {
                                 <button 
                                   className="btn-tiny" 
                                   onClick={() => {
-                                    const ticketLink = `${window.location.origin}/ticket/${ticket._id}?code=${ticket.smsCode}`;
+                                    const ticketLink = `${window.location.origin}/ticket/${ticket.id || ticket._id}?code=${ticket.smsCode}`;
                                     navigator.clipboard.writeText(ticketLink);
                                     alert('Ticket link copied!');
                                   }}
@@ -577,7 +577,7 @@ export default function AttendeeDashboard() {
               <button 
                 className="btn-primary" 
                 onClick={() => {
-                  const ticketLink = `${window.location.origin}/ticket/${selectedTicket._id}?code=${selectedTicket.smsCode}`;
+                  const ticketLink = `${window.location.origin}/ticket/${selectedTicket.id || selectedTicket._id}?code=${selectedTicket.smsCode}`;
                   navigator.clipboard.writeText(ticketLink);
                   alert('Ticket link copied to clipboard!');
                 }}
@@ -587,7 +587,7 @@ export default function AttendeeDashboard() {
               <button 
                 className="btn-secondary" 
                 onClick={() => {
-                  const ticketLink = `${window.location.origin}/ticket/${selectedTicket._id}?code=${selectedTicket.smsCode}`;
+                  const ticketLink = `${window.location.origin}/ticket/${selectedTicket.id || selectedTicket._id}?code=${selectedTicket.smsCode}`;
                   window.open(ticketLink, '_blank');
                 }}
               >

@@ -14,6 +14,13 @@ const SMS_HOST = process.env.SMS_HOST || 'api.smsonlinegh.com';
 const SMS_GATEWAY_URL = process.env.SMS_GATEWAY_URL || 'https://reektickets.onrender.com';
 const USE_GATEWAY = process.env.USE_SMS_GATEWAY !== 'false';
 
+console.log('[SMS] Service initialized with:');
+console.log('[SMS] - API_HOST:', SMS_HOST);
+console.log('[SMS] - SENDER_ID:', SMS_SENDER_ID ? 'SET' : 'NOT SET');
+console.log('[SMS] - API_KEY:', SMS_API_KEY ? `SET (${SMS_API_KEY.substring(0,8)}...)` : 'NOT SET');
+console.log('[SMS] - GATEWAY_URL:', SMS_GATEWAY_URL);
+console.log('[SMS] - USE_GATEWAY:', USE_GATEWAY);
+
 function formatPhone(phone) {
   let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
   if (cleanPhone.startsWith('0')) {
@@ -53,15 +60,29 @@ async function sendViaGateway(phone, message) {
 async function sendViaSmsonlinegh(phone, message) {
   try {
     const cleanPhone = formatPhone(phone);
+    
+    // Check if API key is set
+    if (!SMS_API_KEY) {
+      console.error('[SMS] ERROR: SMS_API_KEY environment variable not set');
+      return {
+        success: false,
+        status: 500,
+        error: 'SMS_API_KEY not configured',
+        message: 'SMS service not properly configured'
+      };
+    }
+
     const params = {
       apikey: SMS_API_KEY,
-      sender: SMS_SENDER_ID,
+      sender: SMS_SENDER_ID || 'ReekTickets',
       message,
       recipients: cleanPhone
     };
 
     const url = `https://${SMS_HOST}/sms/send/?${new URLSearchParams(params).toString()}`;
     console.log(`[SMS] SMSONLINEGH API call to ${cleanPhone}`);
+    console.log(`[SMS] API Host: ${SMS_HOST}`);
+    console.log(`[SMS] Sender ID: ${SMS_SENDER_ID || 'ReekTickets'}`);
 
     const response = await axios.get(url, {
       timeout: 20000,
@@ -96,6 +117,7 @@ async function sendViaSmsonlinegh(phone, message) {
     if (error.response) {
       errorMsg = `HTTP ${error.response.status}: ${error.response.statusText}`;
     }
+    console.error('[SMS] Full error:', error);
     return {
       success: false,
       status: 500,
@@ -108,12 +130,27 @@ async function sendViaSmsonlinegh(phone, message) {
 async function sendSMS(phone, message) {
   try {
     console.log(`[SMS] Sending to ${phone}: ${message.substring(0, 50)}...`);
+    console.log(`[SMS] SMS_API_KEY present: ${!!SMS_API_KEY}`);
+    console.log(`[SMS] SMS_SENDER_ID: ${SMS_SENDER_ID}`);
+    console.log(`[SMS] SMS_HOST: ${SMS_HOST}`);
+    console.log(`[SMS] USE_GATEWAY: ${USE_GATEWAY}`);
 
     if (USE_GATEWAY) {
       const gatewayResult = await sendViaGateway(phone, message);
       if (gatewayResult && gatewayResult.success) {
         return gatewayResult;
       }
+    }
+
+    // If API key is not configured, return a helpful error
+    if (!SMS_API_KEY) {
+      console.error('[SMS] ERROR: SMS_API_KEY is not configured!');
+      return {
+        success: false,
+        status: 500,
+        error: 'SMS_API_KEY not configured',
+        message: 'SMS service configuration error - please contact support'
+      };
     }
 
     return await sendViaSmsonlinegh(phone, message);
@@ -129,8 +166,11 @@ async function sendSMS(phone, message) {
 }
 
 async function sendOTP(phone, otp) {
-  const message = `Your ReekTickets verification code is ${otp}`;
-  return await sendSMS(phone, message);
+  const message = `Your ReekTickets verification code is ${otp}. It expires in 10 minutes.`;
+  console.log(`[OTP] Sending OTP to ${phone}: "${message}"`);
+  const result = await sendSMS(phone, message);
+  console.log(`[OTP] Result:`, JSON.stringify(result));
+  return result;
 }
 
 async function sendTicketConfirmation(phone, ticketDetails) {

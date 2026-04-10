@@ -151,7 +151,7 @@ export default function DashboardHome({ events, tickets, stats }) {
                   const earningAmount = actualPrice - handlingFee - serviceFee;
                   
                   return (
-                    <tr key={ticket._id} className="table-row-hover">
+                    <tr key={ticket.id || ticket._id} className="table-row-hover">
                       <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                       <td>{new Date(ticket.createdAt || new Date()).toLocaleDateString()}</td>
                       <td><strong>{ticket.event?.title || 'N/A'}</strong></td>

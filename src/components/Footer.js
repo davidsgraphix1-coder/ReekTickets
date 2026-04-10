@@ -32,13 +32,12 @@ export default function Footer() {
           </div>
         </div>
         <div className="footer-section">
-          <h4>Connect</h4>
-          <div className="social-links">
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">Twitter</a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href={`https://wa.me/233273476701`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-          </div>
+          <h4>Legal</h4>
+          <ul>
+            <li><Link to="/terms">Terms of Use</Link></li>
+            <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+            <li><Link to="/ticket-agreement">Ticket Agreement</Link></li>
+          </ul>
         </div>
       </div>
       <div className="footer-bottom">

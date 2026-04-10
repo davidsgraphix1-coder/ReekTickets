@@ -63,7 +63,7 @@ export default function UserDashboard({ tickets, payments }) {
               </thead>
               <tbody>
                 {paginatedTickets.map((ticket) => (
-                  <tr key={ticket._id} className="table-row-hover">
+                  <tr key={ticket.id || ticket._id} className="table-row-hover">
                     <td><strong>{ticket.event?.title || 'Event'}</strong></td>
                     <td>{ticket.ticketType || 'Standard'}</td>
                     <td>{new Date(ticket.createdAt).toLocaleDateString()}</td>

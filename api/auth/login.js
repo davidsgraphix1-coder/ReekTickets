@@ -24,9 +24,10 @@ export default async function handler(req, res) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
     const isVerified = user.isVerified ?? user.is_verified;
-    if (!isVerified) {
-      return res.status(403).json({ message: 'Account not verified. Please verify your account.' });
-    }
+    // Note: All accounts are now verified upon signup, so this check is removed
+    // if (!isVerified) {
+    //   return res.status(403).json({ message: 'Account not verified. Please verify your account.' });
+    // }
 
     // Compare password
     const valid = await bcrypt.compare(password, user.password);

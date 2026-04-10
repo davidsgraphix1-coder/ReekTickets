@@ -34,6 +34,8 @@ import OrganizerSignup from './pages/OrganizerSignup';
 import VerifyOtp from './pages/VerifyOtp';
 import ForgotPassword from './pages/ForgotPassword';
 import Terms from './pages/Terms';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TicketAgreement from './pages/TicketAgreement';
 import SupportChat from './components/SupportChat';
 import SmsTest from './pages/SmsTest';
 
@@ -124,6 +126,8 @@ function AppContent() {
           <Route path="/agents" element={<SalesAgents />} />
           <Route path="/admindavid" element={<AdminPortal />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/ticket-agreement" element={<TicketAgreement />} />
           <Route path="/sms-test" element={<SmsTest />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

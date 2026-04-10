@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const auth = require('../middleware/auth');
+const { connectDB } = require('../config/db');
 
 const router = express.Router();
 
@@ -12,7 +13,9 @@ const upload = multer({ storage });
 
 router.get('/', async (req, res) => {
   try {
-    const events = await Event.find().sort({ date: 1 }).populate('organizer', 'fullName email');
+    const supabase = await connectDB();
+    const { data: events, error } = await supabase.from('events').select('*').order('date', { ascending: true });
+    if (error) throw error;
     return res.json(events);
   } catch (error) {
     console.error(error);
@@ -22,7 +25,9 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id).populate('organizer', 'fullName email');
+    const supabase = await connectDB();
+    const { data: event, error } = await supabase.from('events').select('*').eq('id', req.params.id).single();
+    if (error && error.code !== 'PGRST116') throw error;
     if (!event) return res.status(404).json({ message: 'Event not found' });
     res.json(event);
   } catch (error) {
@@ -33,13 +38,14 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', auth, upload.single('banner'), async (req, res) => {
   try {
-    const { title, description, date, location, category, ticketTypes } = req.body;
+    const { title, description, aboutUs, date, location, category, ticketTypes } = req.body;
     if (!title || !date || !location || !ticketTypes) return res.status(400).json({ message: 'Required fields missing' });
     const banner = req.file ? `/uploads/${req.file.filename}` : '/banner.jpg';
-    const event = await Event.create({
+    const eventData = {
       title,
       description,
-      date: new Date(date),
+      about_us: aboutUs || '',
+      date: new Date(date).toISOString(),
       location,
       category: category || 'General',
       banner,
@@ -47,7 +53,12 @@ router.post('/', auth, upload.single('banner'), async (req, res) => {
       ticketTypes: JSON.parse(ticketTypes),
       status: 'pending',
       published: false,
-    });
+      created_at: new Date().toISOString(),
+    };
+
+    const supabase = await connectDB();
+    const { data: event, error } = await supabase.from('events').insert(eventData).select().single();
+    if (error) throw error;
     res.json(event);
   } catch (error) {
     console.error(error);
@@ -59,7 +70,9 @@ router.post('/', auth, upload.single('banner'), async (req, res) => {
 // Get all events for the logged-in organizer
 router.get('/my-events', auth, async (req, res) => {
   try {
-    const events = await Event.find({ organizer: req.user.id }).sort({ date: 1 });
+    const supabase = await connectDB();
+    const { data: events, error } = await supabase.from('events').select('*').eq('organizer', req.user.id).order('date', { ascending: true });
+    if (error) throw error;
     res.json(events);
   } catch (error) {
     res.status(500).json({ message: 'Could not fetch organizer events' });
@@ -69,18 +82,25 @@ router.get('/my-events', auth, async (req, res) => {
 // Edit event (organizer only)
 router.put('/:id', auth, upload.single('banner'), async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (event.organizer.toString() !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
-    const { title, description, date, location, category, ticketTypes } = req.body;
-    if (title) event.title = title;
-    if (description) event.description = description;
-    if (date) event.date = new Date(date);
-    if (location) event.location = location;
-    if (category) event.category = category;
-    if (ticketTypes) event.ticketTypes = JSON.parse(ticketTypes);
-    if (req.file) event.banner = `/uploads/${req.file.filename}`;
-    await event.save();
+    const supabase = await connectDB();
+    const { data: existingEvent, error: fetchError } = await supabase.from('events').select('*').eq('id', req.params.id).single();
+    if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+    if (!existingEvent) return res.status(404).json({ message: 'Event not found' });
+    if (existingEvent.organizer !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+
+    const { title, description, aboutUs, date, location, category, ticketTypes } = req.body;
+    const updates = {};
+    if (title) updates.title = title;
+    if (description) updates.description = description;
+    if (aboutUs !== undefined) updates.about_us = aboutUs;
+    if (date) updates.date = new Date(date).toISOString();
+    if (location) updates.location = location;
+    if (category) updates.category = category;
+    if (ticketTypes) updates.ticketTypes = JSON.parse(ticketTypes);
+    if (req.file) updates.banner = `/uploads/${req.file.filename}`;
+
+    const { data: event, error } = await supabase.from('events').update(updates).eq('id', req.params.id).select().single();
+    if (error) throw error;
     res.json(event);
   } catch (error) {
     res.status(500).json({ message: 'Could not update event' });
@@ -90,10 +110,14 @@ router.put('/:id', auth, upload.single('banner'), async (req, res) => {
 // Delete event (organizer only)
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: 'Event not found' });
-    if (event.organizer.toString() !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
-    await event.deleteOne();
+    const supabase = await connectDB();
+    const { data: existingEvent, error: fetchError } = await supabase.from('events').select('*').eq('id', req.params.id).single();
+    if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+    if (!existingEvent) return res.status(404).json({ message: 'Event not found' });
+    if (existingEvent.organizer !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+
+    const { error } = await supabase.from('events').delete().eq('id', req.params.id);
+    if (error) throw error;
     res.json({ message: 'Event deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Could not delete event' });

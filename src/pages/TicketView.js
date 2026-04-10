@@ -46,7 +46,7 @@ export default function TicketView() {
           <p>Reference: {ticket.reference}</p>
         </div>
         <div className="ticket-qr">
-          <QRCode value={ticket.reference || ticket._id} size={180} />
+          <QRCode value={ticket.reference || ticket.id || ticket._id} size={180} />
         </div>
         <div className="ticket-message">
           <p>Access Code: {ticket.smsCode}</p>

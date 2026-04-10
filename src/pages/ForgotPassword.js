@@ -5,7 +5,7 @@ import SEO from '../components/SEO';
 
 export default function ForgotPassword() {
   const [step, setStep] = useState(1); // 1: request, 2: verify code, 3: reset password
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [resetCode, setResetCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,7 +20,7 @@ export default function ForgotPassword() {
     setMessage('');
     setLoading(true);
 
-    const data = await forgotPassword({ email });
+    const data = await forgotPassword({ phone });
     setLoading(false);
 
     if (data?.message) {
@@ -40,7 +40,7 @@ export default function ForgotPassword() {
     setMessage('');
     setLoading(true);
 
-    const data = await verifyResetCode({ email, resetCode });
+    const data = await verifyResetCode({ phone, resetCode });
     setLoading(false);
 
     if (data?.verified) {
@@ -67,7 +67,7 @@ export default function ForgotPassword() {
     }
 
     setLoading(true);
-    const data = await resetPassword({ email, resetCode, newPassword });
+    const data = await resetPassword({ phone, resetCode, newPassword });
     setLoading(false);
 
     if (data?.message && !data.message.includes('error')) {
@@ -101,12 +101,12 @@ export default function ForgotPassword() {
 
         {step === 1 && (
           <form onSubmit={handleStep1} className="forgot-password-form">
-            <label>Email Address</label>
+            <label>Phone Number</label>
             <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="tel"
+              placeholder="Enter your phone number (e.g. 027xxxxxxx)"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               required
               disabled={loading}
             />
@@ -119,7 +119,7 @@ export default function ForgotPassword() {
         {step === 2 && (
           <form onSubmit={handleStep2} className="forgot-password-form">
             <label>Reset Code</label>
-            <p className="help-text">Enter the 6-digit code sent to your email</p>
+            <p className="help-text">Enter the 6-digit code sent to your phone</p>
             <input
               type="text"
               placeholder="000000"
