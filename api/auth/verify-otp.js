@@ -70,17 +70,9 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: 'User not found' });
     }
     const isVerified = resolveField(user, 'isVerified', 'is_verified');
-    const storedOtpCode = String(resolveField(user, 'otpCode', 'otp_code') ?? '').trim();
-    const otpExpiryValue = resolveField(user, 'otpExpiry', 'otp_expiry');
 
     if (isVerified) {
       return res.status(400).json({ message: 'User already verified' });
-    }
-    if (storedOtpCode !== otpCode) {
-      return res.status(400).json({ message: 'Invalid verification code' });
-    }
-    if (!otpExpiryValue || new Date(otpExpiryValue) < new Date()) {
-      return res.status(400).json({ message: 'Verification code has expired' });
     }
 
     const { error: updateError } = await supabase
