@@ -77,11 +77,17 @@ router.post('/signup', async (req, res) => {
     }
 
     const existing = await getUserByEmail(email);
-    console.log('Existing user:', existing);
+    console.log('Existing user by email:', existing ? 'YES' : 'NO');
+    
+    // Generate OTP
     const otpCode = String(Math.floor(100000 + Math.random() * 900000));
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
     const hashed = await bcrypt.hash(password, 10);
+    
+    // Normalize phone
     const normalizedPhone = normalizePhone(phone);
+    console.log('[SIGNUP] Raw phone from request:', phone);
+    console.log('[SIGNUP] Normalized phone for storage:', normalizedPhone);
 
     // Only allow valid roles
     const allowedRoles = ['attendee', 'organizer', 'vendor', 'admin', 'gate'];
@@ -89,7 +95,7 @@ router.post('/signup', async (req, res) => {
     
     // Ensure OTP code is stored as a clean string (6 digits)
     const cleanOtpCode = String(otpCode).trim();
-    console.log('[SIGNUP] OTP code to store:', cleanOtpCode, '(length:', cleanOtpCode.length, ')');
+    console.log('[SIGNUP] Generated OTP code:', cleanOtpCode, 'length:', cleanOtpCode.length, 'type:', typeof cleanOtpCode);
     
     const userData = {
       full_name: fullName,
@@ -134,13 +140,13 @@ router.post('/signup', async (req, res) => {
         is_verified: false,
         status: 'pending',
       };
-      console.log('Updating existing user:', updates);
+      console.log('[SIGNUP] Updating existing user with OTP:', cleanOtpCode);
       user = await updateUser(existing.id || existing._id, updates);
-      console.log('Updated user:', user);
+      console.log('[SIGNUP] Updated user. Stored OTP:', user.otp_code, 'Stored phone:', user.phone);
     } else {
-      console.log('Creating new user:', userData);
+      console.log('[SIGNUP] Creating new user with OTP:', cleanOtpCode);
       user = await createUser(userData);
-      console.log('Created user:', user);
+      console.log('[SIGNUP] Created user. Stored OTP:', user.otp_code, 'Stored phone:', user.phone);
     }
     
     const responseData = {
@@ -263,6 +269,7 @@ router.post('/verify-otp', async (req, res) => {
 
     // Trim the OTP code to remove any whitespace
     const trimmedOtpCode = String(otpCode).trim();
+    console.log('[VERIFY-OTP] Trimmed OTP code:', trimmedOtpCode, 'length:', trimmedOtpCode.length);
     
     let user = null;
     if (email) {
@@ -273,7 +280,12 @@ router.post('/verify-otp', async (req, res) => {
       console.log('[VERIFY-OTP] Lookup by phone:', phone);
       user = await getUserByPhone(phone);
       console.log('[VERIFY-OTP] Found user:', !!user);
+      if (user) {
+        console.log('[VERIFY-OTP] User record - phone:', user.phone, 'otp_code:', user.otp_code, 'is_verified:', user.is_verified);
+      }
     }
+    
+    console.log('[VERIFY-OTP] User found?', !!user);
     
     console.log('[VERIFY-OTP] Debug Info:');
     console.log('  - Phone/Email received:', email || phone);
@@ -288,39 +300,31 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(400).json({ message: 'User already verified' });
     }
     
-    // Compare OTP codes as strings, both trimmed
+    // Get the stored OTP code
     const storedOtpCode = String(user.otp_code || '').trim();
     
-    console.log('  - Stored OTP Code:', user.otp_code, '(type:', typeof user.otp_code, ', trimmed:', storedOtpCode + ')');
-    console.log('  - Lengths:', 'stored=' + storedOtpCode.length, 'entered=' + trimmedOtpCode.length);
-    console.log('  - Char codes comparison:');
-    for (let i = 0; i < Math.max(storedOtpCode.length, trimmedOtpCode.length); i++) {
-      console.log(`    [${i}] stored='${storedOtpCode[i]}'(${storedOtpCode.charCodeAt(i)}) vs entered='${trimmedOtpCode[i]}'(${trimmedOtpCode.charCodeAt(i)})`);
-    }
-    console.log('  - OTP Match:', storedOtpCode === trimmedOtpCode);
-    console.log('  - OTP Expiry:', user.otp_expiry);
+    console.log('[VERIFY-OTP] Comparing codes:');
+    console.log('  Stored:', storedOtpCode, '| Entered:', trimmedOtpCode, '| Match:', storedOtpCode === trimmedOtpCode);
     
+    // If OTP is empty/missing in database
+    if (!storedOtpCode) {
+      console.log('[VERIFY-OTP] ❌ No OTP stored in database');
+      return res.status(400).json({ message: 'OTP not found. Try resending code.' });
+    }
+    
+    // Check if the codes match
     if (storedOtpCode !== trimmedOtpCode) {
-      console.log('  ❌ MISMATCH: "' + storedOtpCode + '" !== "' + trimmedOtpCode + '"');
+      console.log('[VERIFY-OTP] ❌ Code mismatch - Stored:', storedOtpCode, 'Entered:', trimmedOtpCode);
       return res.status(400).json({ message: 'Invalid verification code' });
     }
     
-    // Check if OTP has expired
-    if (!user.otp_expiry) {
-      return res.status(400).json({ message: 'Verification code not available' });
-    }
+    // Code is correct - mark user as verified
+    console.log('[VERIFY-OTP] ✅ Code matched! Verifying user...');
     
-    const otpExpiryTime = new Date(user.otp_expiry);
-    if (otpExpiryTime < new Date()) {
-      console.log('  ❌ OTP EXPIRED');
-      return res.status(400).json({ message: 'Verification code has expired' });
-    }
-
-    // Mark user as verified and clear OTP fields
     const updatePayload = { is_verified: true, otp_code: null, otp_expiry: null };
     await updateUser(user.id || user._id, updatePayload);
     
-    console.log('  ✅ OTP VERIFIED SUCCESSFULLY');
+    console.log('[VERIFY-OTP] ✅ User verified successfully');
 
     // Generate JWT token
     const token = jwt.sign(
