@@ -269,7 +269,7 @@ router.post('/verify-otp', async (req, res) => {
     
     console.log('[VERIFY-OTP] Debug Info:');
     console.log('  - Phone/Email received:', email || phone);
-    console.log('  - OTP Code received:', otpCode, '(trimmed:', trimmedOtpCode + ')');
+    console.log('  - OTP Code received:', otpCode, '(type:', typeof otpCode, ', trimmed:', trimmedOtpCode + ')');
     console.log('  - User found:', user ? `Yes, ID: ${user.id}` : 'No');
     
     if (!user) {
@@ -283,7 +283,12 @@ router.post('/verify-otp', async (req, res) => {
     // Compare OTP codes as strings, both trimmed
     const storedOtpCode = String(user.otp_code || '').trim();
     
-    console.log('  - Stored OTP Code:', user.otp_code, '(trimmed:', storedOtpCode + ')');
+    console.log('  - Stored OTP Code:', user.otp_code, '(type:', typeof user.otp_code, ', trimmed:', storedOtpCode + ')');
+    console.log('  - Lengths:', 'stored=' + storedOtpCode.length, 'entered=' + trimmedOtpCode.length);
+    console.log('  - Char codes comparison:');
+    for (let i = 0; i < Math.max(storedOtpCode.length, trimmedOtpCode.length); i++) {
+      console.log(`    [${i}] stored='${storedOtpCode[i]}'(${storedOtpCode.charCodeAt(i)}) vs entered='${trimmedOtpCode[i]}'(${trimmedOtpCode.charCodeAt(i)})`);
+    }
     console.log('  - OTP Match:', storedOtpCode === trimmedOtpCode);
     console.log('  - OTP Expiry:', user.otp_expiry);
     
