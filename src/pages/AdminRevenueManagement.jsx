@@ -3,6 +3,12 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE from '../config/api';
 
+const SERVICE_FEES = {
+  standard: 0.05,
+  gold: 0.075,
+  platinum: 0.10
+};
+
 export default function AdminRevenueManagement() {
   const [revenue, setRevenue] = useState({
     totalServiceFees: 0,
@@ -470,9 +476,3 @@ export default function AdminRevenueManagement() {
     </div>
   );
 }
-
-const SERVICE_FEES = {
-  standard: 0.05,
-  gold: 0.075,
-  platinum: 0.10
-};
