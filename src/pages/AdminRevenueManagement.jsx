@@ -9,6 +9,11 @@ const SERVICE_FEES = {
   platinum: 0.10
 };
 
+const formatCurrency = (value) => {
+  const num = Number(value) || 0;
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 export default function AdminRevenueManagement() {
   const [revenue, setRevenue] = useState({
     totalServiceFees: 0,
@@ -159,7 +164,7 @@ export default function AdminRevenueManagement() {
           <div className="card-content">
             <h3>Total Service Fees</h3>
             <p className="stat-number">
-              GH₵ {revenue.totalServiceFees.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              GH₵ {formatCurrency(revenue.totalServiceFees)}
             </p>
             <small>From all transactions</small>
           </div>
@@ -170,7 +175,7 @@ export default function AdminRevenueManagement() {
           <div className="card-content">
             <h3>Available Balance</h3>
             <p className="stat-number">
-              GH₵ {revenue.availableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              GH₵ {formatCurrency(revenue.availableBalance)}
             </p>
             <small>Ready to withdraw</small>
           </div>
@@ -181,7 +186,7 @@ export default function AdminRevenueManagement() {
           <div className="card-content">
             <h3>Total Withdrawn</h3>
             <p className="stat-number">
-              GH₵ {revenue.totalWithdrawn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              GH₵ {formatCurrency(revenue.totalWithdrawn)}
             </p>
             <small>Cumulative withdrawals</small>
           </div>
@@ -191,7 +196,7 @@ export default function AdminRevenueManagement() {
           <div className="card-icon"><FaChartLine /></div>
           <div className="card-content">
             <h3>Total Transactions</h3>
-            <p className="stat-number">{revenue.totalTransactions.toLocaleString()}</p>
+            <p className="stat-number">{(revenue.totalTransactions || 0).toLocaleString()}</p>
             <small>Successful sales</small>
           </div>
         </div>
@@ -208,10 +213,10 @@ export default function AdminRevenueManagement() {
                 <strong>Transactions:</strong> {data.count}
               </div>
               <div style={{ fontSize: '14px', marginBottom: '8px' }}>
-                <strong>Total Sales:</strong> GH₵ {data.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <strong>Total Sales:</strong> GH₵ {formatCurrency(data.amount)}
               </div>
               <div style={{ fontSize: '14px', color: '#28a745' }}>
-                <strong>Service Fee ({(SERVICE_FEES[tier] * 100).toFixed(1)}%):</strong> GH₵ {data.serviceFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <strong>Service Fee ({(SERVICE_FEES[tier] * 100).toFixed(1)}%):</strong> GH₵ {formatCurrency(data.serviceFee)}
               </div>
             </div>
           ))}
@@ -263,10 +268,7 @@ export default function AdminRevenueManagement() {
                     <tr key={withdrawal.id}>
                       <td>
                         <strong>
-                          {withdrawal.amount.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
+                          {formatCurrency(withdrawal.amount)}
                         </strong>
                       </td>
                       <td>{withdrawal.meta?.paystackEmail}</td>
@@ -332,10 +334,7 @@ export default function AdminRevenueManagement() {
                     <tr key={withdrawal.id}>
                       <td>
                         <strong>
-                          {withdrawal.amount.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
+                          {formatCurrency(withdrawal.amount)}
                         </strong>
                       </td>
                       <td>{withdrawal.meta?.paystackEmail}</td>
@@ -384,10 +383,7 @@ export default function AdminRevenueManagement() {
             <div style={{ marginBottom: '15px' }}>
               <p style={{ marginBottom: '5px' }}>
                 <strong>Available Balance:</strong> GH₵{' '}
-                {revenue.availableBalance.toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
+                {formatCurrency(revenue.availableBalance)}
               </p>
             </div>
 
