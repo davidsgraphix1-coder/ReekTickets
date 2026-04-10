@@ -255,7 +255,7 @@ router.post('/login', async (req, res) => {
 
 router.post('/verify-otp', async (req, res) => {
   try {
-    const { email, phone, otpCode } = req.body;
+    console.log('[VERIFY-OTP] Received request:', { email, phone, otpCode });
     
     if (!otpCode || (!email && !phone)) {
       return res.status(400).json({ message: 'Email or phone and verification code are required' });
@@ -267,9 +267,12 @@ router.post('/verify-otp', async (req, res) => {
     let user = null;
     if (email) {
       user = await getUserByEmail(email);
+      console.log('[VERIFY-OTP] Lookup by email:', email, '-> found:', !!user);
     }
     if (!user && phone) {
+      console.log('[VERIFY-OTP] Lookup by phone:', phone);
       user = await getUserByPhone(phone);
+      console.log('[VERIFY-OTP] Found user:', !!user);
     }
     
     console.log('[VERIFY-OTP] Debug Info:');

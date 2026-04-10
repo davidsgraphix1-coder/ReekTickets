@@ -82,7 +82,9 @@ export default function Signup({ onLogin }) {
     const signupData = {
       fullName: `${form.firstName} ${form.lastName}`,
       email: form.email,
-      phone: `+233${form.phone.replace(/\D/g, '')}`,
+      phone: form.phone.startsWith('0') 
+        ? `+233${form.phone.slice(1).replace(/\D/g, '')}`
+        : `+233${form.phone.replace(/\D/g, '')}`,
       password: form.password,
       role: selectedRole,
       ...(selectedRole === 'organizer' || selectedRole === 'vendor' ? {
@@ -95,8 +97,11 @@ export default function Signup({ onLogin }) {
       } : {})
     };
 
+    console.log('[SIGNUP] Phone from form input:', form.phone);
+    console.log('[SIGNUP] Formatted phone for API:', signupData.phone);
     const data = await signup(signupData);
     if (data?.user) {
+      console.log('[SIGNUP] Navigating to verify-email with phone:', signupData.phone);
       navigate('/verify-email', {
         state: {
           phone: signupData.phone,
