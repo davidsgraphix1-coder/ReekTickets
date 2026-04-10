@@ -69,12 +69,13 @@ export default async function handler(req, res) {
     if (userError || !user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    
     const isVerified = resolveField(user, 'isVerified', 'is_verified');
-
     if (isVerified) {
       return res.status(400).json({ message: 'User already verified' });
     }
 
+    // Mark user as verified - no OTP check
     const { error: updateError } = await supabase
       .from('users')
       .update({ is_verified: true, otp_code: null, otp_expiry: null })
@@ -98,12 +99,12 @@ export default async function handler(req, res) {
     };
 
     return res.status(200).json({
-      message: 'Account verified successfully',
       token,
       user: userResponse,
+      message: 'OTP verified successfully'
     });
   } catch (error) {
-    console.error('Verification error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Verify OTP error:', error);
+    return res.status(500).json({ message: 'Server error' });
   }
 }
