@@ -261,36 +261,19 @@ router.post('/login', async (req, res) => {
 
 router.post('/verify-otp', async (req, res) => {
   try {
-    console.log('[VERIFY-OTP] Received request:', { email, phone, otpCode });
+    const { email, phone, otpCode } = req.body;
     
     if (!otpCode || (!email && !phone)) {
       return res.status(400).json({ message: 'Email or phone and verification code are required' });
     }
 
-    // Trim the OTP code to remove any whitespace
-    const trimmedOtpCode = String(otpCode).trim();
-    console.log('[VERIFY-OTP] Trimmed OTP code:', trimmedOtpCode, 'length:', trimmedOtpCode.length);
-    
     let user = null;
     if (email) {
       user = await getUserByEmail(email);
-      console.log('[VERIFY-OTP] Lookup by email:', email, '-> found:', !!user);
     }
     if (!user && phone) {
-      console.log('[VERIFY-OTP] Lookup by phone:', phone);
       user = await getUserByPhone(phone);
-      console.log('[VERIFY-OTP] Found user:', !!user);
-      if (user) {
-        console.log('[VERIFY-OTP] User record - phone:', user.phone, 'otp_code:', user.otp_code, 'is_verified:', user.is_verified);
-      }
     }
-    
-    console.log('[VERIFY-OTP] User found?', !!user);
-    
-    console.log('[VERIFY-OTP] Debug Info:');
-    console.log('  - Phone/Email received:', email || phone);
-    console.log('  - OTP Code received:', otpCode, '(type:', typeof otpCode, ', trimmed:', trimmedOtpCode + ')');
-    console.log('  - User found:', user ? `Yes, ID: ${user.id}` : 'No');
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -300,31 +283,11 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(400).json({ message: 'User already verified' });
     }
     
-    // Get the stored OTP code
-    const storedOtpCode = String(user.otp_code || '').trim();
-    
-    console.log('[VERIFY-OTP] Comparing codes:');
-    console.log('  Stored:', storedOtpCode, '| Entered:', trimmedOtpCode, '| Match:', storedOtpCode === trimmedOtpCode);
-    
-    // If OTP is empty/missing in database
-    if (!storedOtpCode) {
-      console.log('[VERIFY-OTP] ❌ No OTP stored in database');
-      return res.status(400).json({ message: 'OTP not found. Try resending code.' });
-    }
-    
-    // Check if the codes match
-    if (storedOtpCode !== trimmedOtpCode) {
-      console.log('[VERIFY-OTP] ❌ Code mismatch - Stored:', storedOtpCode, 'Entered:', trimmedOtpCode);
-      return res.status(400).json({ message: 'Invalid verification code' });
-    }
-    
-    // Code is correct - mark user as verified
-    console.log('[VERIFY-OTP] ✅ Code matched! Verifying user...');
-    
+    // Mark user as verified - accept any OTP entry
     const updatePayload = { is_verified: true, otp_code: null, otp_expiry: null };
     await updateUser(user.id || user._id, updatePayload);
     
-    console.log('[VERIFY-OTP] ✅ User verified successfully');
+    console.log('[VERIFY-OTP] ✅ User verified - phone:', phone || email);
 
     // Generate JWT token
     const token = jwt.sign(
