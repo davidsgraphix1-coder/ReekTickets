@@ -86,6 +86,11 @@ router.post('/signup', async (req, res) => {
     // Only allow valid roles
     const allowedRoles = ['attendee', 'organizer', 'vendor', 'admin', 'gate'];
     const safeRole = allowedRoles.includes(role) ? role : 'attendee';
+    
+    // Ensure OTP code is stored as a clean string (6 digits)
+    const cleanOtpCode = String(otpCode).trim();
+    console.log('[SIGNUP] OTP code to store:', cleanOtpCode, '(length:', cleanOtpCode.length, ')');
+    
     const userData = {
       full_name: fullName,
       first_name: firstName,
@@ -99,7 +104,7 @@ router.post('/signup', async (req, res) => {
       business_partners: businessPartners || [],
       business_details: business_details || { country: 'Ghana' },
       terms_accepted: termsAccepted || false,
-      otp_code: otpCode,
+      otp_code: cleanOtpCode,
       otp_expiry: otpExpiry.toISOString(),
       is_verified: false,
       status: 'pending',
@@ -124,7 +129,7 @@ router.post('/signup', async (req, res) => {
         business_partners: businessPartners || [],
         business_details: business_details || { country: 'Ghana' },
         terms_accepted: termsAccepted || false,
-        otp_code: otpCode,
+        otp_code: cleanOtpCode,
         otp_expiry: otpExpiry.toISOString(),
         is_verified: false,
         status: 'pending',
@@ -363,7 +368,7 @@ router.post('/resend-otp', async (req, res) => {
     }
 
     // Generate new OTP
-    const newOtpCode = String(Math.floor(100000 + Math.random() * 900000));
+    const newOtpCode = String(Math.floor(100000 + Math.random() * 900000)).trim();
     const newOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
     // Update user with new OTP
