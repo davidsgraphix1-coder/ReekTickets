@@ -105,7 +105,7 @@ export default function SupportChat({ user }) {
     setInput('');
 
     try {
-      const response = await supportFetch(`/support/chat/${chatId}/message`, {
+      const response = await supportFetch(`/api/support/chat/${chatId}/message`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ text: messageObj.text, fileUrl: messageObj.fileUrl, emoji: messageObj.emoji, id: messageObj.id }),
@@ -137,13 +137,13 @@ export default function SupportChat({ user }) {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await supportFetch('/upload', { method: 'POST', body: formData });
+      const res = await supportFetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json().catch(() => null);
       if (res.ok && data?.url) {
         const messageObj = createMessage({ sender: 'user', text: '', fileUrl: data.url });
         addMessage(messageObj);
         try {
-          const messageResponse = await supportFetch(`/support/chat/${chatId}/message`, {
+          const messageResponse = await supportFetch(`/api/support/chat/${chatId}/message`, {
             method: 'POST',
             headers,
             body: JSON.stringify({ text: messageObj.text, fileUrl: messageObj.fileUrl, emoji: messageObj.emoji, id: messageObj.id }),
@@ -178,7 +178,7 @@ export default function SupportChat({ user }) {
 
     const initChat = async () => {
       try {
-        const response = await supportFetch('/support/chat', {
+        const response = await supportFetch('/api/support/chat', {
           method: 'POST',
           headers,
           body: JSON.stringify({ category: selectedCategory }),
@@ -198,7 +198,7 @@ export default function SupportChat({ user }) {
         pollInterval = setInterval(async () => {
           if (!active) return;
           try {
-            const messagesResponse = await supportFetch(`/support/chat/${id}/messages`, {
+            const messagesResponse = await supportFetch(`/api/support/chat/${id}/messages`, {
               method: 'GET',
               headers,
             });
