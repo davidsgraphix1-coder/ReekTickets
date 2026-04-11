@@ -2,6 +2,7 @@ import { FaCheckCircle, FaTimesCircle, FaClock, FaMoneyBillWave, FaChartLine, Fa
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE from '../config/api';
+import './AdminRevenueManagement.css';
 
 const SERVICE_FEES = {
   standard: 0.05,
@@ -205,18 +206,21 @@ export default function AdminRevenueManagement() {
       {/* Revenue by Tier */}
       <div style={{ marginBottom: '30px', backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
         <h3 style={{ marginBottom: '20px' }}>Revenue Breakdown by Event Tier</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+        <div className="tier-cards-grid">
           {Object.entries(revenue.paymentsByTier || {}).map(([tier, data]) => (
-            <div key={tier} style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6' }}>
-              <h4 style={{ textTransform: 'capitalize', marginBottom: '10px' }}>{tier} Events</h4>
-              <div style={{ fontSize: '14px', marginBottom: '8px' }}>
-                <strong>Transactions:</strong> {data.count}
+            <div key={tier} className="tier-card">
+              <h4>{tier} Events</h4>
+              <div className="tier-card-row">
+                <strong>Transactions:</strong>
+                <span>{data.count}</span>
               </div>
-              <div style={{ fontSize: '14px', marginBottom: '8px' }}>
-                <strong>Total Sales:</strong> GH₵ {formatCurrency(data.amount)}
+              <div className="tier-card-row">
+                <strong>Total Sales:</strong>
+                <span className="tier-card-value">GH₵ {formatCurrency(data.amount)}</span>
               </div>
-              <div style={{ fontSize: '14px', color: '#28a745' }}>
-                <strong>Service Fee ({(SERVICE_FEES[tier] * 100).toFixed(1)}%):</strong> GH₵ {formatCurrency(data.serviceFee)}
+              <div className="tier-card-row">
+                <strong>Service Fee ({(SERVICE_FEES[tier] * 100).toFixed(1)}%):</strong>
+                <span className="tier-card-fee">GH₵ {formatCurrency(data.serviceFee)}</span>
               </div>
             </div>
           ))}
