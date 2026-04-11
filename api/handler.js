@@ -22,6 +22,7 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     req.url = req.url.replace(/^\/api/, '');
     req.path = req.path.replace(/^\/api/, '');
+    console.log('[API] Stripped /api prefix:', req.path, req.method);
   }
   next();
 });
@@ -52,7 +53,7 @@ app.get('/test', (req, res) => {
   res.json({ message: 'API handler is working!' });
 });
 
-// Routes - mount with proper paths (Vercel strips /api/ prefix)
+// Routes - mount with proper paths (path stripping middleware converts /api/* to /*)
 try {
   console.log('[API] Attempting to load routes...');
   const authRouter = require('../server/routes/auth');
@@ -66,13 +67,9 @@ try {
   app.use('/events', require('../server/routes/events'));
   app.use('/payments', require('../server/routes/payments'));
   app.use('/support', require('../server/routes/support'));
-  app.use('/api/support', require('../server/routes/support'));
   app.use('/upload', require('../server/routes/upload'));
-  app.use('/api/upload', require('../server/routes/upload'));  // Add for consistency
-  const extrasRouter = require('../server/routes/extras');
-  app.use('/', extrasRouter);
   
-  // Add vendor and agent routes if they exist
+  // Add vendor and agent routes if they exist (before generic routes)
   try {
     app.use('/vendor', require('../server/routes/vendor'));
   } catch (err) {
@@ -84,6 +81,10 @@ try {
   } catch (err) {
     console.log('[API] Agent routes not available:', err.message);
   }
+  
+  // Mount extras router at root (must be last)
+  const extrasRouter = require('../server/routes/extras');
+  app.use('/', extrasRouter);
   
   console.log('[API] All routes mounted successfully');
 } catch (e) {
