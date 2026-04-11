@@ -67,10 +67,10 @@ try {
   app.use('/payments', require('../server/routes/payments'));
   app.use('/support', require('../server/routes/support'));
   app.use('/api/support', require('../server/routes/support'));
-  const extrasRouter = require('../server/routes/extras');
-  app.use('/', extrasRouter);
   app.use('/upload', require('../server/routes/upload'));
   app.use('/api/upload', require('../server/routes/upload'));  // Add for consistency
+  const extrasRouter = require('../server/routes/extras');
+  app.use('/', extrasRouter);
   
   // Add vendor and agent routes if they exist
   try {
