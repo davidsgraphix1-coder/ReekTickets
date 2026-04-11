@@ -17,6 +17,15 @@ app.use(cors({
   credentials: true
 }));
 
+// Strip /api prefix for route matching (Vercel may not strip it)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    req.url = req.url.replace(/^\/api/, '');
+    req.path = req.path.replace(/^\/api/, '');
+  }
+  next();
+});
+
 let dbConnected = false;
 
 // Database connection middleware
