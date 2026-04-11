@@ -92,19 +92,26 @@ export default function OrganizerDashboard() {
         }),
       ]);
 
-      const allEvents = eventsRes.data || [];
-      const userTickets = ticketsRes.data || [];
-      const allUsers = usersRes.data || [];
-      const vendorUsers = vendorsRes.data || [];
-      const allPayments = paymentsRes.data || [];
-      const notifications = notificationsRes.data || [];
-      const messages = messagesRes.data || [];
+      // Ensure all responses are arrays
+      const ensureArray = (data) => {
+        if (Array.isArray(data)) return data;
+        if (data && typeof data === 'object' && data.data && Array.isArray(data.data)) return data.data;
+        return [];
+      };
+
+      const allEvents = ensureArray(eventsRes.data);
+      const userTickets = ensureArray(ticketsRes.data);
+      const allUsers = ensureArray(usersRes.data);
+      const vendorUsers = ensureArray(vendorsRes.data);
+      const allPayments = ensureArray(paymentsRes.data);
+      const notifications = ensureArray(notificationsRes.data);
+      const messages = ensureArray(messagesRes.data);
 
       const currentUser = JSON.parse(localStorage.getItem('reek_user') || '{}');
       const currentUserId = currentUser._id || currentUser.id;
-      const userEvents = currentUserId
+      const userEvents = currentUserId && Array.isArray(allEvents)
         ? allEvents.filter((event) => String(event.organizer?._id || event.organizer) === String(currentUserId))
-        : allEvents;
+        : (Array.isArray(allEvents) ? allEvents : []);
 
       setEvents(userEvents);
       setTickets(userTickets);
