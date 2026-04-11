@@ -607,9 +607,11 @@ router.get('/admin/revenue-summary', auth, async (req, res) => {
 // Admin: Request withdrawal of platform fees
 router.post('/admin/request-withdrawal', auth, async (req, res) => {
   try {
-    const { amount, paystackEmail } = req.body;
+    const { amount, accountNumber, bankCode, accountName } = req.body;
     if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
-    if (!paystackEmail) return res.status(400).json({ message: 'Paystack email required' });
+    if (!accountNumber || !bankCode || !accountName) {
+      return res.status(400).json({ message: 'Bank account details required (account number, bank code, account name)' });
+    }
 
     const user = await getUserById(req.user.id);
     if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Admin access denied' });
@@ -665,7 +667,9 @@ router.post('/admin/request-withdrawal', auth, async (req, res) => {
       provider: 'paystack',
       meta: {
         type: 'admin_withdrawal',
-        paystackEmail,
+        accountNumber,
+        bankCode,
+        accountName,
         requestedAt: new Date().toISOString()
       },
       created_at: new Date().toISOString()
@@ -747,8 +751,13 @@ router.post('/admin/process-withdrawal/:withdrawalId', auth, async (req, res) =>
     const paystackKey = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackKey) return res.status(500).json({ message: 'Paystack key not configured' });
 
-    const paystackEmail = withdrawal.meta?.paystackEmail;
-    if (!paystackEmail) return res.status(400).json({ message: 'No Paystack email on file' });
+    const accountNumber = withdrawal.meta?.accountNumber;
+    const bankCode = withdrawal.meta?.bankCode;
+    const accountName = withdrawal.meta?.accountName;
+
+    if (!accountNumber || !bankCode || !accountName) {
+      return res.status(400).json({ message: 'No bank account details on file' });
+    }
 
     // Step 1: Create recipient on Paystack
     let recipientCode;
@@ -757,9 +766,9 @@ router.post('/admin/process-withdrawal/:withdrawalId', auth, async (req, res) =>
         'https://api.paystack.co/transferrecipient',
         {
           type: 'nuban',
-          name: `ReekTickets Admin Withdrawal`,
-          account_number: paystackEmail,
-          bank_code: 'paystack',
+          name: accountName,
+          account_number: accountNumber,
+          bank_code: bankCode,
           currency: 'GHS'
         },
         {
@@ -770,7 +779,7 @@ router.post('/admin/process-withdrawal/:withdrawalId', auth, async (req, res) =>
     } catch (recipientError) {
       console.error('Paystack recipient creation error:', recipientError?.response?.data || recipientError.message);
       return res.status(400).json({
-        message: 'Could not create Paystack recipient. Verify email is linked to a valid Paystack account.',
+        message: 'Could not create Paystack recipient. Verify bank account details are correct.',
         error: recipientError?.response?.data?.message
       });
     }
@@ -828,6 +837,249 @@ router.post('/admin/process-withdrawal/:withdrawalId', auth, async (req, res) =>
   } catch (error) {
     console.error('Admin process withdrawal error:', error);
     res.status(500).json({ message: 'Withdrawal processing failed' });
+  }
+});
+
+// ===== ORGANIZER MOBILE MONEY WITHDRAWALS =====
+
+// Organizer: Request mobile money withdrawal
+router.post('/organizer/request-withdrawal', auth, async (req, res) => {
+  try {
+    const { amount, mobileNumber, provider, fullName } = req.body;
+    if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
+    if (!mobileNumber || mobileNumber.length < 9) return res.status(400).json({ message: 'Invalid mobile number' });
+    if (!provider) return res.status(400).json({ message: 'Provider required' });
+    if (!fullName) return res.status(400).json({ message: 'Full name required' });
+
+    const user = await getUserById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const supabase = await connectDB();
+
+    // Get organizer's available balance
+    const { data: allPayments } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('status', 'success')
+      .not('meta', 'is', null);
+
+    let organizerEarnings = 0;
+    if (allPayments && allPayments.length > 0) {
+      for (const payment of allPayments) {
+        if (payment.user === req.user.id) {
+          const feeCalc = calculateFees(payment.amount, 'standard');
+          organizerEarnings += feeCalc.organizerAmount;
+        }
+      }
+    }
+
+    // Subtract already withdrawn amounts
+    const { data: approvedWithdrawals } = await supabase
+      .from('payments')
+      .select('amount')
+      .eq('user', req.user.id)
+      .contains('meta', { type: 'organizer_withdrawal' })
+      .eq('status', 'approved');
+
+    const withdrawnAmount = (approvedWithdrawals || []).reduce((sum, w) => sum + (w.amount || 0), 0);
+    const availableBalance = organizerEarnings - withdrawnAmount;
+
+    if (amount > availableBalance) {
+      return res.status(400).json({
+        message: 'Insufficient balance',
+        availableBalance,
+        requestedAmount: amount
+      });
+    }
+
+    // Create withdrawal request
+    const withdrawalRecord = {
+      user: req.user.id,
+      amount,
+      reference: `ORGANIZER-WITHDRAWAL-${Date.now()}`,
+      status: 'pending',
+      provider: 'mobile_money',
+      meta: {
+        type: 'organizer_withdrawal',
+        mobileNumber,
+        provider,
+        fullName,
+        requestedAt: new Date().toISOString()
+      },
+      created_at: new Date().toISOString()
+    };
+
+    const { data: withdrawal, error: withdrawalError } = await supabase
+      .from('payments')
+      .insert(withdrawalRecord)
+      .select()
+      .single();
+
+    if (withdrawalError) throw withdrawalError;
+
+    res.json({
+      message: 'Withdrawal request submitted successfully',
+      withdrawalId: withdrawal.id,
+      amount,
+      status: 'pending'
+    });
+  } catch (error) {
+    console.error('Organizer withdrawal request error:', error);
+    res.status(500).json({ message: 'Withdrawal request failed' });
+  }
+});
+
+// Organizer: Get withdrawal history
+router.get('/organizer/withdrawals', auth, async (req, res) => {
+  try {
+    const user = await getUserById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const supabase = await connectDB();
+    const { data: withdrawals, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('user', req.user.id)
+      .contains('meta', { type: 'organizer_withdrawal' })
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json(withdrawals || []);
+  } catch (error) {
+    console.error('Organizer withdrawals fetch error:', error);
+    res.status(500).json({ message: 'Could not fetch withdrawals' });
+  }
+});
+
+// Admin: Get all organizer withdrawal requests
+router.get('/admin/organizer-withdrawals', auth, async (req, res) => {
+  try {
+    const user = await getUserById(req.user.id);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Admin access denied' });
+
+    const supabase = await connectDB();
+    const { data: withdrawals, error } = await supabase
+      .from('payments')
+      .select('*')
+      .contains('meta', { type: 'organizer_withdrawal' })
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json(withdrawals || []);
+  } catch (error) {
+    console.error('Admin organizer withdrawals fetch error:', error);
+    res.status(500).json({ message: 'Could not fetch withdrawals' });
+  }
+});
+
+// Admin: Approve organizer withdrawal
+router.post('/admin/approve-organizer-withdrawal/:withdrawalId', auth, async (req, res) => {
+  try {
+    const { withdrawalId } = req.params;
+    if (!withdrawalId) return res.status(400).json({ message: 'Withdrawal ID required' });
+
+    const user = await getUserById(req.user.id);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Admin access denied' });
+
+    const supabase = await connectDB();
+
+    // Fetch withdrawal record
+    const { data: withdrawal, error: fetchError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('id', withdrawalId)
+      .single();
+
+    if (fetchError || !withdrawal) return res.status(404).json({ message: 'Withdrawal not found' });
+
+    if (withdrawal.status !== 'pending') {
+      return res.status(400).json({ message: `Withdrawal already ${withdrawal.status}` });
+    }
+
+    // Update withdrawal status to approved
+    const updatedMeta = {
+      ...withdrawal.meta,
+      approvedAt: new Date().toISOString(),
+      approvedBy: req.user.id
+    };
+
+    const { data: updatedWithdrawal, error: updateError } = await supabase
+      .from('payments')
+      .update({
+        status: 'approved',
+        meta: updatedMeta
+      })
+      .eq('id', withdrawalId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    res.json({
+      message: 'Withdrawal approved successfully',
+      withdrawal: updatedWithdrawal
+    });
+  } catch (error) {
+    console.error('Admin approve withdrawal error:', error);
+    res.status(500).json({ message: 'Could not approve withdrawal' });
+  }
+});
+
+// Admin: Decline organizer withdrawal
+router.post('/admin/decline-organizer-withdrawal/:withdrawalId', auth, async (req, res) => {
+  try {
+    const { withdrawalId } = req.params;
+    const { reason } = req.body;
+    
+    if (!withdrawalId) return res.status(400).json({ message: 'Withdrawal ID required' });
+
+    const user = await getUserById(req.user.id);
+    if (!user || user.role !== 'admin') return res.status(403).json({ message: 'Admin access denied' });
+
+    const supabase = await connectDB();
+
+    // Fetch withdrawal record
+    const { data: withdrawal, error: fetchError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('id', withdrawalId)
+      .single();
+
+    if (fetchError || !withdrawal) return res.status(404).json({ message: 'Withdrawal not found' });
+
+    if (withdrawal.status !== 'pending') {
+      return res.status(400).json({ message: `Withdrawal already ${withdrawal.status}` });
+    }
+
+    // Update withdrawal status to declined
+    const updatedMeta = {
+      ...withdrawal.meta,
+      declinedAt: new Date().toISOString(),
+      declinedBy: req.user.id,
+      declineReason: reason || 'No reason provided'
+    };
+
+    const { data: updatedWithdrawal, error: updateError } = await supabase
+      .from('payments')
+      .update({
+        status: 'declined',
+        meta: updatedMeta
+      })
+      .eq('id', withdrawalId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    res.json({
+      message: 'Withdrawal declined successfully',
+      withdrawal: updatedWithdrawal
+    });
+  } catch (error) {
+    console.error('Admin decline withdrawal error:', error);
+    res.status(500).json({ message: 'Could not decline withdrawal' });
   }
 });
 

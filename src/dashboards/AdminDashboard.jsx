@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { FaChartPie, FaUsers, FaUserShield, FaCalendarAlt, FaTicketAlt, FaMoneyBillWave, FaFileAlt, FaCog, FaSearch, FaBell, FaStore, FaHandsHelping, FaSun, FaMoon, FaChevronDown, FaBullhorn, FaBolt, FaEye, FaUserPlus, FaUndo, FaClipboard, FaLink, FaTimes, FaDollarSign, FaClock, FaCreditCard, FaBars, FaTimes as FaClose } from 'react-icons/fa';
+import { FaChartPie, FaUsers, FaUserShield, FaCalendarAlt, FaTicketAlt, FaMoneyBillWave, FaFileAlt, FaCog, FaSearch, FaBell, FaStore, FaHandsHelping, FaSun, FaMoon, FaChevronDown, FaBullhorn, FaBolt, FaEye, FaUserPlus, FaUndo, FaClipboard, FaLink, FaTimes, FaDollarSign, FaClock, FaCreditCard, FaBars, FaTimes as FaClose, FaMobileAlt } from 'react-icons/fa';
 import axios from 'axios';
 import API_BASE from '../config/api';
 import './AdminDashboard.css';
 import AdminPayoutManagement from '../pages/AdminPayoutManagement';
 import AdminRevenueManagement from '../pages/AdminRevenueManagement';
+import AdminOrganizerWithdrawals from '../pages/AdminOrganizerWithdrawals';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -595,6 +596,7 @@ export default function AdminDashboard() {
             { id: 'payments', label: 'Payments', icon: <FaMoneyBillWave /> },
             { id: 'payouts', label: 'Payouts', icon: <FaDollarSign /> },
             { id: 'admin-revenue', label: 'Revenue', icon: <FaChartPie /> },
+            { id: 'organizer-withdrawals', label: 'Organizer Withdrawals', icon: <FaMobileAlt /> },
             { id: 'tickets', label: 'Tickets', icon: <FaTicketAlt /> },
             { id: 'reports', label: 'Reports', icon: <FaFileAlt /> },
             { id: 'settings', label: 'Settings', icon: <FaCog /> }
@@ -1930,6 +1932,11 @@ export default function AdminDashboard() {
               {/* ADMIN REVENUE & WITHDRAWALS TAB */}
               {activeTab === 'admin-revenue' && (
                 <AdminRevenueManagement />
+              )}
+
+              {/* ORGANIZER WITHDRAWALS TAB */}
+              {activeTab === 'organizer-withdrawals' && (
+                <AdminOrganizerWithdrawals />
               )}
 
               {/* SETTINGS TAB */}

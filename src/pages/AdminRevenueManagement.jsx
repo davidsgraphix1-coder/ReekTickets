@@ -35,7 +35,9 @@ export default function AdminRevenueManagement() {
   const [processing, setProcessing] = useState({});
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [paystackEmail, setPaystackEmail] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [bankCode, setBankCode] = useState('');
+  const [accountName, setAccountName] = useState('');
   const [withdrawLoading, setWithdrawLoading] = useState(false);
 
   const headers = {
@@ -65,8 +67,8 @@ export default function AdminRevenueManagement() {
   };
 
   const handleRequestWithdrawal = async () => {
-    if (!withdrawAmount || !paystackEmail) {
-      alert('Please enter both amount and Paystack email');
+    if (!withdrawAmount || !accountNumber || !bankCode || !accountName) {
+      alert('Please fill in all bank account details');
       return;
     }
 
@@ -81,7 +83,9 @@ export default function AdminRevenueManagement() {
         `${API_BASE}/payments/admin/request-withdrawal`,
         {
           amount: parseFloat(withdrawAmount),
-          paystackEmail
+          accountNumber,
+          bankCode,
+          accountName
         },
         { headers }
       );
@@ -89,7 +93,9 @@ export default function AdminRevenueManagement() {
       if (res.data.message) {
         alert(res.data.message);
         setWithdrawAmount('');
-        setPaystackEmail('');
+        setAccountNumber('');
+        setBankCode('');
+        setAccountName('');
         setShowWithdrawModal(false);
         await Promise.all([fetchRevenueSummary(), fetchWithdrawals()]);
       }
@@ -100,7 +106,8 @@ export default function AdminRevenueManagement() {
   };
 
   const handleProcessWithdrawal = async (withdrawalId, withdrawalData) => {
-    if (!window.confirm(`Process withdrawal of GH₵${withdrawalData.amount.toFixed(2)} to ${withdrawalData.meta?.paystackEmail}?`)) {
+    const bankInfo = `${withdrawalData.meta?.accountName} (${withdrawalData.meta?.accountNumber})`;
+    if (!window.confirm(`Process withdrawal of GH₵${withdrawalData.amount.toFixed(2)} to ${bankInfo}?`)) {
       return;
     }
 
@@ -259,7 +266,8 @@ export default function AdminRevenueManagement() {
               <thead>
                 <tr>
                   <th>Amount (GH₵)</th>
-                  <th>Paystack Email</th>
+                  <th>Bank Account</th>
+                  <th>Account Name</th>
                   <th>Requested Date</th>
                   <th>Status</th>
                   <th>Action</th>
@@ -275,7 +283,8 @@ export default function AdminRevenueManagement() {
                           {formatCurrency(withdrawal.amount)}
                         </strong>
                       </td>
-                      <td>{withdrawal.meta?.paystackEmail}</td>
+                      <td>{withdrawal.meta?.accountNumber}</td>
+                      <td>{withdrawal.meta?.accountName}</td>
                       <td>{new Date(withdrawal.created_at).toLocaleDateString()}</td>
                       <td>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -325,7 +334,8 @@ export default function AdminRevenueManagement() {
               <thead>
                 <tr>
                   <th>Amount (GH₵)</th>
-                  <th>Paystack Email</th>
+                  <th>Bank Account</th>
+                  <th>Account Name</th>
                   <th>Requested Date</th>
                   <th>Processed Date</th>
                   <th>Status</th>
@@ -341,7 +351,8 @@ export default function AdminRevenueManagement() {
                           {formatCurrency(withdrawal.amount)}
                         </strong>
                       </td>
-                      <td>{withdrawal.meta?.paystackEmail}</td>
+                      <td>{withdrawal.meta?.accountNumber}</td>
+                      <td>{withdrawal.meta?.accountName}</td>
                       <td>{new Date(withdrawal.created_at).toLocaleDateString()}</td>
                       <td>
                         {withdrawal.meta?.processedAt
@@ -412,15 +423,67 @@ export default function AdminRevenueManagement() {
               />
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', marginBottom: '5px' }}>
-                <strong>Paystack Email</strong>
+                <strong>Account Holder Name</strong>
               </label>
               <input
-                type="email"
-                value={paystackEmail}
-                onChange={(e) => setPaystackEmail(e.target.value)}
-                placeholder="Enter Paystack email"
+                type="text"
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+                placeholder="Enter account holder name"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>
+                <strong>Bank Name / Code</strong>
+              </label>
+              <select
+                value={bankCode}
+                onChange={(e) => setBankCode(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <option value="">Select bank</option>
+                <option value="001">GCB Bank (001)</option>
+                <option value="002">Barclays Bank (002)</option>
+                <option value="003">Social Security Bank (SSB) (003)</option>
+                <option value="004">Zenith Bank (004)</option>
+                <option value="005">Access Bank (005)</option>
+                <option value="006">First Atlantic Bank (006)</option>
+                <option value="007">Ecobank (007)</option>
+                <option value="008">Agricultural Development (008)</option>
+                <option value="015">MTN Mobile Money (015)</option>
+                <option value="016">GT Bank (016)</option>
+                <option value="018">Prudential (018)</option>
+                <option value="019">International Bank (019)</option>
+                <option value="037">CAL Bank (037)</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>
+                <strong>Account Number</strong>
+              </label>
+              <input
+                type="text"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
+                placeholder="Enter 10-digit account number"
+                maxLength="13"
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -430,7 +493,7 @@ export default function AdminRevenueManagement() {
                 }}
               />
               <small style={{ display: 'block', marginTop: '5px', color: '#666' }}>
-                The email must be linked to a validated Paystack account
+                Enter your bank account number (numbers only)
               </small>
             </div>
 
@@ -455,7 +518,9 @@ export default function AdminRevenueManagement() {
                 onClick={() => {
                   setShowWithdrawModal(false);
                   setWithdrawAmount('');
-                  setPaystackEmail('');
+                  setAccountNumber('');
+                  setBankCode('');
+                  setAccountName('');
                 }}
                 style={{
                   flex: 1,

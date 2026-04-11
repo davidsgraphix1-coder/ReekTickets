@@ -1,13 +1,19 @@
 import { FaMoneyBillWave, FaChartPie, FaCreditCard } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
-import { requestOrganizerPayout, getOrganizerPayouts, getPaymentSummary } from '../../services/api';
+import axios from 'axios';
+import API_BASE from '../../config/api';
+import { getOrganizerPayouts, getPaymentSummary } from '../../services/api';
+
+const MobileMoneyProviders = ['MTN Mobile Money', 'Vodafone Cash', 'AirtelTigo Money'];
 
 export default function Transactions({ payments, tickets }) {
-  const [showPayoutModal, setShowPayoutModal] = useState(false);
-  const [payoutAmount, setPayoutAmount] = useState('');
-  const [paystackEmail, setPaystackEmail] = useState('');
-  const [payoutHistory, setPayoutHistory] = useState([]);
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
+  const [withdrawalAmount, setWithdrawalAmount] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [provider, setProvider] = useState('');
+  const [withdrawalHistory, setWithdrawalHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState('');
   const [summary, setSummary] = useState({
     totalRevenue: 0,
     totalOrganizerEarnings: 0,
@@ -20,50 +26,67 @@ export default function Transactions({ payments, tickets }) {
   const totalRevenue = summary.totalRevenue;
   const availableBalance = summary.totalOrganizerEarnings;
 
-  const handlePayoutRequest = async () => {
-    if (!payoutAmount || payoutAmount <= 0) {
+  const handleWithdrawalRequest = async () => {
+    if (!withdrawalAmount || withdrawalAmount <= 0) {
       alert('Please enter a valid amount');
       return;
     }
 
-    if (payoutAmount > availableBalance) {
+    if (withdrawalAmount > availableBalance) {
       alert('Amount exceeds available balance');
       return;
     }
 
-    if (!paystackEmail || !paystackEmail.includes('@')) {
-      alert('Please provide a valid Paystack email address');
+    if (!mobileNumber || mobileNumber.length < 9) {
+      alert('Please enter a valid mobile money number');
+      return;
+    }
+
+    if (!provider) {
+      alert('Please select a mobile money provider');
       return;
     }
 
     setLoading(true);
     try {
-      const result = await requestOrganizerPayout(parseFloat(payoutAmount), paystackEmail);
-      if (result.message && !result.message.includes('error')) {
-        alert('Payout request submitted successfully! Admin will process it shortly. Funds typically arrive within 1-2 business days.');
-        setShowPayoutModal(false);
-        setPayoutAmount('');
-        setPaystackEmail('');
-        // Refresh payout history
-        fetchPayoutHistory();
+      const headers = { Authorization: `Bearer ${localStorage.getItem('reek_token')}` };
+      const response = await axios.post(
+        `${API_BASE}/payments/organizer/request-withdrawal`,
+        {
+          amount: parseFloat(withdrawalAmount),
+          mobileNumber,
+          provider,
+          fullName
+        },
+        { headers }
+      );
+
+      if (response.data.message && !response.data.message.includes('error')) {
+        alert('Withdrawal request submitted successfully! Admin will process it shortly.');
+        setShowWithdrawalModal(false);
+        setWithdrawalAmount('');
+        setMobileNumber('');
+        setProvider('');
+        fetchWithdrawalHistory();
       } else {
-        alert(result.message || 'Payout request failed');
+        alert(response.data.message || 'Withdrawal request failed');
       }
     } catch (error) {
-      console.error('Payout error:', error);
-      alert('Network error. Please try again.');
+      console.error('Withdrawal error:', error);
+      alert(error.response?.data?.message || 'Network error. Please try again.');
     }
     setLoading(false);
   };
 
-  const fetchPayoutHistory = async () => {
+  const fetchWithdrawalHistory = async () => {
     try {
-      const result = await getOrganizerPayouts();
-      if (Array.isArray(result)) {
-        setPayoutHistory(result);
+      const headers = { Authorization: `Bearer ${localStorage.getItem('reek_token')}` };
+      const response = await axios.get(`${API_BASE}/payments/organizer/withdrawals`, { headers });
+      if (Array.isArray(response.data)) {
+        setWithdrawalHistory(response.data);
       }
     } catch (error) {
-      console.error('Failed to fetch payout history:', error);
+      console.error('Failed to fetch withdrawal history:', error);
     }
   };
 
@@ -78,9 +101,12 @@ export default function Transactions({ payments, tickets }) {
     }
   };
 
-  // Fetch payout history and payment summary on component mount
+  // Fetch withdrawal history, payment summary, and user data on component mount
   useEffect(() => {
-    fetchPayoutHistory();
+    const user = JSON.parse(localStorage.getItem('reek_user') || '{}');
+    setFullName(user.full_name || user.fullName || '');
+    
+    fetchWithdrawalHistory();
     fetchPaymentSummary();
   }, []);
 
@@ -117,44 +143,46 @@ export default function Transactions({ payments, tickets }) {
         </div>
       </div>
 
-      {/* Payout Section */}
+      {/* Withdrawal Section */}
       <div className="payout-section" style={{ marginBottom: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>
-        <h3>Request Payout</h3>
-        <p>Withdraw your available earnings via Paystack. Admin approval required.</p>
+        <h3>Request Withdrawal</h3>
+        <p>Withdraw your available earnings via Mobile Money. Admin approval required.</p>
         <button
           className="btn btn-primary"
-          onClick={() => setShowPayoutModal(true)}
+          onClick={() => setShowWithdrawalModal(true)}
           disabled={availableBalance <= 0}
         >
-          Request Payout
+          Request Withdrawal
         </button>
       </div>
 
-      {/* Payout History */}
-      {payoutHistory.length > 0 && (
+      {/* Withdrawal History */}
+      {withdrawalHistory.length > 0 && (
         <div style={{ marginBottom: '30px' }}>
-          <h3>Payout History</h3>
+          <h3>Withdrawal History</h3>
           <div className="table-wrapper">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Date</th>
                   <th>Amount</th>
+                  <th>Mobile Number</th>
+                  <th>Provider</th>
                   <th>Status</th>
-                  <th>Reference</th>
                 </tr>
               </thead>
               <tbody>
-                {payoutHistory.map((payout) => (
-                  <tr key={payout._id}>
-                    <td>{new Date(payout.createdAt).toLocaleDateString()}</td>
-                    <td>GH₵ {Math.abs(payout.amount).toFixed(2)}</td>
+                {withdrawalHistory.map((withdrawal) => (
+                  <tr key={withdrawal.id}>
+                    <td>{new Date(withdrawal.created_at).toLocaleDateString()}</td>
+                    <td>GH₵ {withdrawal.amount.toFixed(2)}</td>
+                    <td>{withdrawal.meta?.mobileNumber}</td>
+                    <td>{withdrawal.meta?.provider}</td>
                     <td>
-                      <span className={`badge ${payout.status === 'pending' ? 'badge-warning' : payout.status === 'success' ? 'badge-success' : 'badge-danger'}`}>
-                        {payout.status}
+                      <span className={`badge ${withdrawal.status === 'pending' ? 'badge-warning' : withdrawal.status === 'approved' ? 'badge-success' : 'badge-danger'}`}>
+                        {withdrawal.status}
                       </span>
                     </td>
-                    <td>{payout._id}</td>
                   </tr>
                 ))}
               </tbody>
@@ -194,21 +222,32 @@ export default function Transactions({ payments, tickets }) {
         </div>
       )}
 
-      {/* Payout Modal */}
-      {showPayoutModal && (
-        <div className="modal-overlay" onClick={() => setShowPayoutModal(false)}>
+      {/* Withdrawal Modal */}
+      {showWithdrawalModal && (
+        <div className="modal-overlay" onClick={() => setShowWithdrawalModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Request Payout</h3>
-              <button className="modal-close" onClick={() => setShowPayoutModal(false)}>×</button>
+              <h3>Request Withdrawal</h3>
+              <button className="modal-close" onClick={() => setShowWithdrawalModal(false)}>×</button>
             </div>
             <div className="modal-body">
+              <div className="form-group">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  disabled
+                  placeholder="Your full name"
+                  style={{ backgroundColor: '#f5f5f5' }}
+                />
+              </div>
+
               <div className="form-group">
                 <label>Amount (GH₵)</label>
                 <input
                   type="number"
-                  value={payoutAmount}
-                  onChange={(e) => setPayoutAmount(e.target.value)}
+                  value={withdrawalAmount}
+                  onChange={(e) => setWithdrawalAmount(e.target.value)}
                   placeholder="Enter amount"
                   min="1"
                   max={availableBalance}
@@ -218,24 +257,37 @@ export default function Transactions({ payments, tickets }) {
               </div>
 
               <div className="form-group">
-                <label>Paystack Email</label>
+                <label>Mobile Money Provider</label>
+                <select
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value)}
+                >
+                  <option value="">Select provider</option>
+                  {MobileMoneyProviders.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Mobile Money Number</label>
                 <input
-                  type="email"
-                  value={paystackEmail}
-                  onChange={(e) => setPaystackEmail(e.target.value)}
-                  placeholder="Enter Paystack account email"
+                  type="text"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value)}
+                  placeholder="Enter mobile money number (e.g., 0241234567)"
                 />
-                <small>The email linked to your Paystack account</small>
+                <small>Format: 10 digits starting with 0</small>
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowPayoutModal(false)}>Cancel</button>
+              <button className="btn btn-secondary" onClick={() => setShowWithdrawalModal(false)}>Cancel</button>
               <button
                 className="btn btn-primary"
-                onClick={handlePayoutRequest}
+                onClick={handleWithdrawalRequest}
                 disabled={loading}
               >
-                {loading ? 'Processing...' : 'Request Payout'}
+                {loading ? 'Processing...' : 'Submit Withdrawal'}
               </button>
             </div>
           </div>
