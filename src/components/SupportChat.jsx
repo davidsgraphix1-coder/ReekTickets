@@ -3,7 +3,6 @@ import ChatButton from './ChatButton';
 import ChatWindow from './ChatWindow';
 import styles from './SupportChat.module.css';
 import { FaInfoCircle, FaTicketAlt, FaCreditCard, FaUsers, FaStore, FaUserShield, FaUserCircle, FaUndo, FaExclamationTriangle } from 'react-icons/fa';
-import { socket } from '../services/socket';
 import API_BASE from '../config/api';
 
 const SUPPORT_CATEGORIES = [
@@ -78,7 +77,6 @@ export default function SupportChat({ user }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
-  const [connected, setConnected] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [chatError, setChatError] = useState('');
 
@@ -122,10 +120,6 @@ export default function SupportChat({ user }) {
       setChatError('Unable to send support message. Please try again.');
     }
 
-    if (socket && socket.connected) {
-      socket.emit('userMessage', { chatId, message: messageObj });
-    }
-
     if (AUTO_REPLIES[selectedCategory]) {
       setTyping(true);
       setTimeout(() => {
@@ -162,10 +156,6 @@ export default function SupportChat({ user }) {
           console.error('Failed to send file support message', error);
           setChatError('Unable to attach file to support chat. Please try again.');
         }
-
-        if (socket && socket.connected) {
-          socket.emit('userMessage', { chatId, message: messageObj });
-        }
       } else {
         throw new Error(data?.message || 'File upload failed');
       }
@@ -184,6 +174,8 @@ export default function SupportChat({ user }) {
     }
 
     let active = true;
+    let pollInterval = null;
+
     const initChat = async () => {
       try {
         const response = await supportFetch('/support/chat', {
@@ -200,14 +192,26 @@ export default function SupportChat({ user }) {
         const id = chat.id || chat._id;
         setChatId(id);
         setMessages(chat.messages || []);
-        if (socket && !socket.connected) {
-          socket.connect();
-          socket.once('connect', () => socket.emit('join', id));
-        } else if (socket) {
-          socket.emit('join', id);
-        }
-        setConnected(true);
         setChatError('');
+
+        // Start polling for new messages
+        pollInterval = setInterval(async () => {
+          if (!active) return;
+          try {
+            const messagesResponse = await supportFetch(`/support/chat/${id}/messages`, {
+              method: 'GET',
+              headers,
+            });
+            if (messagesResponse.ok) {
+              const messagesData = await messagesResponse.json().catch(() => null);
+              if (Array.isArray(messagesData)) {
+                setMessages(messagesData);
+              }
+            }
+          } catch (error) {
+            console.error('Failed to poll messages', error);
+          }
+        }, 2000); // Poll every 2 seconds
       } catch (error) {
         console.error('Failed to initialize support chat', error);
         setChatError(error.message || 'Unable to start support chat. Please try again.');
@@ -218,31 +222,9 @@ export default function SupportChat({ user }) {
 
     return () => {
       active = false;
-      if (socket) {
-        socket.off('newMessage');
-        if (socket.connected) socket.disconnect();
-      }
-      setConnected(false);
+      if (pollInterval) clearInterval(pollInterval);
     };
   }, [open, selectedCategory, currentUser, headers]);
-
-  useEffect(() => {
-    if (!connected || !chatId) return;
-
-    const handleNewMessage = (msg) => {
-      if (!msg || !msg.id) {
-        addMessage({ ...msg, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` });
-      } else {
-        addMessage(msg);
-      }
-      setTyping(false);
-    };
-
-    socket.on('newMessage', handleNewMessage);
-    return () => {
-      socket.off('newMessage', handleNewMessage);
-    };
-  }, [connected, chatId]);
 
   const handleEmojiSelect = (emoji) => {
     setInput((prev) => `${prev || ''}${emoji}`);
