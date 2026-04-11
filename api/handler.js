@@ -82,19 +82,20 @@ try {
   console.error('[API] Stack:', e.stack);
 }
 
-// Error handler
+// 404
 app.use((err, req, res, next) => {
-  console.error('[API] Error:', err);
-  res.status(500).json({ error: err.message });
+  console.error('[API] Error handler:', err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-// 404
 app.use((req, res) => {
   console.warn('[API] 404:', req.method, req.path);
-  res.status(404).json({ message: 'API endpoint not found' });
+  res.status(404).json({ message: 'API endpoint not found', path: req.path });
 });
 
-// Vercel serverless function export
-module.exports = app;
+// Export for Vercel serverless
+module.exports = (req, res) => {
+  return app(req, res);
+};
 
 

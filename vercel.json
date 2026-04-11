@@ -10,19 +10,13 @@
   },
   "rewrites": [
     {
-      "source": "/api/:path(.+)",
+      "source": "/api/(.*)",
       "destination": "/api/handler"
     },
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/handler.js": {
-      "memory": 1024,
-      "maxDuration": 30
-    }
-  }
+  ]
 }
 
