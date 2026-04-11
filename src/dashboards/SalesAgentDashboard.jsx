@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { FaChartPie, FaMoneyBillWave, FaLink, FaDollarSign, FaMedal, FaBell, FaCog, FaChevronDown, FaUserCircle, FaTicketAlt, FaCalendarAlt, FaClock, FaChartLine, FaMousePointer, FaShareAlt, FaFilePdf, FaClipboard, FaSort, FaSortUp, FaSortDown, FaBars, FaTimes as FaClose } from 'react-icons/fa';
+import { FaChartPie, FaMoneyBillWave, FaLink, FaDollarSign, FaMedal, FaBell, FaCog, FaChevronDown, FaUserCircle, FaTicketAlt, FaCalendarAlt, FaClock, FaChartLine, FaMousePointer, FaShareAlt, FaFilePdf, FaClipboard, FaSort, FaSortUp, FaSortDown, FaBars, FaTimes as FaClose, FaCamera } from 'react-icons/fa';
 import axios from 'axios';
 import API_BASE from '../config/api';
 import { withdrawFunds } from '../services/api';
@@ -35,6 +35,8 @@ export default function SalesAgentDashboard() {
   const [settingsError, setSettingsError] = useState('');
   const [settingsMessage, setSettingsMessage] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profilePicUploading, setProfilePicUploading] = useState(false);
+  const [profilePicError, setProfilePicError] = useState('');
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${localStorage.getItem('reek_token')}`
@@ -139,6 +141,42 @@ export default function SalesAgentDashboard() {
       setSettingsError(err.response?.data?.message || 'Failed to save settings.');
     } finally {
       setSettingsLoading(false);
+    }
+  };
+
+  const handleProfilePicUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProfilePicUploading(true);
+    setProfilePicError('');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await axios.post(`${API_BASE}/upload`, formData, {
+        headers: {
+          ...headers,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      const picUrl = response.data.url;
+      
+      const updateRes = await axios.patch(`${API_BASE}/auth/me`, 
+        { profilePic: picUrl, avatarUrl: picUrl }, 
+        { headers }
+      );
+      
+      const updatedUser = { ...user, profilePic: picUrl, avatarUrl: picUrl };
+      localStorage.setItem('reek_user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    } catch (err) {
+      console.error('Profile picture upload failed:', err);
+      setProfilePicError('Failed to upload profile picture. Please try again.');
+    } finally {
+      setProfilePicUploading(false);
     }
   };
 
@@ -388,6 +426,34 @@ export default function SalesAgentDashboard() {
             <div className="settings-panel">
               <h2>Agent Settings</h2>
               <p>Update your sales agent profile settings here.</p>
+
+              {/* Profile Picture Upload */}
+              <div className="settings-section" style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
+                <h3 style={{ marginBottom: '16px' }}>Profile Picture</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                  <img 
+                    src={user?.profilePic || user?.avatarUrl || 'https://i.pravatar.cc/120?img=12'} 
+                    alt="Profile" 
+                    style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb' }}
+                  />
+                  <div style={{ flex: 1, minWidth: '200px' }}>
+                    <label htmlFor="agent-pic-upload" style={{ display: 'inline-block', cursor: 'pointer', background: '#7c3aed', color: 'white', padding: '8px 16px', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '8px' }}>
+                      <FaCamera size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                      Upload Picture
+                    </label>
+                    <input
+                      id="agent-pic-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfilePicUpload}
+                      disabled={profilePicUploading}
+                      style={{ display: 'none' }}
+                    />
+                    {profilePicError && <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '8px 0 0 0' }}>{profilePicError}</p>}
+                    {profilePicUploading && <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: '8px 0 0 0' }}>Uploading...</p>}
+                  </div>
+                </div>
+              </div>
 
               <div className="settings-fields">
                 <div className="form-group">

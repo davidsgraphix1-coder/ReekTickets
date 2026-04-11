@@ -2236,14 +2236,19 @@ export default function AdminDashboard() {
                     {/* User Info */}
                     <div className="detail-section">
                       <h3><FaClipboard /> Personal Information</h3>
-                      <div className="detail-grid">
-                        <div className="detail-item">
-                          <label>Full Name</label>
-                          <p>{selectedUserDetails.fullName}</p>
-                        </div>
-                        <div className="detail-item">
-                          <label>Email</label>
-                          <p>{selectedUserDetails.email}</p>
+                      <div className="detail-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', alignItems: 'start' }}>
+                        {/* Profile Picture Column */}
+                        <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+                          <img 
+                            src={selectedUserDetails.profilePic || selectedUserDetails.avatarUrl || 'https://i.pravatar.cc/120?img=12'} 
+                            alt={selectedUserDetails.fullName}
+                            style={{ width: '100px', height: '100px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #e5e7eb' }}
+                          />
+                          <div>
+                            <h4 style={{ margin: '0 0 8px 0' }}>{selectedUserDetails.fullName}</h4>
+                            <p style={{ margin: '0 0 4px 0', color: '#6b7280', fontSize: '0.9rem' }}>{selectedUserDetails.email}</p>
+                            <p style={{ margin: '0', color: '#6b7280', fontSize: '0.9rem' }}>Member since {formatDate(selectedUserDetails.createdAt)}</p>
+                          </div>
                         </div>
                         <div className="detail-item">
                           <label>Phone</label>
@@ -2256,10 +2261,6 @@ export default function AdminDashboard() {
                         <div className="detail-item">
                           <label>Status</label>
                           <p><span className={`badge ${selectedUserDetails.status === 'active' ? 'active' : 'banned'}`}>{selectedUserDetails.status || 'active'}</span></p>
-                        </div>
-                        <div className="detail-item">
-                          <label>Member Since</label>
-                          <p>{formatDate(selectedUserDetails.createdAt)}</p>
                         </div>
                       </div>
                     </div>

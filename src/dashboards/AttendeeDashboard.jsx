@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { FaChartPie, FaTicketAlt, FaClock, FaCalendarAlt, FaRegCalendarAlt, FaHeart, FaRegHeart, FaBell, FaCog, FaRegFileAlt, FaChevronDown, FaSun, FaMoon, FaMapMarkerAlt, FaShareAlt, FaCopy, FaExternalLinkAlt, FaFilePdf, FaQrcode, FaSort, FaSortUp, FaSortDown, FaTimes, FaBars, FaTimes as FaClose } from 'react-icons/fa';
+import { FaChartPie, FaTicketAlt, FaClock, FaCalendarAlt, FaRegCalendarAlt, FaHeart, FaRegHeart, FaBell, FaCog, FaRegFileAlt, FaChevronDown, FaSun, FaMoon, FaMapMarkerAlt, FaShareAlt, FaCopy, FaExternalLinkAlt, FaFilePdf, FaQrcode, FaSort, FaSortUp, FaSortDown, FaTimes, FaBars, FaTimes as FaClose, FaCamera } from 'react-icons/fa';
 import axios from 'axios';
 import API_BASE from '../config/api';
 import './AttendeeDashboard.css';
@@ -24,6 +24,8 @@ export default function AttendeeDashboard() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [reportMessage, setReportMessage] = useState('');
   const [reportStatus, setReportStatus] = useState('');
+  const [profilePicUploading, setProfilePicUploading] = useState(false);
+  const [profilePicError, setProfilePicError] = useState('');
 
   const headers = useMemo(() => ({
     Authorization: `Bearer ${localStorage.getItem('reek_token')}`
@@ -57,6 +59,42 @@ export default function AttendeeDashboard() {
       console.error('Failed to fetch notifications:', err);
     }
   }, [headers]);
+
+  const handleProfilePicUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProfilePicUploading(true);
+    setProfilePicError('');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await axios.post(`${API_BASE}/upload`, formData, {
+        headers: {
+          ...headers,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      const picUrl = response.data.url;
+      
+      const updateRes = await axios.patch(`${API_BASE}/auth/me`, 
+        { profilePic: picUrl, avatarUrl: picUrl }, 
+        { headers }
+      );
+      
+      const updatedUser = { ...user, profilePic: picUrl, avatarUrl: picUrl };
+      localStorage.setItem('reek_user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    } catch (err) {
+      console.error('Profile picture upload failed:', err);
+      setProfilePicError('Failed to upload profile picture. Please try again.');
+    } finally {
+      setProfilePicUploading(false);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -192,12 +230,35 @@ export default function AttendeeDashboard() {
       {/* Sidebar */}
       <div className={`attendee-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
-          <div className="user-avatar">
+          <div className="user-avatar" style={{ position: 'relative', display: 'inline-block' }}>
             <img src={userAvatar} alt={user?.fullName} />
+            <label style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              background: '#3b82f6',
+              borderRadius: '50%',
+              padding: '4px',
+              cursor: profilePicUploading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid white',
+            }}>
+              <FaCamera size={12} color="white" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleProfilePicUpload}
+                disabled={profilePicUploading}
+                style={{ display: 'none' }}
+              />
+            </label>
           </div>
           <div className="user-info">
             <div className="user-name">{user?.fullName || 'Attendee'}</div>
             <div className="user-subtitle">Event Attendee</div>
+            {profilePicError && <div style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px' }}>{profilePicError}</div>}
           </div>
         </div>
 

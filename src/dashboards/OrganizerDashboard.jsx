@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaChartPie, FaUser, FaTicketAlt, FaPlus, FaBullhorn, FaMoneyBillWave, FaBell, FaEnvelope, FaUsers, FaStore, FaVideo, FaCog, FaChevronDown } from 'react-icons/fa';
+import { FaChartPie, FaUser, FaTicketAlt, FaPlus, FaBullhorn, FaMoneyBillWave, FaBell, FaEnvelope, FaUsers, FaStore, FaVideo, FaCog, FaChevronDown, FaCamera } from 'react-icons/fa';
 import axios from 'axios';
 import API_BASE from '../config/api';
 import './OrganizerDashboard.css';
@@ -34,6 +34,8 @@ export default function OrganizerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [organizer, setOrganizer] = useState(null);
+  const [profilePicUploading, setProfilePicUploading] = useState(false);
+  const [profilePicError, setProfilePicError] = useState('');
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -58,14 +60,36 @@ export default function OrganizerDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError('');
       const [eventsRes, ticketsRes, usersRes, vendorsRes, paymentsRes, notificationsRes, messagesRes] = await Promise.all([
-        axios.get(`${API_BASE}/events`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_BASE}/tickets`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_BASE}/users`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_BASE}/vendors`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_BASE}/payments`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_BASE}/notifications`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${API_BASE}/messages`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API_BASE}/events`, { headers }).catch(err => {
+          console.error('Failed to fetch events:', err.message);
+          return { data: [] };
+        }),
+        axios.get(`${API_BASE}/tickets`, { headers }).catch(err => {
+          console.error('Failed to fetch tickets:', err.message);
+          return { data: [] };
+        }),
+        axios.get(`${API_BASE}/users`, { headers }).catch(err => {
+          console.error('Failed to fetch users:', err.message);
+          return { data: [] };
+        }),
+        axios.get(`${API_BASE}/vendors`, { headers }).catch(err => {
+          console.error('Failed to fetch vendors:', err.message);
+          return { data: [] };
+        }),
+        axios.get(`${API_BASE}/payments`, { headers }).catch(err => {
+          console.error('Failed to fetch payments:', err.message);
+          return { data: [] };
+        }),
+        axios.get(`${API_BASE}/notifications`, { headers }).catch(err => {
+          console.error('Failed to fetch notifications:', err.message);
+          return { data: [] };
+        }),
+        axios.get(`${API_BASE}/messages`, { headers }).catch(err => {
+          console.error('Failed to fetch messages:', err.message);
+          return { data: [] };
+        }),
       ]);
 
       const allEvents = eventsRes.data || [];
@@ -108,12 +132,49 @@ export default function OrganizerDashboard() {
         totalEvents: userEvents.length,
         ticketsSold: userTickets.length,
       });
-      setError('');
     } catch (err) {
-      setError('Could not fetch organizer data');
-      console.error(err);
+      console.error('Unexpected error fetching organizer data:', err);
+      setError('Unable to load some dashboard data. Please refresh or contact support.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProfilePicUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProfilePicUploading(true);
+    setProfilePicError('');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await axios.post(`${API_BASE}/upload`, formData, {
+        headers: {
+          ...headers,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      const picUrl = response.data.url;
+      
+      // Update user profile with new pic
+      const updateRes = await axios.patch(`${API_BASE}/auth/me`, 
+        { profilePic: picUrl, avatarUrl: picUrl }, 
+        { headers }
+      );
+      
+      // Update local storage and state
+      const updatedUser = { ...organizer, profilePic: picUrl, avatarUrl: picUrl };
+      localStorage.setItem('reek_user', JSON.stringify(updatedUser));
+      setOrganizer(updatedUser);
+    } catch (err) {
+      console.error('Profile picture upload failed:', err);
+      setProfilePicError('Failed to upload profile picture. Please try again.');
+    } finally {
+      setProfilePicUploading(false);
     }
   };
 
@@ -237,10 +298,35 @@ export default function OrganizerDashboard() {
           <div className="header-right">
             <button className="icon-btn notification-btn"><FaBell /></button>
             <div className="user-profile">
-              <img src={organizerAvatar} alt="User" className="avatar" />
+              <div style={{ position: 'relative' }}>
+                <img src={organizerAvatar} alt="User" className="avatar" />
+                <label style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  background: '#3b82f6',
+                  borderRadius: '50%',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid white',
+                }}>
+                  <FaCamera size={12} color="white" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePicUpload}
+                    disabled={profilePicUploading}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
               <span className="user-name">{organizer?.fullName || organizer?.email || 'Organizer'}</span>
               <span className="dropdown-arrow"><FaChevronDown /></span>
             </div>
+            {profilePicError && <span style={{ color: '#ef4444', fontSize: '0.85rem' }}>{profilePicError}</span>}
           </div>
         </header>
 
