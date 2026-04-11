@@ -95,8 +95,6 @@ app.use((req, res) => {
 });
 
 // Vercel serverless function export
-module.exports = (req, res) => {
-  app(req, res);
-};
+module.exports = app;
 
 
