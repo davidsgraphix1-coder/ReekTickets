@@ -206,7 +206,7 @@ export default function AdminRevenueManagement() {
       <div style={{ marginBottom: '30px', backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
         <h3 style={{ marginBottom: '20px' }}>Revenue Breakdown by Event Tier</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-          {Object.entries(revenue.paymentsByTier).map(([tier, data]) => (
+          {Object.entries(revenue.paymentsByTier || {}).map(([tier, data]) => (
             <div key={tier} style={{ backgroundColor: '#fff', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6' }}>
               <h4 style={{ textTransform: 'capitalize', marginBottom: '10px' }}>{tier} Events</h4>
               <div style={{ fontSize: '14px', marginBottom: '8px' }}>
