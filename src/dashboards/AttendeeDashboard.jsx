@@ -75,8 +75,13 @@ export default function AttendeeDashboard() {
         headers: {
           ...headers,
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 30000
       });
+      
+      if (!response.data?.url) {
+        throw new Error('No URL returned from upload');
+      }
       
       const picUrl = response.data.url;
       
@@ -90,7 +95,16 @@ export default function AttendeeDashboard() {
       setUser(updatedUser);
     } catch (err) {
       console.error('Profile picture upload failed:', err);
-      setProfilePicError('Failed to upload profile picture. Please try again.');
+      
+      if (err.response?.data?.error) {
+        setProfilePicError(err.response.data.error);
+      } else if (err.message?.includes('timeout')) {
+        setProfilePicError('Upload timed out. Please try again.');
+      } else if (err.message?.includes('Network')) {
+        setProfilePicError('Network error. Please check your connection.');
+      } else {
+        setProfilePicError('Failed to upload profile picture. Please try again.');
+      }
     } finally {
       setProfilePicUploading(false);
     }

@@ -61,6 +61,20 @@ try {
   const extrasRouter = require('../server/routes/extras');
   app.use('/', extrasRouter);
   app.use('/upload', require('../server/routes/upload'));
+  app.use('/api/upload', require('../server/routes/upload'));  // Add for consistency
+  
+  // Add vendor and agent routes if they exist
+  try {
+    app.use('/vendor', require('../server/routes/vendor'));
+  } catch (err) {
+    console.log('[API] Vendor routes not available:', err.message);
+  }
+  
+  try {
+    app.use('/agent', require('../server/routes/agent'));
+  } catch (err) {
+    console.log('[API] Agent routes not available:', err.message);
+  }
   
   console.log('[API] All routes mounted successfully');
 } catch (e) {
