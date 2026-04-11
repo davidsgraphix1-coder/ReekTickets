@@ -350,13 +350,18 @@ router.post('/admin/process-payout/:payoutId', auth, async (req, res) => {
 
     // Step 2: Initiate transfer
     try {
+      // Generate unique reference (lowercase, dashes/underscores only, 16-50 chars)
+      const uniqueRef = `payout-${payoutId.substring(0, 8)}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      
       const transferResponse = await axios.post(
         'https://api.paystack.co/transfer',
         {
           source: 'balance',
+          amount: Math.round(payout.amount * 100), // Amount in pesewas (100 pesewas = 1 GHS)
+          recipient: recipientCode,
+          reference: uniqueRef,
           reason: `ReekTickets organizer payout`,
-          amount: Math.round(payout.amount * 100), // Amount in kobo
-          recipient: recipientCode
+          currency: 'GHS'
         },
         {
           headers: { Authorization: `Bearer ${paystackKey}`, 'Content-Type': 'application/json' }
@@ -371,6 +376,7 @@ router.post('/admin/process-payout/:payoutId', auth, async (req, res) => {
         paystackTransferId: transferData.id,
         paystackTransferCode: transferData.transfer_code,
         paystackTransferReference: transferData.reference,
+        paystackUniqueRef: uniqueRef,
         processedAt: new Date().toISOString(),
         processedBy: req.user.id
       };
