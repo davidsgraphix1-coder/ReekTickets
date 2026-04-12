@@ -12,31 +12,41 @@ function getSupabaseClient() {
 const TABLE = 'announcements';
 
 async function getAllAnnouncements() {
-	const { data, error } = await supabase.from(TABLE).select('*');
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).select('*');
 	if (error) throw error;
 	return data;
 }
 
 async function getAnnouncementById(id) {
-	const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).select('*').eq('id', id).single();
 	if (error) throw error;
 	return data;
 }
 
 async function createAnnouncement(announcement) {
-	const { data, error } = await supabase.from(TABLE).insert([announcement]).single();
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).insert([announcement]).single();
 	if (error) throw error;
 	return data;
 }
 
 async function updateAnnouncement(id, updates) {
-	const { data, error } = await supabase.from(TABLE).update(updates).eq('id', id).single();
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).update(updates).eq('id', id).single();
 	if (error) throw error;
 	return data;
 }
 
 async function deleteAnnouncement(id) {
-	const { data, error } = await supabase.from(TABLE).delete().eq('id', id);
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).delete().eq('id', id);
 	if (error) throw error;
 	return data;
 }

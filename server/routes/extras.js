@@ -20,6 +20,12 @@ const { connectDB } = require('../config/db');
 
 // ===== SUPABASE ENDPOINTS FOR ORGANIZER DASHBOARD =====
 
+// Catch-all logging route for debugging
+router.use((req, res, next) => {
+  console.log('[EXTRAS] Route:', req.method, req.path);
+  next();
+});
+
 // Test endpoint to verify routes are loading
 router.get('/test-routes', async (req, res) => {
   res.json({ message: 'Routes loaded successfully!', timestamp: new Date().toISOString() });

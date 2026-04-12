@@ -12,31 +12,41 @@ function getSupabaseClient() {
 const TABLE = 'invitations';
 
 async function getAllInvitations() {
-	const { data, error } = await supabase.from(TABLE).select('*');
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).select('*');
 	if (error) throw error;
 	return data;
 }
 
 async function getInvitationById(id) {
-	const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).select('*').eq('id', id).single();
 	if (error) throw error;
 	return data;
 }
 
 async function createInvitation(invitation) {
-	const { data, error } = await supabase.from(TABLE).insert([invitation]).single();
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).insert([invitation]).single();
 	if (error) throw error;
 	return data;
 }
 
 async function updateInvitation(id, updates) {
-	const { data, error } = await supabase.from(TABLE).update(updates).eq('id', id).single();
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).update(updates).eq('id', id).single();
 	if (error) throw error;
 	return data;
 }
 
 async function deleteInvitation(id) {
-	const { data, error } = await supabase.from(TABLE).delete().eq('id', id);
+	const client = getSupabaseClient();
+	if (!client) throw new Error('Supabase not configured');
+	const { data, error } = await client.from(TABLE).delete().eq('id', id);
 	if (error) throw error;
 	return data;
 }
