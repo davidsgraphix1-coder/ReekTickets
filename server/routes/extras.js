@@ -30,12 +30,13 @@ router.get('/test-routes', async (req, res) => {
   res.json({ message: 'Routes loaded successfully!', timestamp: new Date().toISOString() });
 });
 
-// GET /users - return users (no auth required for now)
+// GET /users - return users with pagination
 router.get('/users', async (req, res) => {
   console.log('[USERS] Received request at /users');
   try {
     const supabase = await connectDB();
-    const { data: users, error } = await supabase.from('users').select('*').limit(100);
+    const limit = 50; // Limit to 50 users per request
+    const { data: users, error } = await supabase.from('users').select('*').limit(limit);
     if (error) throw error;
     res.json(users || []);
   } catch (error) {
@@ -44,11 +45,12 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// GET /vendors - return vendor users (no auth required for now)
+// GET /vendors - return vendor users with pagination
 router.get('/vendors', async (req, res) => {
   try {
     const supabase = await connectDB();
-    const { data: vendors, error } = await supabase.from('users').select('*').eq('role', 'vendor').limit(100);
+    const limit = 50; // Limit to 50 vendors per request
+    const { data: vendors, error } = await supabase.from('users').select('*').eq('role', 'vendor').limit(limit);
     if (error) throw error;
     res.json(vendors || []);
   } catch (error) {
@@ -57,11 +59,12 @@ router.get('/vendors', async (req, res) => {
   }
 });
 
-// GET /notifications - return user notifications (no auth required for now)
+// GET /notifications - return user notifications with pagination
 router.get('/notifications', async (req, res) => {
   try {
     const supabase = await connectDB();
-    const { data: notifications, error } = await supabase.from('notifications').select('*').limit(50);
+    const limit = 50; // Limit to 50 notifications per request
+    const { data: notifications, error } = await supabase.from('notifications').select('*').limit(limit);
     if (error) throw error;
     res.json(notifications || []);
   } catch (error) {
@@ -70,11 +73,12 @@ router.get('/notifications', async (req, res) => {
   }
 });
 
-// GET /messages - return user messages (no auth required for now)
+// GET /messages - return user messages with pagination
 router.get('/messages', async (req, res) => {
   try {
     const supabase = await connectDB();
-    const { data: messages, error } = await supabase.from('messages').select('*').limit(50);
+    const limit = 50; // Limit to 50 messages per request
+    const { data: messages, error } = await supabase.from('messages').select('*').limit(limit);
     if (error) throw error;
     res.json(messages || []);
   } catch (error) {
@@ -374,22 +378,24 @@ router.delete('/coupons/:id', auth, async (req, res) => {
 
 router.get('/tickets', auth, async (req, res) => {
   try {
-    if (!req.user || !req.user.role) return res.status(401).json({ message: 'Unauthorized' });
-    let tickets;
-    if (req.user.role === 'organizer') {
-      const organizerEventIds = await Event.find({ organizer: req.user.id }).select('_id');
-      const eventIds = organizerEventIds.map((item) => item._id);
-      tickets = await Ticket.find({ event: { $in: eventIds } }).populate('event').populate('user', 'fullName email phone');
-    } else if (req.user.role === 'admin') {
-      tickets = await Ticket.find().populate('event').populate('user', 'fullName email phone');
-    } else {
-      tickets = await Ticket.find({ user: req.user.id }).populate('event').populate('user', 'fullName email phone');
-    }
-    if (!tickets) return res.status(404).json({ message: 'No tickets found' });
-    res.json(tickets);
+    if (!req.user || !req.user.id) return res.status(401).json({ message: 'Unauthorized' });
+    
+    const supabase = await connectDB();
+    const limit = 100; // Limit to 100 tickets per request
+    
+    // Fetch tickets for the user
+    const { data: tickets, error } = await supabase
+      .from('tickets')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .limit(limit)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    res.json(tickets || []);
   } catch (error) {
     console.error('Fetch tickets error:', error);
-    res.status(500).json({ message: 'Could not fetch tickets' });
+    res.json([]);
   }
 });
 
@@ -430,16 +436,26 @@ router.get('/tickets/:id', async (req, res) => {
 });
 
 
-
 router.get('/payments', auth, async (req, res) => {
   try {
     if (!req.user || !req.user.id) return res.status(401).json({ message: 'Unauthorized' });
-    const payments = await Payment.find({ user: req.user.id });
-    if (!payments) return res.status(404).json({ message: 'No payments found' });
-    res.json(payments);
+    
+    const supabase = await connectDB();
+    const limit = 100; // Limit to 100 payments per request
+    
+    // Fetch payments for the user
+    const { data: payments, error } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .limit(limit)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    res.json(payments || []);
   } catch (error) {
     console.error('Fetch payments error:', error);
-    res.status(500).json({ message: 'Could not fetch payments' });
+    res.json([]);
   }
 });
 

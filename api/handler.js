@@ -19,6 +19,9 @@ app.use(cors({
 
 // Strip /api prefix for route matching (Vercel may not strip it)
 app.use((req, res, next) => {
+  // Log request start time for performance tracking
+  req.startTime = Date.now();
+  
   if (req.path.startsWith('/api/')) {
     req.url = req.url.replace(/^\/api/, '');
     req.path = req.path.replace(/^\/api/, '');
@@ -125,6 +128,17 @@ try {
   console.error('[API] Stack:', e.stack);
   console.error('[API] Full error:', JSON.stringify(e, null, 2));
 }
+
+// Response time logging middleware (before 404)
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  res.send = function(data) {
+    const duration = Date.now() - req.startTime;
+    console.log(`[API] ${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
+    return originalSend.call(this, data);
+  };
+  next();
+});
 
 // 404
 app.use((err, req, res, next) => {
