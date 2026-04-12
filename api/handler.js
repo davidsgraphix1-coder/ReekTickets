@@ -84,9 +84,10 @@ try {
   
   // Mount extras router at root (must be last)
   const extrasRouter = require('../server/routes/extras');
+  console.log('[API] Extras router loaded:', !!extrasRouter);
+  console.log('[API] Extras router type:', typeof extrasRouter);
   app.use('/', extrasRouter);
-  
-  console.log('[API] All routes mounted successfully');
+  console.log('[API] Extras router mounted at /');
 } catch (e) {
   console.error('[API] Routes error:', e.message);
   console.error('[API] Stack:', e.stack);
