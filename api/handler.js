@@ -53,6 +53,11 @@ app.get('/test', (req, res) => {
   res.json({ message: 'API handler is working!' });
 });
 
+// Root test endpoint 
+app.get('/roottest', (req, res) => {
+  res.json({ message: 'Root test endpoint working!' });
+});
+
 // Routes - mount with proper paths (path stripping middleware converts /api/* to /*)
 try {
   console.log('[API] Attempting to load routes...');
@@ -64,7 +69,9 @@ try {
   console.log('[API] SMS router loaded:', !!smsRouter);
   app.use('/sms', smsRouter);
   
+  console.log('[API] Loading events router...');
   app.use('/events', require('../server/routes/events'));
+  console.log('[API] Events router mounted');
   app.use('/payments', require('../server/routes/payments'));
   app.use('/support', require('../server/routes/support'));
   app.use('/upload', require('../server/routes/upload'));
