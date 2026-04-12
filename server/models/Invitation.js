@@ -1,5 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+let supabase = null;
+
+function getSupabaseClient() {
+	if (!supabase && process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
+		supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+	}
+	return supabase;
+}
 
 const TABLE = 'invitations';
 
