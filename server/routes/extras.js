@@ -1,11 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
-// Temporarily comment out model imports to test if they're the issue
-// const Wallet = require('../models/Wallet');
-// const Offer = require('../models/Offer');
-// const Invitation = require('../models/Invitation');
-// const Coupon = require('../models/Coupon');
+// Test uncommenting models one by one
+const Wallet = require('../models/Wallet');
 
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');

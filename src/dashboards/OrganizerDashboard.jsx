@@ -61,33 +61,40 @@ export default function OrganizerDashboard() {
     try {
       setLoading(true);
       setError('');
+      
+      // Increase timeout for requests (30 seconds)
+      const axiosConfig = {
+        headers,
+        timeout: 30000
+      };
+      
       const [eventsRes, ticketsRes, usersRes, vendorsRes, paymentsRes, notificationsRes, messagesRes] = await Promise.all([
-        axios.get(`${API_BASE}/events`, { headers }).catch(err => {
-          console.error('Failed to fetch events:', err.message);
+        axios.get(`${API_BASE}/events`, axiosConfig).catch(err => {
+          console.error('Failed to fetch events:', err.message, err.code);
           return { data: [] };
         }),
-        axios.get(`${API_BASE}/tickets`, { headers }).catch(err => {
-          console.error('Failed to fetch tickets:', err.message);
+        axios.get(`${API_BASE}/tickets`, axiosConfig).catch(err => {
+          console.error('Failed to fetch tickets:', err.message, err.code);
           return { data: [] };
         }),
-        axios.get(`${API_BASE}/users`, { headers }).catch(err => {
-          console.error('Failed to fetch users:', err.message);
+        axios.get(`${API_BASE}/users`, axiosConfig).catch(err => {
+          console.error('Failed to fetch users:', err.message, err.code);
           return { data: [] };
         }),
-        axios.get(`${API_BASE}/vendors`, { headers }).catch(err => {
-          console.error('Failed to fetch vendors:', err.message);
+        axios.get(`${API_BASE}/vendors`, axiosConfig).catch(err => {
+          console.error('Failed to fetch vendors:', err.message, err.code);
           return { data: [] };
         }),
-        axios.get(`${API_BASE}/payments`, { headers }).catch(err => {
-          console.error('Failed to fetch payments:', err.message);
+        axios.get(`${API_BASE}/payments`, axiosConfig).catch(err => {
+          console.error('Failed to fetch payments:', err.message, err.code);
           return { data: [] };
         }),
-        axios.get(`${API_BASE}/notifications`, { headers }).catch(err => {
-          console.error('Failed to fetch notifications:', err.message);
+        axios.get(`${API_BASE}/notifications`, axiosConfig).catch(err => {
+          console.error('Failed to fetch notifications:', err.message, err.code);
           return { data: [] };
         }),
-        axios.get(`${API_BASE}/messages`, { headers }).catch(err => {
-          console.error('Failed to fetch messages:', err.message);
+        axios.get(`${API_BASE}/messages`, axiosConfig).catch(err => {
+          console.error('Failed to fetch messages:', err.message, err.code);
           return { data: [] };
         }),
       ]);
