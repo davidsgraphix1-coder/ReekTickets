@@ -62,42 +62,61 @@ export default function OrganizerDashboard() {
       setLoading(true);
       setError('');
       
-      // Increase timeout for requests (30 seconds)
+      // Verify token exists
+      const token = localStorage.getItem('reek_token');
+      if (!token) {
+        console.warn('[DASHBOARD] No token found in localStorage');
+      }
+      
+      // Increase timeout for requests (60 seconds for large payloads)
       const axiosConfig = {
         headers,
-        timeout: 30000
+        timeout: 60000,
+        validateStatus: () => true // Accept all status codes
       };
+      
+      console.log('[DASHBOARD] Starting data fetch with token:', token ? 'present' : 'missing');
       
       const [eventsRes, ticketsRes, usersRes, vendorsRes, paymentsRes, notificationsRes, messagesRes] = await Promise.all([
         axios.get(`${API_BASE}/events`, axiosConfig).catch(err => {
-          console.error('Failed to fetch events:', err.message, err.code);
+          console.error('[DASHBOARD] /events failed:', err.message, err.code, err.response?.status);
           return { data: [] };
         }),
         axios.get(`${API_BASE}/tickets`, axiosConfig).catch(err => {
-          console.error('Failed to fetch tickets:', err.message, err.code);
+          console.error('[DASHBOARD] /tickets failed:', err.message, err.code, err.response?.status);
           return { data: [] };
         }),
         axios.get(`${API_BASE}/users`, axiosConfig).catch(err => {
-          console.error('Failed to fetch users:', err.message, err.code);
+          console.error('[DASHBOARD] /users failed:', err.message, err.code, err.response?.status);
           return { data: [] };
         }),
         axios.get(`${API_BASE}/vendors`, axiosConfig).catch(err => {
-          console.error('Failed to fetch vendors:', err.message, err.code);
+          console.error('[DASHBOARD] /vendors failed:', err.message, err.code, err.response?.status);
           return { data: [] };
         }),
         axios.get(`${API_BASE}/payments`, axiosConfig).catch(err => {
-          console.error('Failed to fetch payments:', err.message, err.code);
+          console.error('[DASHBOARD] /payments failed:', err.message, err.code, err.response?.status);
           return { data: [] };
         }),
         axios.get(`${API_BASE}/notifications`, axiosConfig).catch(err => {
-          console.error('Failed to fetch notifications:', err.message, err.code);
+          console.error('[DASHBOARD] /notifications failed:', err.message, err.code, err.response?.status);
           return { data: [] };
         }),
         axios.get(`${API_BASE}/messages`, axiosConfig).catch(err => {
-          console.error('Failed to fetch messages:', err.message, err.code);
+          console.error('[DASHBOARD] /messages failed:', err.message, err.code, err.response?.status);
           return { data: [] };
         }),
       ]);
+      
+      console.log('[DASHBOARD] Responses received:', { 
+        events: eventsRes.status, 
+        tickets: ticketsRes.status, 
+        users: usersRes.status, 
+        vendors: vendorsRes.status, 
+        payments: paymentsRes.status,
+        notifications: notificationsRes.status,
+        messages: messagesRes.status
+      });
 
       // Ensure all responses are arrays
       const ensureArray = (data) => {
