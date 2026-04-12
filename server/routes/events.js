@@ -18,8 +18,8 @@ router.get('/', async (req, res) => {
     if (error) throw error;
     return res.json(events);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Could not fetch events' });
+    console.error('[EVENTS] Error fetching events:', error.message, error.code);
+    res.status(500).json({ message: 'Could not fetch events', error: error.message });
   }
 });
 
