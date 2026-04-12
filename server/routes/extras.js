@@ -1,40 +1,23 @@
 const express = require('express');
 const router = express.Router();
 
-console.log('[EXTRAS] Router object created:', !!router);
-console.log('[EXTRAS] Router has stack:', !!router.stack);
-console.log('[EXTRAS] Initial stack length:', router.stack.length);
-
-// Test importing models one by one to catch errors
-console.log('[EXTRAS] About to require Wallet...');
-const Wallet = require('../models/Wallet');
-console.log('[EXTRAS] Wallet imported');
-
-console.log('[EXTRAS] About to require Offer...');
-const Offer = require('../models/Offer');
-console.log('[EXTRAS] Offer imported');
-
-console.log('[EXTRAS] About to require Invitation...');
-const Invitation = require('../models/Invitation');
-console.log('[EXTRAS] Invitation imported');
-
-console.log('[EXTRAS] About to require Coupon...');
-const Coupon = require('../models/Coupon');
-console.log('[EXTRAS] Coupon imported');
+// Temporarily comment out model imports to test if they're the issue
+// const Wallet = require('../models/Wallet');
+// const Offer = require('../models/Offer');
+// const Invitation = require('../models/Invitation');
+// const Coupon = require('../models/Coupon');
 
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
-const Ticket = require('../models/Ticket');
-const Payment = require('../models/Payment');
-const User = require('../models/User');
-const Event = require('../models/Event');
-const SalesAgent = require('../models/SalesAgent');
-const Announcement = require('../models/Announcement');
-const AgentSales = require('../models/AgentSales');
-const ReportMessage = require('../models/ReportMessage');
+// const Ticket = require('../models/Ticket');
+// const Payment = require('../models/Payment');
+// const User = require('../models/User');
+// const Event = require('../models/Event');
+// const SalesAgent = require('../models/SalesAgent');
+// const Announcement = require('../models/Announcement');
+// const AgentSales = require('../models/AgentSales');
+// const ReportMessage = require('../models/ReportMessage');
 const { connectDB } = require('../config/db');
-
-console.log('[EXTRAS] All models imported successfully');
 
 // ===== SUPABASE ENDPOINTS FOR ORGANIZER DASHBOARD =====
 
