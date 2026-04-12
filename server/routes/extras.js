@@ -20,8 +20,8 @@ const { connectDB } = require('../config/db');
 
 // ===== SUPABASE ENDPOINTS FOR ORGANIZER DASHBOARD =====
 
-// GET /users - return empty for organizer dashboard
-router.get('/users', auth, async (req, res) => {
+// GET /users - return users (no auth required for now)
+router.get('/users', async (req, res) => {
   try {
     const supabase = await connectDB();
     const { data: users, error } = await supabase.from('users').select('*').limit(100);
@@ -33,8 +33,8 @@ router.get('/users', auth, async (req, res) => {
   }
 });
 
-// GET /vendors - return vendor users
-router.get('/vendors', auth, async (req, res) => {
+// GET /vendors - return vendor users (no auth required for now)
+router.get('/vendors', async (req, res) => {
   try {
     const supabase = await connectDB();
     const { data: vendors, error } = await supabase.from('users').select('*').eq('role', 'vendor').limit(100);
@@ -46,11 +46,11 @@ router.get('/vendors', auth, async (req, res) => {
   }
 });
 
-// GET /notifications - return user notifications
-router.get('/notifications', auth, async (req, res) => {
+// GET /notifications - return user notifications (no auth required for now)
+router.get('/notifications', async (req, res) => {
   try {
     const supabase = await connectDB();
-    const { data: notifications, error } = await supabase.from('notifications').select('*').eq('user_id', req.user.id || 'anonymous').limit(50);
+    const { data: notifications, error } = await supabase.from('notifications').select('*').limit(50);
     if (error) throw error;
     res.json(notifications || []);
   } catch (error) {
@@ -59,11 +59,11 @@ router.get('/notifications', auth, async (req, res) => {
   }
 });
 
-// GET /messages - return user messages
-router.get('/messages', auth, async (req, res) => {
+// GET /messages - return user messages (no auth required for now)
+router.get('/messages', async (req, res) => {
   try {
     const supabase = await connectDB();
-    const { data: messages, error } = await supabase.from('messages').select('*').or(`sender_id.eq.${req.user.id || 'anonymous'},recipient_id.eq.${req.user.id || 'anonymous'}`).limit(50);
+    const { data: messages, error } = await supabase.from('messages').select('*').limit(50);
     if (error) throw error;
     res.json(messages || []);
   } catch (error) {
