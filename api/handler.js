@@ -94,6 +94,12 @@ try {
     console.log('[API] Agent routes not available:', err.message);
   }
   
+  // Mount test-simple router for debugging
+  console.log('[API] Loading test-simple router...');
+  const testSimpleRouter = require('../server/routes/test-simple');
+  app.use('/', testSimpleRouter);
+  console.log('[API] Test-simple router mounted at /');
+  
   // Mount extras router at root (must be last)
   console.log('[API] Loading extras router...');
   let extrasRouter;
