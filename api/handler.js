@@ -58,6 +58,11 @@ app.get('/roottest', (req, res) => {
   res.json({ message: 'Root test endpoint working!' });
 });
 
+// Direct test route for users  
+app.get('/users-direct', (req, res) => {
+  res.json({ message: 'Direct users route working!' });
+});
+
 // Routes - mount with proper paths (path stripping middleware converts /api/* to /*)
 try {
   console.log('[API] Attempting to load routes...');
