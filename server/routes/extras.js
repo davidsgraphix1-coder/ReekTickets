@@ -18,6 +18,62 @@ const AgentSales = require('../models/AgentSales');
 const ReportMessage = require('../models/ReportMessage');
 const { connectDB } = require('../config/db');
 
+// ===== SUPABASE ENDPOINTS FOR ORGANIZER DASHBOARD =====
+
+// GET /users - return empty for organizer dashboard
+router.get('/users', auth, async (req, res) => {
+  try {
+    const supabase = await connectDB();
+    const { data: users, error } = await supabase.from('users').select('*').limit(100);
+    if (error) throw error;
+    res.json(users || []);
+  } catch (error) {
+    console.error('[USERS] Error:', error.message);
+    res.json([]);
+  }
+});
+
+// GET /vendors - return vendor users
+router.get('/vendors', auth, async (req, res) => {
+  try {
+    const supabase = await connectDB();
+    const { data: vendors, error } = await supabase.from('users').select('*').eq('role', 'vendor').limit(100);
+    if (error) throw error;
+    res.json(vendors || []);
+  } catch (error) {
+    console.error('[VENDORS] Error:', error.message);
+    res.json([]);
+  }
+});
+
+// GET /notifications - return user notifications
+router.get('/notifications', auth, async (req, res) => {
+  try {
+    const supabase = await connectDB();
+    const { data: notifications, error } = await supabase.from('notifications').select('*').eq('user_id', req.user.id || 'anonymous').limit(50);
+    if (error) throw error;
+    res.json(notifications || []);
+  } catch (error) {
+    console.error('[NOTIFICATIONS] Error:', error.message);
+    res.json([]);
+  }
+});
+
+// GET /messages - return user messages
+router.get('/messages', auth, async (req, res) => {
+  try {
+    const supabase = await connectDB();
+    const { data: messages, error } = await supabase.from('messages').select('*').or(`sender_id.eq.${req.user.id || 'anonymous'},recipient_id.eq.${req.user.id || 'anonymous'}`).limit(50);
+    if (error) throw error;
+    res.json(messages || []);
+  } catch (error) {
+    console.error('[MESSAGES] Error:', error.message);
+    res.json([]);
+  }
+});
+
+
+
 
 
 // Wallet endpoints
