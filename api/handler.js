@@ -90,14 +90,29 @@ try {
   }
   
   // Mount extras router at root (must be last)
-  const extrasRouter = require('../server/routes/extras');
+  console.log('[API] Loading extras router...');
+  let extrasRouter;
+  try {
+    extrasRouter = require('../server/routes/extras');
+    console.log('[API] Extras router required successfully');
+  } catch (requireErr) {
+    console.error('[API] Error requiring extras router:', requireErr.message);
+    throw requireErr;
+  }
+  
   console.log('[API] Extras router loaded:', !!extrasRouter);
   console.log('[API] Extras router type:', typeof extrasRouter);
+  console.log('[API] Extras router stack length:', extrasRouter.stack ? extrasRouter.stack.length : 'undefined');
+  
   app.use('/', extrasRouter);
   console.log('[API] Extras router mounted at /');
+  
+  console.log('[API] All routes mounted successfully');
 } catch (e) {
   console.error('[API] Routes error:', e.message);
+  console.error('[API] Error name:', e.name);
   console.error('[API] Stack:', e.stack);
+  console.error('[API] Full error:', JSON.stringify(e, null, 2));
 }
 
 // 404
