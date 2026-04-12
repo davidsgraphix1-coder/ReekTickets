@@ -20,6 +20,11 @@ const { connectDB } = require('../config/db');
 
 // ===== SUPABASE ENDPOINTS FOR ORGANIZER DASHBOARD =====
 
+// Test endpoint to verify routes are loading
+router.get('/test-routes', async (req, res) => {
+  res.json({ message: 'Routes loaded successfully!', timestamp: new Date().toISOString() });
+});
+
 // GET /users - return users (no auth required for now)
 router.get('/users', async (req, res) => {
   try {
