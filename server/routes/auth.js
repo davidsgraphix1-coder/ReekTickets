@@ -67,8 +67,7 @@ router.post('/signup', async (req, res) => {
   console.log('Request body:', req.body);
   try {
     const {
-      fullName, firstName, lastName, email, phone, password, role,
-      businessName, contactNumber, businessPartners, business_details, termsAccepted
+      fullName, email, phone, password, role, businessName
     } = req.body;
 
     if (!fullName || !email || !phone || !password) {
@@ -99,19 +98,13 @@ router.post('/signup', async (req, res) => {
     
     const userData = {
       full_name: fullName,
-      first_name: firstName,
-      last_name: lastName,
       email: email.toLowerCase(),
       phone: normalizedPhone,
-      password: hashed,
+      password_hash: hashed,
       role: safeRole,
-      business_name: businessName,
-      contact_number: contactNumber,
-      business_partners: businessPartners || [],
-      business_details: business_details || { country: 'Ghana' },
-      terms_accepted: termsAccepted || false,
+      business_name: businessName || null,
       otp_code: cleanOtpCode,
-      otp_expiry: otpExpiry.toISOString(),
+      otp_expiry: otpExpiry.getTime(),
       is_verified: false,
       status: 'pending',
       created_at: new Date().toISOString(),
@@ -125,18 +118,12 @@ router.post('/signup', async (req, res) => {
       }
       const updates = {
         full_name: fullName,
-        first_name: firstName,
-        last_name: lastName,
         phone: normalizedPhone,
-        password: hashed,
+        password_hash: hashed,
         role: safeRole,
-        business_name: businessName,
-        contact_number: contactNumber,
-        business_partners: businessPartners || [],
-        business_details: business_details || { country: 'Ghana' },
-        terms_accepted: termsAccepted || false,
+        business_name: businessName || null,
         otp_code: cleanOtpCode,
-        otp_expiry: otpExpiry.toISOString(),
+        otp_expiry: otpExpiry.getTime(),
         is_verified: false,
         status: 'pending',
       };
