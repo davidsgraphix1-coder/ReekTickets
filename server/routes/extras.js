@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
+console.log('[EXTRAS] Router object created:', !!router);
+console.log('[EXTRAS] Router has stack:', !!router.stack);
+console.log('[EXTRAS] Initial stack length:', router.stack.length);
+
 const Wallet = require('../models/Wallet');
 const Offer = require('../models/Offer');
 const Invitation = require('../models/Invitation');
@@ -28,11 +32,13 @@ router.use((req, res, next) => {
 
 // Test endpoint to verify routes are loading
 router.get('/test-routes', async (req, res) => {
+  console.log('[TEST-ROUTES] Received request at /test-routes');
   res.json({ message: 'Routes loaded successfully!', timestamp: new Date().toISOString() });
 });
 
 // GET /users - return users (no auth required for now)
 router.get('/users', async (req, res) => {
+  console.log('[USERS] Received request at /users');
   try {
     const supabase = await connectDB();
     const { data: users, error } = await supabase.from('users').select('*').limit(100);
@@ -752,5 +758,8 @@ router.post('/admin/set-user-otp', auth, async (req, res) => {
     res.status(500).json({ message: 'Could not set OTP' });
   }
 });
+
+console.log('[EXTRAS] Final router stack length:', router.stack.length);
+console.log('[EXTRAS] Routes in router:', router.stack.map((layer, i) => `${i}: ${layer.route ? layer.route.path + ' (' + Object.keys(layer.route.methods).join(', ').toUpperCase() + ')' : 'middleware'}`).slice(0, 10).join(', '));
 
 module.exports = router;
