@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sendEmail } = require('../utils/email');
 const { connectDB } = require('../config/db');
-const { sendOTP } = require('../services/smsService');
+const { sendOTP } = require('../services/zenophSmsService');
 const auth = require('../middleware/auth');
 const { getUserByEmail, getUserByPhone, updateUser, getUserById, createUser } = require('../models/User');
 
@@ -78,11 +78,6 @@ router.post('/signup', async (req, res) => {
     const existing = await getUserByEmail(email);
     console.log('Existing user by email:', existing ? 'YES' : 'NO');
     
-    // Generate OTP
-    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
-    const hashed = await bcrypt.hash(password, 10);
-    
     // Normalize phone
     const normalizedPhone = normalizePhone(phone);
     console.log('[SIGNUP] Raw phone from request:', phone);
@@ -92,9 +87,16 @@ router.post('/signup', async (req, res) => {
     const allowedRoles = ['attendee', 'organizer', 'vendor', 'admin', 'gate'];
     const safeRole = allowedRoles.includes(role) ? role : 'attendee';
     
-    // Ensure OTP code is stored as a clean string (6 digits)
-    const cleanOtpCode = String(otpCode).trim();
-    console.log('[SIGNUP] Generated OTP code:', cleanOtpCode, 'length:', cleanOtpCode.length, 'type:', typeof cleanOtpCode);
+    const isAdmin = safeRole === 'admin';
+    
+    // For admin, skip OTP (auto-verify). For others, generate OTP.
+    const otpCode = isAdmin ? null : String(Math.floor(100000 + Math.random() * 900000));
+    const otpExpiry = isAdmin ? null : new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const hashed = await bcrypt.hash(password, 10);
+    
+    console.log('[SIGNUP] Role:', safeRole, 'IsAdmin:', isAdmin, 'OTP:', isAdmin ? 'SKIPPED' : otpCode);
+    
+    console.log('[SIGNUP] Role:', safeRole, 'IsAdmin:', isAdmin, 'OTP:', isAdmin ? 'SKIPPED' : otpCode);
     
     const userData = {
       full_name: fullName,
@@ -103,10 +105,10 @@ router.post('/signup', async (req, res) => {
       password_hash: hashed,
       role: safeRole,
       business_name: businessName || null,
-      otp_code: cleanOtpCode,
-      otp_expiry: otpExpiry.getTime(),
-      is_verified: false,
-      status: 'pending',
+      otp_code: otpCode,
+      otp_expiry: otpExpiry ? otpExpiry.getTime() : null,
+      is_verified: isAdmin ? true : false,
+      status: isAdmin ? 'active' : 'pending',
       created_at: new Date().toISOString(),
     };
 
@@ -122,53 +124,55 @@ router.post('/signup', async (req, res) => {
         password_hash: hashed,
         role: safeRole,
         business_name: businessName || null,
-        otp_code: cleanOtpCode,
-        otp_expiry: otpExpiry.getTime(),
-        is_verified: false,
-        status: 'pending',
+        otp_code: otpCode,
+        otp_expiry: otpExpiry ? otpExpiry.getTime() : null,
+        is_verified: isAdmin ? true : false,
+        status: isAdmin ? 'active' : 'pending',
       };
-      console.log('[SIGNUP] Updating existing user with OTP:', cleanOtpCode);
+      console.log('[SIGNUP] Updating existing user:', isAdmin ? 'AUTO-VERIFIED (Admin)' : 'With OTP: ' + otpCode);
       user = await updateUser(existing.id || existing._id, updates);
-      console.log('[SIGNUP] Updated user. Stored OTP:', user.otp_code, 'Stored phone:', user.phone);
     } else {
-      console.log('[SIGNUP] Creating new user with OTP:', cleanOtpCode);
+      console.log('[SIGNUP] Creating new user:', isAdmin ? 'AUTO-VERIFIED (Admin)' : 'With OTP: ' + otpCode);
       user = await createUser(userData);
-      console.log('[SIGNUP] Created user. Stored OTP:', user.otp_code, 'Stored phone:', user.phone);
     }
     
     const responseData = {
-      message: 'Signup complete. User created as pending verification.',
+      message: isAdmin ? 'Admin account created and verified!' : 'Signup complete. User created as pending verification.',
       user: { id: user.id || user._id, fullName: user.full_name, email: user.email, role: user.role, phone: user.phone }
     };
     console.log('Signup response:', responseData);
     
-    // Send OTP SMS
-    console.log('[SIGNUP] Attempting to send OTP SMS to:', normalizedPhone, 'with code:', otpCode);
-    try {
-      const smsResult = await sendOtpSms(normalizedPhone, otpCode);
-      console.log('[SIGNUP] SMS send result:', smsResult);
-      
-      if (!smsResult.success) {
-        console.warn('[SIGNUP] SMS failed but user was created. User needs to resend OTP. Error:', smsResult.message);
+    // Send OTP SMS (skip for admin users - auto-verified)
+    if (!isAdmin) {
+      console.log('[SIGNUP] Attempting to send OTP SMS to:', normalizedPhone, 'with code:', otpCode);
+      try {
+        const smsResult = await sendOtpSms(normalizedPhone, otpCode);
+        console.log('[SIGNUP] SMS send result:', smsResult);
+        
+        if (!smsResult.success) {
+          console.warn('[SIGNUP] SMS failed but user was created. User needs to resend OTP. Error:', smsResult.message);
+          responseData.message = 'User created but OTP delivery failed. Please use Resend Code button.';
+          responseData.smsError = smsResult.message;
+          // In development, show the code for testing
+          if (process.env.NODE_ENV !== 'production') {
+            responseData.otpCode = otpCode;
+            responseData.testMode = true;
+          }
+        } else {
+          responseData.message = 'Signup successful! Check your SMS for the verification code.';
+        }
+      } catch (smsError) {
+        console.error('[SIGNUP] SMS sending exception:', smsError);
         responseData.message = 'User created but OTP delivery failed. Please use Resend Code button.';
-        responseData.smsError = smsResult.message;
+        responseData.smsError = smsError.message;
         // In development, show the code for testing
         if (process.env.NODE_ENV !== 'production') {
           responseData.otpCode = otpCode;
           responseData.testMode = true;
         }
-      } else {
-        responseData.message = 'Signup successful! Check your SMS for the verification code.';
       }
-    } catch (smsError) {
-      console.error('[SIGNUP] SMS sending exception:', smsError);
-      responseData.message = 'User created but OTP delivery failed. Please use Resend Code button.';
-      responseData.smsError = smsError.message;
-      // In development, show the code for testing
-      if (process.env.NODE_ENV !== 'production') {
-        responseData.otpCode = otpCode;
-        responseData.testMode = true;
-      }
+    } else {
+      console.log('[SIGNUP] Admin user - skipping SMS verification');
     }
     
     return res.json(responseData);
@@ -200,7 +204,12 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
-    if (user.is_verified === false) return res.status(403).json({ message: 'Account not verified. Please verify your account.' });
+    
+    // Allow admin users even if not verified (they auto-verify on signup)
+    // For other users, require verification
+    if (user.is_verified === false && user.role !== 'admin') {
+      return res.status(403).json({ message: 'Account not verified. Please verify your account.' });
+    }
 
     // Check if account is locked
     if (user.lock_until && user.lock_until > Date.now()) {
@@ -270,7 +279,31 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(400).json({ message: 'User already verified' });
     }
     
-    // Mark user as verified - accept any OTP entry
+    // ✅ VALIDATE OTP CODE
+    console.log('[VERIFY-OTP] Stored OTP:', user.otp_code, 'Provided OTP:', otpCode);
+    
+    if (!user.otp_code) {
+      return res.status(400).json({ message: 'No OTP code found. Please request a new one.' });
+    }
+    
+    if (String(user.otp_code).trim() !== String(otpCode).trim()) {
+      console.log('[VERIFY-OTP] ❌ OTP mismatch - Stored:', user.otp_code, 'Provided:', otpCode);
+      return res.status(401).json({ message: 'Invalid OTP code' });
+    }
+    
+    // ✅ CHECK OTP EXPIRY
+    if (user.otp_expiry) {
+      const expiryTime = typeof user.otp_expiry === 'number' 
+        ? user.otp_expiry 
+        : new Date(user.otp_expiry).getTime();
+      
+      if (Date.now() > expiryTime) {
+        console.log('[VERIFY-OTP] ❌ OTP expired');
+        return res.status(401).json({ message: 'OTP code has expired. Please request a new one.' });
+      }
+    }
+    
+    // ✅ Mark user as verified
     const updatePayload = { is_verified: true, otp_code: null, otp_expiry: null };
     await updateUser(user.id || user._id, updatePayload);
     
@@ -291,7 +324,8 @@ router.post('/verify-otp', async (req, res) => {
         email: user.email, 
         role: user.role, 
         phone: user.phone 
-      } 
+      },
+      message: 'Account verified successfully'
     });
   } catch (error) {
     console.error('Verify OTP error:', error);
