@@ -1,20 +1,26 @@
 /**
  * SMS Service using Zenoph SDK (Python)
- * This wraps the Zenoph.Notify SDK for reliable SMS delivery via SMSONLINEGH
+ * Supports both local Python execution and HTTP calls to external service
  */
 
 const { spawn } = require('child_process');
+const axios = require('axios');
 const path = require('path');
 
 const SMS_API_KEY = process.env.SMS_API_KEY;
 const SMS_SENDER_ID = process.env.SMS_SENDER_ID || 'ReekTickets';
 const ZENOPH_PYTHON_PATH = '/home/dosei1213/zenoph.notify-2.23.10-python';
+const SMS_SERVICE_URL = process.env.SMS_SERVICE_URL; // External SMS service URL for production
+
+// Determine if we're in production (Vercel) or development
+const IS_PRODUCTION = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
 console.log('[Zenoph SMS] Service initialized');
 console.log('[Zenoph SMS] - API_KEY:', SMS_API_KEY ? `SET (${SMS_API_KEY.substring(0, 8)}...)` : 'NOT SET');
 console.log('[Zenoph SMS] - SENDER_ID:', SMS_SENDER_ID);
 console.log('[Zenoph SMS] - Python path:', ZENOPH_PYTHON_PATH);
-console.log('[Zenoph SMS] - Env SMS_SENDER_ID:', process.env.SMS_SENDER_ID);
+console.log('[Zenoph SMS] - SMS Service URL:', SMS_SERVICE_URL || 'Not configured (will use local Python)');
+console.log('[Zenoph SMS] - Environment:', IS_PRODUCTION ? 'PRODUCTION' : 'DEVELOPMENT');
 
 function formatPhone(phone) {
   let cleanPhone = phone.replace(/\s+/g, '').replace(/^\+/, '');
@@ -24,6 +30,29 @@ function formatPhone(phone) {
     cleanPhone = '233' + cleanPhone;
   }
   return cleanPhone;
+}
+
+// Send SMS via HTTP call to external service
+async function sendSmsViaHttp(phone, message) {
+  try {
+    console.log('[Zenoph SMS HTTP] Calling external SMS service at:', SMS_SERVICE_URL);
+    const response = await axios.post(SMS_SERVICE_URL + '/send', {
+      phone,
+      message
+    }, {
+      timeout: 10000
+    });
+    
+    console.log('[Zenoph SMS HTTP] Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('[Zenoph SMS HTTP] Error calling external service:', error.message);
+    return {
+      success: false,
+      error: error.message,
+      message: 'Failed to call external SMS service'
+    };
+  }
 }
 
 function sendSmsViaPython(apiKey, senderId, phone, message) {
@@ -107,7 +136,17 @@ async function sendSMS(phone, message) {
 
     console.log(`[Zenoph SMS] Sending to ${cleanPhone}: ${message.substring(0, 50)}...`);
     
-    const result = await sendSmsViaPython(SMS_API_KEY, SMS_SENDER_ID, cleanPhone, message);
+    let result;
+    
+    // Use HTTP service if configured (production on Vercel)
+    if (SMS_SERVICE_URL) {
+      console.log('[Zenoph SMS] Using external HTTP service');
+      result = await sendSmsViaHttp(cleanPhone, message);
+    } else {
+      // Use local Python (development)
+      console.log('[Zenoph SMS] Using local Python service');
+      result = await sendSmsViaPython(SMS_API_KEY, SMS_SENDER_ID, cleanPhone, message);
+    }
     
     console.log('[Zenoph SMS] Send result:', result);
     return {
