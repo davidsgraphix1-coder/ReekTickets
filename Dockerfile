@@ -1,29 +1,18 @@
-FROM node:18 as app
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install Python for SMS handler
-RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
+# Create virtual environment
+RUN python -m venv /opt/venv
 
-# Copy package files
-COPY package*.json ./
-RUN npm ci --only=production
+# Activate virtual environment
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy Python dependencies
-COPY requirements-sms.txt ./
-RUN pip install -r requirements-sms.txt
+COPY python-backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy SMS handler and gateway
-COPY server/sms_handler.py ./server/
-COPY server/sms-gateway.js ./server/
+COPY python-backend/ .
 
-# Environment
-ENV NODE_ENV=production
-ENV PORT=${PORT:-8001}
+EXPOSE 5001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:${PORT}/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
-
-# Start SMS gateway
-CMD ["node", "server/sms-gateway.js"]
+CMD ["gunicorn", "backend:app", "--bind", "0.0.0.0:5001"]

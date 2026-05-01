@@ -1,9 +1,9 @@
 {
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfile": "Dockerfile.sms"
+    "dockerfile": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "node server/sms-gateway.js"
+    "startCommand": "gunicorn backend:app --bind 0.0.0.0:$PORT"
   }
 }
