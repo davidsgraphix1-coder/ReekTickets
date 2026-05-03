@@ -3466,8 +3466,8 @@ tr:hover { background: #f3f5ff; }
 /* ALL EVENTS — dark Egotickets-style section */
 .all-events-section.all-events-dark {
   width: 100%;
-  background: #0b0a1f;
-  color: #fff;
+  background: #ffffff;
+  color: #1f2937;
   padding: 56px 0 80px;
 }
 .all-events-inner {
@@ -3483,7 +3483,7 @@ tr:hover { background: #f3f5ff; }
   margin-bottom: 28px;
 }
 .all-events-eyebrow {
-  color: #a78bfa;
+  color: #1f2937;
   font-size: 12px;
   letter-spacing: 2px;
   font-weight: 700;
@@ -3491,31 +3491,31 @@ tr:hover { background: #f3f5ff; }
   text-transform: uppercase;
 }
 .all-events-title {
-  font-size: clamp(28px, 4vw, 44px);
+  font-size: clamp(24px, 3vw, 36px);
   font-weight: 800;
   margin: 0 0 10px;
-  color: #fff;
+  color: #1f2937;
   line-height: 1.1;
 }
 .all-events-title .title-accent {
-  color: #a78bfa;
+  color: #1f2937;
 }
 .all-events-subtitle {
-  color: #9ca3af;
+  color: #4b5563;
   margin: 0;
   max-width: 560px;
   font-size: 14px;
   line-height: 1.5;
 }
 .all-events-viewall {
-  color: #a78bfa;
+  color: #1f2937;
   font-weight: 700;
   text-decoration: none;
   font-size: 14px;
   white-space: nowrap;
   margin-top: 6px;
 }
-.all-events-viewall:hover { color: #c4b5fd; }
+.all-events-viewall:hover { color: #6b7280; }
 
 .all-events-filters {
   display: flex;
@@ -3525,8 +3525,8 @@ tr:hover { background: #f3f5ff; }
 }
 .filter-pill {
   background: transparent;
-  border: 1px solid rgba(255,255,255,.12);
-  color: #d1d5db;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
   padding: 10px 20px;
   border-radius: 999px;
   font-size: 14px;
@@ -3534,7 +3534,7 @@ tr:hover { background: #f3f5ff; }
   cursor: pointer;
   transition: all .18s ease;
 }
-.filter-pill:hover { background: rgba(255,255,255,.06); color: #fff; }
+.filter-pill:hover { background: #f3f4f6; color: #1f2937; }
 .filter-pill.active {
   background: linear-gradient(135deg, #a855f7, #d946ef);
   color: #fff;
@@ -3545,7 +3545,7 @@ tr:hover { background: #f3f5ff; }
 .events-empty {
   grid-column: 1 / -1;
   text-align: center;
-  color: #9ca3af;
+  color: #6b7280;
   padding: 40px 20px;
 }
 
