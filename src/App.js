@@ -96,7 +96,7 @@ function AppContent() {
       {location.pathname !== '/' && <MobileMenuBar user={user} onLogout={logout} />}
       <main className="app-content">
         <Routes>
-          <Route path="/" element={<Events user={user} />} />
+          <Route path="/" element={<Home user={user} />} />
           <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login onLogin={setUser} />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
