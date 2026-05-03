@@ -10,10 +10,10 @@ const slides = [
 ];
 
 const FILTERS = [
-  { key: 'trending', label: 'Trending', desc: 'Hot events selling fast right now.' },
-  { key: 'upcoming', label: 'Upcoming', desc: 'Events happening soon — book early.' },
-  { key: 'popular-accra', label: 'Popular in Accra', desc: 'Top events in Accra this season.' },
-  { key: 'recent', label: 'Recent', desc: 'Newly added events on ReekTickets.' },
+  { key: 'trending', label: 'Trending' },
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'popular-accra', label: 'Popular in Accra' },
+  { key: 'recent', label: 'Recent' },
 ];
 
 export default function Home({ user }) {
@@ -94,8 +94,6 @@ export default function Home({ user }) {
     },
   ];
 
-  const activeFilterDesc = FILTERS.find((f) => f.key === activeFilter)?.desc;
-
   return (
     <div className="home-wrapper home-white">
       <SEO
@@ -104,23 +102,18 @@ export default function Home({ user }) {
         keywords="tickets Ghana, buy event tickets Ghana, Accra events, Ghana concerts, online ticketing Ghana, event management Ghana, sell tickets online Ghana, ReekTickets"
         ogTitle="ReekTickets – Ghana’s Top #4 Ticketing Platform"
         ogDescription="Buy tickets for top events in Ghana."
-        ogImage="/public/banner.jpg"
+        ogImage="/banner.jpg"
         canonical="https://reektickets.com/"
         jsonLd={homeJsonLd}
       />
 
-      {/* HERO BANNER + LOGO */}
+      {/* HERO BANNER */}
       <section
         className="hero hero-white"
-        style={{ backgroundImage: `url('/public/banner.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: `url('/banner.jpg')` }}
       >
-        <div className="hero-overlay hero-overlay-clear">
+        <div className="hero-overlay">
           <div className="hero-content">
-            <img
-              src="/reektickets-actual-logo.png"
-              alt="ReekTickets"
-              className="hero-logo"
-            />
             <p className="eyebrow">ReekTickets — Anytime, anywhere</p>
             <h1>{slides[slide].title}</h1>
             <p className="hero-text">{slides[slide].subtitle}</p>
@@ -137,48 +130,49 @@ export default function Home({ user }) {
         </div>
       </section>
 
-      {/* ALL EVENTS SECTION */}
-      <section className="all-events-section">
-        <div className="all-events-header">
-          <h2 className="all-events-title">
-            <span className="title-all">ALL</span>
-            <span className="title-events">events</span>
-          </h2>
-          <p className="all-events-subtitle">
-            Discover, filter and grab tickets for the best events on ReekTickets.
-          </p>
-          <div className="title-underline" />
-        </div>
+      {/* ALL EVENTS SECTION (Egotickets-style, dark) */}
+      <section className="all-events-section all-events-dark">
+        <div className="all-events-inner">
+          <div className="all-events-top">
+            <div className="all-events-header">
+              <p className="all-events-eyebrow">ALL EVENTS</p>
+              <h2 className="all-events-title">
+                Discover what’s <span className="title-accent">happening</span>
+              </h2>
+              <p className="all-events-subtitle">
+                Filter by what's hot right now, what's coming up next, what's popping in Accra, or the freshly listed.
+              </p>
+            </div>
+            <a href="/events" className="all-events-viewall">View all →</a>
+          </div>
 
-        <div className="all-events-filters" role="tablist" aria-label="Filter events">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              role="tab"
-              aria-selected={activeFilter === f.key}
-              className={`filter-pill ${activeFilter === f.key ? 'active' : ''}`}
-              onClick={() => setActiveFilter(f.key)}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-        {activeFilterDesc && (
-          <p className="all-events-filter-desc">{activeFilterDesc}</p>
-        )}
+          <div className="all-events-filters" role="tablist" aria-label="Filter events">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                role="tab"
+                aria-selected={activeFilter === f.key}
+                className={`filter-pill ${activeFilter === f.key ? 'active' : ''}`}
+                onClick={() => setActiveFilter(f.key)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
 
-        {msg && <div className="error-message">{msg}</div>}
+          {msg && <div className="error-message">{msg}</div>}
 
-        <div className="events-grid ego-grid">
-          {loading ? (
-            <div className="events-empty">Loading events...</div>
-          ) : filteredEvents.length === 0 ? (
-            <div className="events-empty">No events to show in this category yet.</div>
-          ) : (
-            filteredEvents.map((event) => (
-              <EventCard key={event._id} event={event} onBuy={handleBuy} />
-            ))
-          )}
+          <div className="events-grid ego-grid">
+            {loading ? (
+              <div className="events-empty">Loading events...</div>
+            ) : filteredEvents.length === 0 ? (
+              <div className="events-empty">No events to show in this category yet.</div>
+            ) : (
+              filteredEvents.map((event) => (
+                <EventCard key={event._id} event={event} onBuy={handleBuy} />
+              ))
+            )}
+          </div>
         </div>
       </section>
     </div>

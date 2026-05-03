@@ -142,27 +142,33 @@ export default function EventDetails() {
         </div>
       </section>
 
-      {/* SHARE */}
-      <section className="ed-share-section">
+      {/* SHARE — Egotickets style */}
+      <section className="ed-share-section ego-share">
         <h3 className="ed-section-label">Share this event</h3>
-        <div className="ed-share-icons">
-          <a className="ed-share-btn ed-share-fb" href={shareLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook">
-            <i className="fab fa-facebook-f">f</i>
+        <div className="ego-share-row">
+          <a className="ego-share-btn ego-share-fb" href={shareLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.5l.5-3h-3V8.7c0-.9.3-1.5 1.6-1.5H17V4.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.1V10.5H8v3h2.5V21h3z"/></svg>
           </a>
-          <a className="ed-share-btn ed-share-tw" href={shareLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Share on Twitter / X">
-            <i className="fab fa-x-twitter">𝕏</i>
+          <a className="ego-share-btn ego-share-tw" href={shareLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Share on X">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M18.244 2H21l-6.52 7.45L22 22h-6.59l-4.78-6.27L4.97 22H2.21l6.97-7.96L2 2h6.73l4.32 5.72L18.24 2zm-1.16 18.4h1.7L7.02 3.51H5.2L17.08 20.4z"/></svg>
           </a>
-          <a className="ed-share-btn ed-share-wa" href={shareLinks.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="Share on WhatsApp">
-            <i className="fab fa-whatsapp">W</i>
+          <a className="ego-share-btn ego-share-wa" href={shareLinks.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="Share on WhatsApp">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.93 11.93 0 0 0 12.04 0C5.5 0 .2 5.3.2 11.84c0 2.09.55 4.13 1.6 5.93L0 24l6.39-1.67a11.86 11.86 0 0 0 5.65 1.44h.01c6.54 0 11.84-5.3 11.84-11.84 0-3.16-1.23-6.13-3.37-8.45zM12.05 21.5a9.65 9.65 0 0 1-4.92-1.35l-.35-.21-3.79.99 1.01-3.69-.23-.38a9.64 9.64 0 0 1-1.49-5.16c0-5.34 4.34-9.68 9.68-9.68 2.59 0 5.02 1.01 6.85 2.84a9.62 9.62 0 0 1 2.83 6.85c0 5.34-4.34 9.79-9.58 9.79zm5.3-7.27c-.29-.15-1.71-.85-1.98-.95-.27-.1-.46-.15-.66.15-.19.29-.76.95-.93 1.14-.17.19-.34.22-.63.07-.29-.15-1.22-.45-2.32-1.43-.86-.77-1.44-1.72-1.61-2.01-.17-.29-.02-.45.13-.6.13-.13.29-.34.43-.51.15-.17.19-.29.29-.49.1-.19.05-.36-.02-.51-.07-.15-.66-1.59-.9-2.18-.24-.57-.48-.5-.66-.51l-.56-.01c-.19 0-.51.07-.78.36-.27.29-1.02 1-1.02 2.43 0 1.43 1.04 2.81 1.18 3 .15.19 2.05 3.13 4.96 4.39.69.3 1.23.48 1.65.62.69.22 1.32.19 1.81.12.55-.08 1.71-.7 1.95-1.37.24-.67.24-1.24.17-1.37-.07-.13-.27-.21-.56-.36z"/></svg>
           </a>
-          <a className="ed-share-btn ed-share-tg" href={shareLinks.telegram} target="_blank" rel="noopener noreferrer" aria-label="Share on Telegram">
-            <i className="fab fa-telegram-plane">T</i>
+          <a className="ego-share-btn ego-share-tg" href={shareLinks.telegram} target="_blank" rel="noopener noreferrer" aria-label="Share on Telegram">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M21.94 4.4 18.7 19.7c-.24 1.08-.88 1.34-1.78.84l-4.92-3.63-2.37 2.28c-.26.26-.48.48-.99.48l.36-5.04 9.18-8.3c.4-.36-.09-.55-.62-.2L6.2 13.18 1.36 11.7c-1.05-.33-1.07-1.05.22-1.55L20.6 2.93c.87-.32 1.63.2 1.34 1.47z"/></svg>
           </a>
-          <button className="ed-share-btn ed-share-copy" onClick={handleCopy} aria-label="Copy link">
-            <i className="fas fa-link">🔗</i>
+          <a className="ego-share-btn ego-share-li" href={`https://www.linkedin.com/sharing/share-offsite/?url=${enc}`} target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM8.34 18.34H5.67V9.99h2.67v8.35zM7 8.82a1.55 1.55 0 1 1 0-3.1 1.55 1.55 0 0 1 0 3.1zm11.34 9.52h-2.67v-4.06c0-.97-.02-2.22-1.35-2.22-1.36 0-1.57 1.06-1.57 2.15v4.13h-2.67V9.99h2.56v1.14h.04c.36-.68 1.23-1.4 2.54-1.4 2.71 0 3.21 1.78 3.21 4.1v4.51z"/></svg>
+          </a>
+          <a className="ego-share-btn ego-share-em" href={`mailto:?subject=${encodeURIComponent(event.title)}&body=${shareText}%20${enc}`} aria-label="Share by Email">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M22 5H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h20a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1zm-1 2v.4l-9 6.43L3 7.4V7h18zM3 17V9.84l8.42 6.02a1 1 0 0 0 1.16 0L21 9.84V17H3z"/></svg>
+          </a>
+          <button className="ego-share-btn ego-share-copy" onClick={handleCopy} aria-label="Copy link">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M10.59 13.41a1 1 0 0 1 0-1.41l3-3a1 1 0 0 1 1.41 1.41l-3 3a1 1 0 0 1-1.41 0zm-3.18-2.83a3 3 0 0 1 4.24 0l1.42-1.41a5 5 0 1 0-7.07 7.07l1.41-1.41a3 3 0 0 1 0-4.25zm9.9 1.42-1.41 1.41a3 3 0 1 1-4.24 4.24l-1.42 1.41a5 5 0 1 0 7.07-7.06z"/></svg>
+            <span className="ego-share-label">{copied ? 'Copied!' : 'Copy link'}</span>
           </button>
         </div>
-        {copied && <span className="ed-copied">Link copied!</span>}
       </section>
 
       {/* ABOUT */}
