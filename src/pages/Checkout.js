@@ -12,11 +12,7 @@ export default function Checkout() {
   const [user, setUser] = useState(null);
 
   // Fee structure
-  const SERVICE_FEES = {
-    standard: 0.05,  // 5%
-    gold: 0.075,     // 7.5%
-    platinum: 0.10   // 10%
-  };
+  const SERVICE_FEE_RATE = 0.038; // 3.8%
   const TRANSACTION_FEE = 0.025; // 2.5%
 
   useEffect(() => {
@@ -58,8 +54,7 @@ export default function Checkout() {
 
   const calculateFees = () => {
     const subtotal = calculateTotal();
-    const serviceTier = event?.serviceTier || 'standard';
-    const serviceFee = subtotal * SERVICE_FEES[serviceTier];
+    const serviceFee = subtotal * SERVICE_FEE_RATE;
     const transactionFee = subtotal * TRANSACTION_FEE;
     const totalFees = serviceFee + transactionFee;
     return {
@@ -157,7 +152,7 @@ export default function Checkout() {
                 <span>GH₵ {fees.subtotal.toFixed(2)}</span>
               </div>
               <div className="summary-item" style={{ fontSize: '0.9rem', color: '#666' }}>
-                <span>Service Fee ({(SERVICE_FEES[event?.serviceTier || 'standard'] * 100).toFixed(1)}%)</span>
+                <span>Service Fee (3.8%)</span>
                 <span>GH₵ {fees.serviceFee.toFixed(2)}</span>
               </div>
               <div className="summary-item" style={{ fontSize: '0.9rem', color: '#666' }}>

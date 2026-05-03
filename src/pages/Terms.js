@@ -93,7 +93,7 @@ export default function Terms() {
             <p>All payments on ReekTickets are processed securely through Paystack. By making a purchase, you authorize ReekTickets to charge your payment method for:</p>
             <ul>
               <li>The ticket price as displayed</li>
-              <li>Applicable service fees (5-10% depending on event tier)</li>
+              <li>Applicable service fees (3.8%)</li>
               <li>Transaction fees (2.5% for Ghana Cedis transactions)</li>
             </ul>
             <p>Refunds are subject to each event organizer's specific refund policy. ReekTickets will not process refunds for attendee decisions to not attend.</p>

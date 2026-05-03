@@ -50,11 +50,11 @@ export default function PaymentSuccess() {
         return;
       }
       const ticketLink = `${window.location.origin}/ticket/${ticket.id || ticket._id}?code=${ticket.smsCode}`;
-      const message = `Your ReekTickets ticket is ready. Code: ${ticket.smsCode}. View at: ${ticketLink}`;
-      
       const response = await sendNaloSms({
         to: phone,
-        message
+        ticket,
+        event,
+        ticketLink,
       });
       
       if (response.success) {

@@ -31,7 +31,7 @@ export default function TicketAgreement() {
             <p>The ticket price displayed includes:</p>
             <ul>
               <li>The base event price set by the Organizer</li>
-              <li>ReekTickets service fee (5-10% depending on event tier)</li>
+              <li>ReekTickets service fee (3.8%)</li>
               <li>Transaction fee (2.5% for Ghana Cedis transactions)</li>
             </ul>
             <p>Prices are subject to change. You will see the final price including all fees before confirming purchase.</p>

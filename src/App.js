@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import AdminPortal from './pages/AdminPortal';
 import EventDetails from './pages/EventDetails';
 import Checkout from './pages/Checkout';
+import CheckoutPage from './pages/CheckoutPage';
 import PaymentSuccess from './pages/PaymentSuccess';
 import About from './pages/About';
 import Blog from './pages/Blog';
@@ -95,7 +96,8 @@ function AppContent() {
       {location.pathname !== '/' && <MobileMenuBar user={user} onLogout={logout} />}
       <main className="app-content">
         <Routes>
-          <Route path="/" element={<Home events={[]} />} />
+          <Route path="/" element={<Events user={user} />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login onLogin={setUser} />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/signup" element={<Signup onLogin={setUser} />} />
@@ -105,7 +107,7 @@ function AppContent() {
           <Route path="/about" element={<About />} />
           <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/event/:id" element={<EventDetails />} />
-          <Route path="/checkout/:eventId" element={<Checkout />} />
+          <Route path="/checkout/:eventId" element={<CheckoutPage />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard user={user} /></PrivateRoute>} />
           <Route path="/dashboard/attendee" element={<PrivateRoute allowedRoles={['attendee']}><AttendeeDashboard /></PrivateRoute>} />

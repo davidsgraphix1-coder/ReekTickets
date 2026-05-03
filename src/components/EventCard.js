@@ -8,61 +8,74 @@ export default function EventCard({ event, onBuy }) {
 
   const handleBuyClick = (e) => {
     e.stopPropagation();
-    onBuy(event, price, ticketType);
+    if (typeof onBuy === 'function') {
+      onBuy(event, price, ticketType);
+    } else {
+      window.location.href = `/events/${event._id}`;
+    }
   };
 
-  const formatDate = (dateString) => {
+  const formatDay = (dateString) => {
+    if (!dateString) return '--';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
+    return date.toLocaleDateString('en-US', { day: 'numeric' });
+  };
+
+  const formatMonth = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
   };
 
   const formatTime = (dateString) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
   };
 
   return (
-    <div className="event-card-modern" onClick={handleCardClick}>
+    <article className="ego-event-card" onClick={handleCardClick}>
       <div
-        className="event-card-image"
-        style={{
-          backgroundImage: `url('${event.banner || '/public/banner.jpg'}')`
-        }}
+        className="ego-card-image"
+        style={{ backgroundImage: `url('${event.banner || '/public/banner.jpg'}')` }}
       >
-        <div className="event-category-tag">{event.category || 'General'}</div>
+        <div className="ego-date-badge">
+          <span className="ego-date-day">{formatDay(event.date)}</span>
+          <span className="ego-date-month">{formatMonth(event.date)}</span>
+        </div>
+        {event.category && (
+          <span className="ego-category-pill">{event.category}</span>
+        )}
       </div>
 
-      <div className="event-card-content">
-        <h3 className="event-title">{event.title}</h3>
+      <div className="ego-card-body">
+        <h3 className="ego-card-title">{event.title}</h3>
 
-        <div className="event-location">
-          <span className="location-icon">📍</span>
-          <span>{event.location}</span>
-        </div>
-
-        <div className="event-datetime">
-          <div className="event-date">
-            <span className="date-icon">📅</span>
-            <span>{formatDate(event.date)}</span>
-          </div>
-          <div className="event-time">
-            <span className="time-icon">🕐</span>
+        <div className="ego-card-meta">
+          <span className="ego-meta-row">
+            <i className="fas fa-map-marker-alt" aria-hidden="true">📍</i>
+            <span>{event.location || event.venueName || 'TBA'}</span>
+          </span>
+          <span className="ego-meta-row">
+            <i className="fas fa-clock" aria-hidden="true">🕐</i>
             <span>{formatTime(event.date)}</span>
-          </div>
+          </span>
         </div>
 
-        <button className="grab-ticket-btn" onClick={handleBuyClick}>
-          Grab your ticket
-        </button>
+        <div className="ego-card-footer">
+          <span className="ego-price">
+            <small>From</small>
+            <strong>GH₵ {price}</strong>
+          </span>
+          <button className="ego-buy-btn" onClick={handleBuyClick}>
+            Buy Ticket
+          </button>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { fetchEvents } from '../services/api';
+import { useEffect, useMemo, useState } from 'react';
+import { fetchEvents, initPaystack } from '../services/api';
 import SEO from '../components/SEO';
+import EventCard from '../components/EventCard';
 
 const slides = [
   { title: 'EASY ACCESS TO YOUR FAVOURITE EVENTS', subtitle: 'Buy tickets instantly with secure checkout and event updates.' },
@@ -8,10 +9,19 @@ const slides = [
   { title: 'MANAGE TICKETS WITH EASE', subtitle: 'Track your purchases, download QR codes, and share with friends.' },
 ];
 
-export default function Home() {
+const FILTERS = [
+  { key: 'trending', label: 'Trending', desc: 'Hot events selling fast right now.' },
+  { key: 'upcoming', label: 'Upcoming', desc: 'Events happening soon — book early.' },
+  { key: 'popular-accra', label: 'Popular in Accra', desc: 'Top events in Accra this season.' },
+  { key: 'recent', label: 'Recent', desc: 'Newly added events on ReekTickets.' },
+];
+
+export default function Home({ user }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [slide, setSlide] = useState(0);
+  const [activeFilter, setActiveFilter] = useState('trending');
+  const [msg, setMsg] = useState('');
 
   useEffect(() => {
     fetchEvents().then((data) => {
@@ -23,8 +33,55 @@ export default function Home() {
     });
   }, []);
 
+  useEffect(() => {
+    const t = setInterval(() => setSlide((s) => (s + 1) % slides.length), 6000);
+    return () => clearInterval(t);
+  }, []);
+
   const nextSlide = () => setSlide((s) => (s + 1) % slides.length);
   const prevSlide = () => setSlide((s) => (s - 1 + slides.length) % slides.length);
+
+  const filteredEvents = useMemo(() => {
+    if (!Array.isArray(events) || events.length === 0) return [];
+    const now = Date.now();
+    const arr = [...events];
+    switch (activeFilter) {
+      case 'upcoming':
+        return arr
+          .filter((e) => e.date && new Date(e.date).getTime() >= now)
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
+      case 'popular-accra':
+        return arr.filter((e) =>
+          (e.location || e.city || '').toLowerCase().includes('accra')
+        );
+      case 'recent':
+        return arr.sort((a, b) => {
+          const ad = new Date(a.createdAt || a.date || 0).getTime();
+          const bd = new Date(b.createdAt || b.date || 0).getTime();
+          return bd - ad;
+        });
+      case 'trending':
+      default:
+        return arr.sort((a, b) => (b.ticketsSold || 0) - (a.ticketsSold || 0));
+    }
+  }, [events, activeFilter]);
+
+  const handleBuy = async (event, price, ticketType) => {
+    if (!user) {
+      setMsg('Please log in first');
+      return;
+    }
+    try {
+      const res = await initPaystack({ eventId: event._id, email: user.email, amount: price, ticketType });
+      if (res.authorization_url) {
+        window.location.href = res.authorization_url;
+        return;
+      }
+      setMsg(res.message || 'Payment initialization failed');
+    } catch (err) {
+      setMsg(err?.message || 'Payment initialization failed');
+    }
+  };
 
   const homeJsonLd = [
     {
@@ -33,16 +90,14 @@ export default function Home() {
       name: 'ReekTickets',
       url: 'https://reektickets.com',
       logo: 'https://reektickets.com/reektickets-actual-logo.png',
-      sameAs: [
-        'https://facebook.com',
-        'https://twitter.com',
-        'https://instagram.com',
-      ],
+      sameAs: ['https://facebook.com', 'https://twitter.com', 'https://instagram.com'],
     },
   ];
 
+  const activeFilterDesc = FILTERS.find((f) => f.key === activeFilter)?.desc;
+
   return (
-    <div className="home-wrapper">
+    <div className="home-wrapper home-white">
       <SEO
         title="ReekTickets – Ghana’s Top #4 Ticketing Platform | Buy Event Tickets Online"
         description="Buy tickets for concerts, parties, and events in Ghana. ReekTickets is a fast, secure, and reliable ticketing platform for event organizers, vendors, and attendees."
@@ -53,39 +108,77 @@ export default function Home() {
         canonical="https://reektickets.com/"
         jsonLd={homeJsonLd}
       />
-      <section className="hero" style={{ backgroundImage: `url('/public/banner.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+
+      {/* HERO BANNER + LOGO */}
+      <section
+        className="hero hero-white"
+        style={{ backgroundImage: `url('/public/banner.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
         <div className="hero-overlay hero-overlay-clear">
           <div className="hero-content">
-            <p className="eyebrow">ReekTickets - Anytime, anywhere</p>
+            <img
+              src="/reektickets-actual-logo.png"
+              alt="ReekTickets"
+              className="hero-logo"
+            />
+            <p className="eyebrow">ReekTickets — Anytime, anywhere</p>
             <h1>{slides[slide].title}</h1>
             <p className="hero-text">{slides[slide].subtitle}</p>
             <div className="hero-controls">
-              <button className="hero-arrow" onClick={prevSlide}>←</button>
+              <button className="hero-arrow" onClick={prevSlide} aria-label="Previous slide">←</button>
               <div className="dots">
-                {slides.map((_, index) => <span key={index} className={`dot ${index === slide ? 'active' : ''}`}></span>)}
+                {slides.map((_, index) => (
+                  <span key={index} className={`dot ${index === slide ? 'active' : ''}`}></span>
+                ))}
               </div>
-              <button className="hero-arrow" onClick={nextSlide}>→</button>
+              <button className="hero-arrow" onClick={nextSlide} aria-label="Next slide">→</button>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="attraction-section">
-        <div className="section-title">
-          <span className="purple">Attraction</span>
-          <span className="secondary">Events</span>
+      {/* ALL EVENTS SECTION */}
+      <section className="all-events-section">
+        <div className="all-events-header">
+          <h2 className="all-events-title">
+            <span className="title-all">ALL</span>
+            <span className="title-events">events</span>
+          </h2>
+          <p className="all-events-subtitle">
+            Discover, filter and grab tickets for the best events on ReekTickets.
+          </p>
+          <div className="title-underline" />
         </div>
-        <div className="cards-grid">
-          {loading ? <div style={{ gridColumn: '1 / -1', textAlign: 'center' }}>Loading events...</div> : events.length === 0 ? <div style={{ gridColumn: '1 / -1', textAlign: 'center' }}>No events yet, create one in dashboard.</div> : events.map((event) => (
-            <div className="event-card" key={event._id}>
-              <div className="card-img" style={{ backgroundImage: `url('${event.banner || '/public/banner.jpg'}')` }} />
-              <div className="card-body">
-                <h4>{event.title}</h4>
-                <p>{event.location}</p>
-                <div className="card-meta"><span>{new Date(event.date).toLocaleDateString()}</span><strong>GHS {event.ticketTypes?.[0]?.price || 0}</strong></div>
-              </div>
-            </div>
+
+        <div className="all-events-filters" role="tablist" aria-label="Filter events">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              role="tab"
+              aria-selected={activeFilter === f.key}
+              className={`filter-pill ${activeFilter === f.key ? 'active' : ''}`}
+              onClick={() => setActiveFilter(f.key)}
+            >
+              {f.label}
+            </button>
           ))}
+        </div>
+        {activeFilterDesc && (
+          <p className="all-events-filter-desc">{activeFilterDesc}</p>
+        )}
+
+        {msg && <div className="error-message">{msg}</div>}
+
+        <div className="events-grid ego-grid">
+          {loading ? (
+            <div className="events-empty">Loading events...</div>
+          ) : filteredEvents.length === 0 ? (
+            <div className="events-empty">No events to show in this category yet.</div>
+          ) : (
+            filteredEvents.map((event) => (
+              <EventCard key={event._id} event={event} onBuy={handleBuy} />
+            ))
+          )}
         </div>
       </section>
     </div>

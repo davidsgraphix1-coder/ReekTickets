@@ -4,11 +4,7 @@ import axios from 'axios';
 import API_BASE from '../config/api';
 import './AdminRevenueManagement.css';
 
-const SERVICE_FEES = {
-  standard: 0.05,
-  gold: 0.075,
-  platinum: 0.10
-};
+const SERVICE_FEE_RATE = 0.038;
 
 const formatCurrency = (value) => {
   const num = Number(value) || 0;
@@ -226,7 +222,7 @@ export default function AdminRevenueManagement() {
                 <span className="tier-card-value">GH₵ {formatCurrency(data.amount)}</span>
               </div>
               <div className="tier-card-row">
-                <strong>Service Fee ({(SERVICE_FEES[tier] * 100).toFixed(1)}%):</strong>
+                <strong>Service Fee (3.8%):</strong>
                 <span className="tier-card-fee">GH₵ {formatCurrency(data.serviceFee)}</span>
               </div>
             </div>

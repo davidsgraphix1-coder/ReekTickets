@@ -1,128 +1,167 @@
-import API_BASE from '../config/api';
+import { createClient } from '@supabase/supabase-js';
 
-const safeJson = async (res) => {
-  try {
-    return await res.json();
-  } catch {
-    return { message: 'Invalid API response' };
-  }
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('Supabase environment variables are not set. Please add REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY.');
+}
+
+const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+
+const normalizeError = (error, fallback = 'Unable to complete the request.') => ({
+  success: false,
+  message: error?.message || fallback,
+});
+
+const getCurrentUser = async () => {
+  const { data } = await supabase.auth.getSession();
+  return data?.session?.user || null;
 };
 
-const safeFetch = async (url, opts) => {
-  try {
-    const res = await fetch(url, opts);
-    if (!res.ok) {
-      const json = await safeJson(res);
-      return json;
-    }
-    return await safeJson(res);
-  } catch (error) {
-    console.error('Fetch error:', error);
-    return { message: 'Network error: Please check your connection' };
-  }
-};
-
-export const getAuthHeader = () => {
-  const token = localStorage.getItem('reek_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+export const getAuthHeader = () => ({
+  // Supabase manages auth internally in the client. Keep this for compatibility.
+});
 
 export async function signup(data) {
-  return safeFetch(`${API_BASE}/auth/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+  const { email, phone, password, role, fullName, ...metadata } = data || {};
+  if (!email || !password) {
+    return { success: false, message: 'Email and password are required.' };
+  }
+
+  const { data: result, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${window.location.origin}/verify-email`,
+      data: {
+        role,
+        fullName,
+        phone,
+        ...metadata,
+      },
+    },
   });
+
+  if (error) return normalizeError(error);
+  return {
+    success: true,
+    message: 'Signup successful. Check your email or phone for verification.',
+    user: result?.user || null,
+    token: result?.session?.access_token,
+  };
 }
 
 export async function verifyOtp(data) {
-  return safeFetch(`${API_BASE}/auth/verify-otp`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+  const { phone, email, otpCode } = data || {};
+  if (!otpCode) {
+    return { success: false, message: 'OTP code is required.' };
+  }
+
+  const type = phone ? 'sms' : 'email';
+  const authPayload = phone ? { phone } : { email };
+
+  const { data: result, error } = await supabase.auth.verifyOtp({
+    ...authPayload,
+    token: otpCode,
+    type,
   });
+
+  if (error) return normalizeError(error);
+  return {
+    success: true,
+    message: 'Verification successful.',
+    user: result?.user || null,
+    token: result?.session?.access_token,
+  };
 }
 
 export async function resendOtp(data) {
-  return safeFetch(`${API_BASE}/auth/resend-otp`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+  const { phone, email } = data || {};
+  const authPayload = phone ? { phone } : email ? { email } : null;
+  if (!authPayload) {
+    return { success: false, message: 'Email or phone is required to resend OTP.' };
+  }
+
+  const { error } = await supabase.auth.signInWithOtp({
+    ...authPayload,
+    options: {
+      emailRedirectTo: `${window.location.origin}/verify-email`,
+    },
   });
+
+  if (error) return normalizeError(error);
+  return { success: true, message: 'OTP resent successfully.' };
 }
 
 export async function login(data) {
-  return safeFetch(`${API_BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+  const { email, phone, password } = data || {};
+  if (!password) {
+    return { success: false, message: 'Password is required.' };
+  }
+
+  const authPayload = email ? { email } : phone ? { phone } : null;
+  if (!authPayload) {
+    return { success: false, message: 'Email or phone is required to login.' };
+  }
+
+  const { data: result, error } = await supabase.auth.signInWithPassword({
+    ...authPayload,
+    password,
   });
+
+  if (error) return normalizeError(error);
+  return {
+    success: true,
+    message: 'Login successful.',
+    user: result?.user || null,
+    token: result?.session?.access_token,
+  };
 }
 
-export async function forgotPassword(data) {
-  return safeFetch(`${API_BASE}/auth/password-reset`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'request-reset', ...data }),
-  });
+export async function forgotPassword() {
+  return { success: false, message: 'Password reset is not available in Supabase-only mode.' };
 }
 
-export async function verifyResetCode(data) {
-  return safeFetch(`${API_BASE}/auth/password-reset`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'verify-code', ...data }),
-  });
+export async function verifyResetCode() {
+  return { success: false, message: 'Password reset is not available in Supabase-only mode.' };
 }
 
-export async function resetPassword(data) {
-  return safeFetch(`${API_BASE}/auth/password-reset`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'reset-password', ...data }),
-  });
+export async function resetPassword() {
+  return { success: false, message: 'Password reset is not available in Supabase-only mode.' };
 }
 
 export async function fetchEvents() {
-  try {
-    const res = await fetch(`${API_BASE}/events`);
-    if (!res.ok) return [];
-    const json = await res.json();
-    return Array.isArray(json) ? json : [];
-  } catch (error) {
-    return [];
-  }
+  const { data, error } = await supabase.from('events').select('*');
+  if (error) return [];
+  return data || [];
 }
 
 export async function fetchEvent(id) {
-  try {
-    const res = await fetch(`${API_BASE}/events/${id}`);
-    if (!res.ok) throw new Error('Event not found');
-    return await res.json();
-  } catch (error) {
-    throw error;
-  }
+  const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
+  if (error) throw new Error(error.message || 'Event not found');
+  return data || null;
 }
 
 export async function fetchTicket(id, code) {
-  try {
-    const token = localStorage.getItem('reek_token');
-    const query = code ? `?code=${encodeURIComponent(code)}` : '';
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const res = await fetch(`${API_BASE}/tickets/${id}${query}`, { headers });
-    if (!res.ok) throw new Error('Ticket not found');
-    return await res.json();
-  } catch (error) {
-    throw error;
+  const query = supabase.from('tickets').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await query;
+  if (error || !data) {
+    throw new Error('Ticket not found');
   }
+  if (code && data.code !== code && data.smsCode !== code) {
+    throw new Error('Ticket not found');
+  }
+  return data;
 }
 
 export async function fetchMyTickets() {
   try {
-    const res = await fetch(`${API_BASE}/tickets`, {
-      headers: { ...getAuthHeader() },
-    });
-    return await safeJson(res);
+    const user = await getCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase.from('tickets').select('*').eq('user_id', user.id);
+    if (error) return [];
+    return data || [];
   } catch {
     return { message: 'Network error: could not fetch tickets' };
   }
@@ -130,139 +169,53 @@ export async function fetchMyTickets() {
 
 export async function createEvent(payload) {
   try {
-    const res = await fetch(`${API_BASE}/events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify(payload),
-    });
-    return await safeJson(res);
+    const user = await getCurrentUser();
+    const insertPayload = {
+      ...payload,
+      organizer_id: user?.id,
+    };
+    const { data, error } = await supabase.from('events').insert(insertPayload).select().single();
+    if (error) return normalizeError(error);
+    return { success: true, data };
   } catch {
     return { message: 'Network error: cannot create event' };
   }
 }
 
-export async function initPaystack(payload) {
-  try {
-    const res = await fetch(`${API_BASE}/payments/paystack`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify(payload),
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not initialize payment' };
-  }
+export async function initPaystack() {
+  return { success: false, message: 'Paystack integration is not available in Supabase-only mode.' };
 }
 
-export async function withdrawFunds(amount) {
-  try {
-    const res = await fetch(`${API_BASE}/payments/withdraw`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ amount }),
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not process withdrawal' };
-  }
+export async function withdrawFunds() {
+  return { success: false, message: 'Withdrawals are not available in Supabase-only mode.' };
 }
 
-export async function requestOrganizerPayout(amount, paystackEmail) {
-  try {
-    const res = await fetch(`${API_BASE}/payments/organizer/payout`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ amount, paystackEmail }),
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not process payout request' };
-  }
+export async function requestOrganizerPayout() {
+  return { success: false, message: 'Payout requests are not available in Supabase-only mode.' };
 }
 
 export async function getAdminPendingPayouts() {
-  try {
-    const res = await fetch(`${API_BASE}/payments/admin/pending-payouts`, {
-      headers: getAuthHeader(),
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not fetch pending payouts' };
-  }
+  return { success: false, message: 'Admin payout data is not available in Supabase-only mode.' };
 }
 
-export async function processAdminPayout(payoutId) {
-  try {
-    const res = await fetch(`${API_BASE}/payments/admin/process-payout/${payoutId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not process payout' };
-  }
+export async function processAdminPayout() {
+  return { success: false, message: 'Admin payout processing is not available in Supabase-only mode.' };
 }
 
 export async function getOrganizerPayouts() {
-  try {
-    const res = await fetch(`${API_BASE}/payments/organizer/payouts`, {
-      headers: getAuthHeader(),
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not fetch payout history' };
-  }
+  return { success: false, message: 'Organizer payout history is not available in Supabase-only mode.' };
 }
 
 export async function getPaymentSummary() {
-  try {
-    const res = await fetch(`${API_BASE}/payments/summary`, {
-      headers: getAuthHeader(),
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not fetch payment summary' };
-  }
+  return { success: false, message: 'Payment summary is not available in Supabase-only mode.' };
 }
 
-export async function verifyPayment(reference) {
-  try {
-    const res = await fetch(`${API_BASE}/payments/verify?reference=${encodeURIComponent(reference)}`);
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not verify payment' };
-  }
+export async function verifyPayment() {
+  return { success: false, message: 'Payment verification is not available in Supabase-only mode.' };
 }
 
-export async function sendNaloSms(payload) {
-  const { to, message } = payload || {};
-  if (!to || !message) {
-    return { message: 'Missing recipient phone number or message content.', success: false };
-  }
-  
-  try {
-    console.log('[SMS] Sending to', to);
-    // Use backend SMS send endpoint for messages
-    const res = await fetch(`${API_BASE}/sms/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        phone: to,
-        message: message,
-      }),
-    });
-    
-    const result = await safeJson(res);
-    console.log('[SMS] Response:', result);
-    return result.success 
-      ? { message: result.message || 'SMS sent successfully', success: true }
-      : { message: result.message || 'SMS delivery failed', success: false };
-  } catch (error) {
-    console.error('[SMS] Backend error:', error);
-    return { message: `Network error: ${error.message}`, success: false };
-  }
+export async function sendNaloSms() {
+  return { success: false, message: 'SMS sending is not available in Supabase-only mode.' };
 }
 
 export async function verifyTicketCode(ticketId, code) {
@@ -272,50 +225,36 @@ export async function verifyTicketCode(ticketId, code) {
   return fetchTicket(ticketId, code);
 }
 
-// Admin Revenue & Withdrawals Functions
 export async function getAdminRevenueSummary() {
-  try {
-    const res = await fetch(`${API_BASE}/payments/admin/revenue-summary`, {
-      headers: getAuthHeader(),
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not fetch revenue summary' };
-  }
+  return { success: false, message: 'Admin revenue data is not available in Supabase-only mode.' };
 }
 
-export async function requestAdminWithdrawal(amount, paystackEmail) {
-  try {
-    const res = await fetch(`${API_BASE}/payments/admin/request-withdrawal`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ amount, paystackEmail }),
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not request withdrawal' };
-  }
+export async function requestAdminWithdrawal() {
+  return { success: false, message: 'Admin withdrawal requests are not available in Supabase-only mode.' };
 }
 
 export async function getAdminWithdrawals() {
-  try {
-    const res = await fetch(`${API_BASE}/payments/admin/withdrawals`, {
-      headers: getAuthHeader(),
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not fetch withdrawals' };
-  }
+  return { success: false, message: 'Admin withdrawals are not available in Supabase-only mode.' };
 }
 
-export async function processAdminWithdrawal(withdrawalId) {
-  try {
-    const res = await fetch(`${API_BASE}/payments/admin/process-withdrawal/${withdrawalId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    });
-    return await safeJson(res);
-  } catch {
-    return { message: 'Network error: could not process withdrawal' };
+export async function processAdminWithdrawal() {
+  return { success: false, message: 'Admin withdrawal processing is not available in Supabase-only mode.' };
+}
+
+export async function validateCoupon() {
+  return { success: false, message: 'Coupon validation is not available in Supabase-only mode.' };
+}
+
+export async function markAttendance(ticketReference, smsCode) {
+  if (!ticketReference) {
+    return { success: false, message: 'Ticket reference is required.' };
   }
+
+  const { data, error } = await supabase
+    .from('tickets')
+    .update({ attendance: true, verified_at: new Date().toISOString() })
+    .match({ reference: ticketReference });
+
+  if (error) return normalizeError(error);
+  return { success: true, data };
 }
