@@ -1,0 +1,158 @@
+/* Modern chat window styles (bubbles, timestamps, input row, emoji/file, responsive, glassmorphism) */
+.chatWindow {
+  display: flex;
+  flex-direction: column;
+  height: 350px;
+  max-height: 55vh;
+  background: rgba(34, 34, 60, 0.85);
+  border-radius: 1.2em;
+  box-shadow: 0 2px 16px rgba(80,0,120,0.10);
+  overflow: hidden;
+}
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.2em 1em 0.5em 1em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+}
+.userMsg {
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.adminMsg {
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.bubble {
+  background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+  color: #fff;
+  padding: 0.7em 1.1em;
+  border-radius: 1.2em 1.2em 0.3em 1.2em;
+  font-size: 1em;
+  max-width: 80vw;
+  box-shadow: 0 2px 8px rgba(80,0,120,0.10);
+  margin-bottom: 0.2em;
+  word-break: break-word;
+  animation: bubbleIn 0.18s;
+}
+.adminMsg .bubble {
+  background: linear-gradient(135deg, #22223c 0%, #a855f7 100%);
+  border-radius: 1.2em 1.2em 1.2em 0.3em;
+}
+@keyframes bubbleIn {
+  from { transform: scale(0.95); opacity: 0.5; }
+  to { transform: scale(1); opacity: 1; }
+}
+.timestamp {
+  font-size: 0.78em;
+  color: #bdbdf7;
+  opacity: 0.7;
+  margin: 0 0.2em 0.2em 0.2em;
+}
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.7em 1em;
+  background: rgba(30, 20, 50, 0.92);
+  border-top: 1px solid rgba(168,85,247,0.08);
+}
+.input {
+  flex: 1;
+  border: none;
+  border-radius: 1em;
+  padding: 0.7em 1em;
+  font-size: 1em;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  outline: none;
+  margin: 0 0.2em;
+}
+.sendBtn, .emojiBtn, .fileBtn {
+  background: none;
+  border: none;
+  color: #a855f7;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 0.3em;
+  border-radius: 50%;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+.sendBtn:disabled {
+  color: #888;
+  cursor: not-allowed;
+}
+.emojiBtn:focus, .fileBtn:focus, .sendBtn:focus {
+  background: rgba(168,85,247,0.12);
+}
+.fileInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.emojiPicker {
+  position: absolute;
+  bottom: 48px;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(32px, 1fr));
+  gap: 6px;
+  padding: 10px;
+  background: rgba(15, 15, 30, 0.98);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  z-index: 10;
+}
+.emojiOption {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.4em;
+  border-radius: 50%;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.emojiOption:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+.fileInput {
+  display: none;
+}
+.typingDots {
+  display: inline-block;
+  font-size: 1.3em;
+  letter-spacing: 0.1em;
+  animation: blink 1.2s infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.filePreview {
+  margin-top: 0.3em;
+}
+.fileImg {
+  max-width: 160px;
+  max-height: 120px;
+  border-radius: 0.5em;
+  box-shadow: 0 2px 8px rgba(80,0,120,0.10);
+}
+@media (max-width: 700px) {
+  .chatWindow {
+    height: 55vh;
+    min-height: 220px;
+  }
+}

@@ -1,0 +1,357 @@
+/* ===== VEETICKETS DESIGN SYSTEM ===== */
+:root {
+  --vt-primary: #7C3AED;
+  --vt-primary-light: #A78BFA;
+  --vt-primary-dark: #6D28D9;
+  --vt-gradient-coral: linear-gradient(135deg, #FF9A9E 0%, #FCAEAD 50%, #FFB199 100%);
+  --vt-gradient-blue: linear-gradient(135deg, #4FACFE 0%, #00C6FB 100%);
+  --vt-gradient-teal: linear-gradient(135deg, #43E97B 0%, #38F9D7 100%);
+  --vt-gradient-purple: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
+  --vt-bg: #F5F6FA;
+  --vt-card: #FFFFFF;
+  --vt-text: #1F2937;
+  --vt-text-light: #6B7280;
+  --vt-text-muted: #9CA3AF;
+  --vt-border: #E5E7EB;
+  --vt-border-light: #F3F4F6;
+  --vt-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --vt-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --vt-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --vt-radius: 14px;
+  --vt-radius-sm: 10px;
+}
+
+* { box-sizing: border-box; }
+html, body { overflow-x: hidden; max-width: 100vw; }
+
+.gate-entry-dashboard {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  padding: 28px;
+  background: var(--vt-bg);
+  min-height: 100vh;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--vt-text);
+}
+
+.dashboard-page { padding: 0; margin: 0; }
+
+.page-head {
+  background: var(--vt-card);
+  padding: 28px;
+  border-radius: var(--vt-radius);
+  margin-bottom: 24px;
+  box-shadow: var(--vt-shadow-md);
+  border: 1px solid var(--vt-border-light);
+}
+
+.page-head h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  color: var(--vt-text);
+  font-weight: 700;
+}
+
+.page-head p {
+  margin: 0;
+  color: var(--vt-text-light);
+  font-size: 15px;
+}
+
+.page-content { padding: 0; }
+
+/* Scanner Section */
+.scanner-section {
+  background: var(--vt-card);
+  border-radius: var(--vt-radius);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: var(--vt-shadow-sm);
+  border: 1px solid var(--vt-border-light);
+}
+
+.scanner-section h2 {
+  margin-top: 0;
+  margin-bottom: 24px;
+  color: var(--vt-text);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.form-group { margin-bottom: 18px; }
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--vt-text);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--vt-border);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  color: var(--vt-text);
+  background: var(--vt-card);
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--vt-primary);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--vt-primary);
+  color: white;
+  width: 100%;
+  padding: 14px;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--vt-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+}
+
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-success {
+  background: #059669;
+  color: white;
+  margin-top: 14px;
+  width: 100%;
+  padding: 14px;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+/* Status Messages */
+.success, .error, .warning, .info {
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-top: 14px;
+  font-size: 14px;
+  animation: slideIn 0.3s ease;
+}
+
+.success { background: #D1FAE5; border: 1px solid #A7F3D0; color: #047857; }
+.error { background: #FEE2E2; border: 1px solid #FECACA; color: #991B1B; }
+.warning { background: #FEF3C7; border: 1px solid #FDE68A; color: #92400E; }
+.info { background: #DBEAFE; border: 1px solid #BFDBFE; color: #1E40AF; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ticket Card */
+.ticket-card {
+  background: var(--vt-gradient-purple);
+  color: white;
+  border-radius: var(--vt-radius);
+  padding: 24px;
+  margin-top: 24px;
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.ticket-card::before {
+  content: '';
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  top: -30px;
+  right: -30px;
+}
+
+.ticket-card h3 {
+  margin: 0 0 14px 0;
+  font-size: 20px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+}
+
+.ticket-card p {
+  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+}
+
+.ticket-card strong { font-weight: 700; display: inline-block; min-width: 120px; }
+
+.ticket-qr {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 18px;
+}
+
+.ticket-qr svg { max-width: 100%; height: auto; }
+
+/* Attendee Details */
+.attendee-info {
+  background: var(--vt-bg);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 18px;
+  border: 1px solid var(--vt-border-light);
+}
+
+.attendee-info p { margin: 6px 0; color: var(--vt-text); font-size: 14px; }
+
+.status-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.status-active { background: #D1FAE5; color: #047857; }
+.status-used { background: #FED7AA; color: #92400E; }
+.status-invalid { background: #FEE2E2; color: #991B1B; }
+.status-pending { background: #DBEAFE; color: #1E40AF; }
+.status-issued { background: #E9D5FF; color: #6B21A8; }
+
+/* Entry Stats */
+.entry-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f5ff 100%);
+  padding: 20px;
+  border-radius: var(--vt-radius-sm);
+  text-align: center;
+  box-shadow: var(--vt-shadow-sm);
+  border: 1px solid var(--vt-border-light);
+  transition: all 0.2s;
+}
+
+.stat-card:hover { box-shadow: var(--vt-shadow-md); }
+
+.stat-card .stat-number {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--vt-primary);
+  margin: 0;
+}
+
+.stat-card .stat-label {
+  font-size: 13px;
+  color: var(--vt-text-light);
+  margin-top: 6px;
+}
+
+/* Loading State */
+.loading {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid var(--vt-border-light);
+  border-top: 2px solid var(--vt-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* QR Scanner Container */
+.qr-scanner-container {
+  background: var(--vt-bg);
+  border: 2px dashed var(--vt-border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 18px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.qr-scanner-container video {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.qr-instructions { font-size: 14px; color: var(--vt-text-light); margin: 14px 0; line-height: 1.6; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .gate-entry-dashboard { padding: 16px; }
+  .page-head { padding: 20px; margin-bottom: 18px; }
+  .page-head h1 { font-size: 22px; }
+  .scanner-section { padding: 20px; margin-bottom: 18px; }
+  .scanner-section h2 { font-size: 18px; }
+  .form-row { grid-template-columns: 1fr; gap: 14px; }
+  .ticket-card { padding: 20px; }
+  .ticket-card h3 { font-size: 18px; }
+  .entry-stats { grid-template-columns: 1fr; gap: 14px; }
+}
+
+@media (max-width: 480px) {
+  .gate-entry-dashboard { padding: 12px; }
+  .page-head { padding: 16px; border-radius: 10px; }
+  .page-head h1 { font-size: 18px; }
+  .page-head p { font-size: 13px; }
+  .scanner-section { padding: 14px; border-radius: 10px; }
+  .scanner-section h2 { font-size: 16px; }
+  .form-group input, .form-group textarea { padding: 10px 12px; font-size: 14px; }
+  .btn { padding: 10px 14px; font-size: 13px; }
+  .ticket-card { padding: 16px; border-radius: 10px; }
+  .ticket-card h3 { font-size: 16px; }
+  .ticket-card p { font-size: 13px; }
+  .stat-card { padding: 16px; }
+  .stat-card .stat-number { font-size: 24px; }
+  .stat-card .stat-label { font-size: 12px; }
+}

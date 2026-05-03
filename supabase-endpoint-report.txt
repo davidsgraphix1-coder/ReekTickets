@@ -1,0 +1,148 @@
+src/components/AddAdminModal.jsx:49:      const response = await axios.post('/api/upload', formDataForUpload, {
+src/components/AddAdminModal.jsx:95:      const response = await axios.post(
+src/components/AddAdminModal.jsx:96:        '/api/admin-management/create-admin',
+src/components/RealtimeChat.jsx:27:        const res = await axios.get(`/api/support/user/chats`, { headers });
+src/components/RealtimeChat.jsx:35:          const newChatRes = await axios.post('/api/support/create', {
+src/components/RealtimeChat.jsx:93:      await axios.post(`/api/support/chat/${chatId}/message`, {
+src/components/SupportChat.jsx:129:      const response = await supportFetch(`/api/support/chat/${chatId}/message`, {
+src/components/SupportChat.jsx:175:      const uploadUrl = '/api/upload';
+src/components/SupportChat.jsx:176:      const res = await fetch(uploadUrl, { 
+src/components/SupportChat.jsx:193:          const messageResponse = await supportFetch(`/api/support/chat/${chatId}/message`, {
+src/components/SupportChat.jsx:235:        const response = await supportFetch('/api/support/chat', {
+src/components/SupportChat.jsx:255:            const messagesResponse = await supportFetch(`/api/support/chat/${id}/messages`, {
+src/components/SupportChat.jsx:40:  const cleanedBase = API_BASE.replace(/\/+/g, '/').replace(/\/$/, '');
+src/components/SupportChat.jsx:46:  const cleanedBase = API_BASE.replace(/\/api$/, '').replace(/\/+$/, '');
+src/components/SupportChat.jsx:61:      const response = await fetch(endpoint, options);
+src/components/SupportChat.jsx:6:import API_BASE from '../config/api';
+src/config/api.js:10:const rawApiBase = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_BASE;
+src/config/api.js:11:const API_BASE = normalizeApiUrl(rawApiBase) || defaultApiOrigin;
+src/config/api.js:13:export default API_BASE;
+src/config/axiosInstance.js:2:import API_BASE from './api';
+src/config/axiosInstance.js:5:const axiosInstance = axios.create({
+src/config/axiosInstance.js:6:  baseURL: API_BASE,
+src/dashboards/AdminDashboard.jsx:120:      const res = await axios.get(getApiUrl('/auth/me'), { headers });
+src/dashboards/AdminDashboard.jsx:131:      const response = await axios.get(getApiUrl('/admin/users'), { headers });
+src/dashboards/AdminDashboard.jsx:148:        axios.get(getApiUrl('/admin/users'), { headers }).catch(() => ({ data: [] })),
+src/dashboards/AdminDashboard.jsx:149:        axios.get(getApiUrl('/admin/events'), { headers }).catch(() => ({ data: [] })),
+src/dashboards/AdminDashboard.jsx:150:        axios.get(getApiUrl('/admin/tickets'), { headers }).catch(() => ({ data: [] })),
+src/dashboards/AdminDashboard.jsx:151:        axios.get(getApiUrl('/admin/payments'), { headers }).catch(() => ({ data: [] })),
+src/dashboards/AdminDashboard.jsx:152:        axios.get(getApiUrl('/admin/reports'), { headers }).catch(() => ({ data: [] })),
+src/dashboards/AdminDashboard.jsx:153:        axios.get(getApiUrl('/notifications'), { headers }).catch(() => ({ data: [] })),
+src/dashboards/AdminDashboard.jsx:308:    if (!path) return `${API_BASE}`;
+src/dashboards/AdminDashboard.jsx:312:    return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+src/dashboards/AdminDashboard.jsx:339:      const res = await axios.get(getApiUrl('/notifications'), { headers });
+src/dashboards/AdminDashboard.jsx:356:      await axios.post(getApiUrl('/admin/announcements'), { message: announcementMessage.trim(), roles: ['all'] }, { headers });
+src/dashboards/AdminDashboard.jsx:375:      await axios.delete(getApiUrl(`/notifications/${notificationId}`), { headers });
+src/dashboards/AdminDashboard.jsx:404:      await axios.post(
+src/dashboards/AdminDashboard.jsx:447:      const response = await axios.post(
+src/dashboards/AdminDashboard.jsx:481:      const response = await axios.post(getApiUrl('/admin/set-user-otp'), {
+src/dashboards/AdminDashboard.jsx:507:      const response = await axios.post(getApiUrl('/admin/set-user-otp'), {
+src/dashboards/AdminDashboard.jsx:567:      const response = await axios.post(
+src/dashboards/AdminDashboard.jsx:5:import API_BASE from '../config/api';
+src/dashboards/AdminDashboard.jsx:749:      const response = await axios.post(`${API_BASE}/admin/users/register`, submitData, {
+src/dashboards/AttendeeDashboard.jsx:229:      await axios.post(`${API_BASE}/report`, { message: reportMessage.trim() }, { headers });
+src/dashboards/AttendeeDashboard.jsx:40:      const res = await axios.get(`${API_BASE}/auth/me`, { headers });
+src/dashboards/AttendeeDashboard.jsx:4:import API_BASE from '../config/api';
+src/dashboards/AttendeeDashboard.jsx:50:      const res = await axios.get(`${API_BASE}/tickets`, { headers });
+src/dashboards/AttendeeDashboard.jsx:60:      const res = await axios.get(`${API_BASE}/notifications`, { headers });
+src/dashboards/AttendeeDashboard.jsx:78:      const response = await axios.post(`${API_BASE}/upload`, formData, {
+src/dashboards/AttendeeDashboard.jsx:92:      const updateRes = await axios.patch(`${API_BASE}/auth/me`, 
+src/dashboards/OrganizerDashboard.jsx:100:        axios.get(`${API_BASE}/payments`, axiosConfig).catch(err => {
+src/dashboards/OrganizerDashboard.jsx:104:        axios.get(`${API_BASE}/notifications`, axiosConfig).catch(err => {
+src/dashboards/OrganizerDashboard.jsx:108:        axios.get(`${API_BASE}/messages`, axiosConfig).catch(err => {
+src/dashboards/OrganizerDashboard.jsx:196:      const response = await axios.post(`${API_BASE}/upload`, formData, {
+src/dashboards/OrganizerDashboard.jsx:211:      const updateRes = await axios.patch(`${API_BASE}/auth/me`, 
+src/dashboards/OrganizerDashboard.jsx:246:      await axios.post(`${API_BASE}/report`, { message: reportMessage.trim() }, { headers });
+src/dashboards/OrganizerDashboard.jsx:5:import API_BASE from '../config/api';
+src/dashboards/OrganizerDashboard.jsx:84:        axios.get(`${API_BASE}/events`, axiosConfig).catch(err => {
+src/dashboards/OrganizerDashboard.jsx:88:        axios.get(`${API_BASE}/tickets`, axiosConfig).catch(err => {
+src/dashboards/OrganizerDashboard.jsx:92:        axios.get(`${API_BASE}/users`, axiosConfig).catch(err => {
+src/dashboards/OrganizerDashboard.jsx:96:        axios.get(`${API_BASE}/vendors`, axiosConfig).catch(err => {
+src/dashboards/organizer-sections/ComplementaryTickets.jsx:47:      await axios.post(`${API_BASE}/tickets/complimentary`, ticketData, { headers });
+src/dashboards/organizer-sections/ComplementaryTickets.jsx:4:import API_BASE from '../../config/api';
+src/dashboards/organizer-sections/EventCreation.jsx:18:import API_BASE from '../../config/api';
+src/dashboards/organizer-sections/EventCreation.jsx:304:      await axios.post(`${API_BASE}/events`, form, {
+src/dashboards/organizer-sections/OrganizerSettings.jsx:45:      await axios.patch(`${API_BASE}/auth/me`, updateData, { headers });
+src/dashboards/organizer-sections/OrganizerSettings.jsx:4:import API_BASE from '../../config/api';
+src/dashboards/organizer-sections/OrganizerSettings.jsx:73:              const updateRes = await axios.patch(`${API_BASE}/auth/me`, { profilePic: url, avatarUrl: url }, { headers });
+src/dashboards/organizer-sections/PhysicalTickets.jsx:49:      await axios.post(`${API_BASE}/tickets/physical`, ticketData, { headers });
+src/dashboards/organizer-sections/PhysicalTickets.jsx:4:import API_BASE from '../../config/api';
+src/dashboards/organizer-sections/Transactions.jsx:4:import API_BASE from '../../config/api';
+src/dashboards/organizer-sections/Transactions.jsx:53:      const response = await axios.post(
+src/dashboards/organizer-sections/Transactions.jsx:54:        `${API_BASE}/payments/organizer/request-withdrawal`,
+src/dashboards/organizer-sections/Transactions.jsx:84:      const response = await axios.get(`${API_BASE}/payments/organizer/withdrawals`, { headers });
+src/dashboards/SalesAgentDashboard.jsx:104:      const res = await axios.get(`${API_BASE}/agent/leaderboard`, { headers });
+src/dashboards/SalesAgentDashboard.jsx:113:      const res = await axios.get(`${API_BASE}/agent/notifications`, { headers });
+src/dashboards/SalesAgentDashboard.jsx:154:      const res = await axios.patch(`${API_BASE}/agent/profile`, agentProfile, { headers });
+src/dashboards/SalesAgentDashboard.jsx:176:      const response = await axios.post(`${API_BASE}/upload`, formData, {
+src/dashboards/SalesAgentDashboard.jsx:190:      const updateRes = await axios.patch(`${API_BASE}/auth/me`, 
+src/dashboards/SalesAgentDashboard.jsx:236:      const res = await axios.post(`${API_BASE}/agent/referral-link`, { eventId }, { headers });
+src/dashboards/SalesAgentDashboard.jsx:345:      await axios.post(`${API_BASE}/report`, { message: reportMessage.trim() }, { headers });
+src/dashboards/SalesAgentDashboard.jsx:5:import API_BASE from '../config/api';
+src/dashboards/SalesAgentDashboard.jsx:65:      const res = await axios.get(`${API_BASE}/auth/me`, { headers });
+src/dashboards/SalesAgentDashboard.jsx:75:      const res = await axios.get(`${API_BASE}/agent/profile`, { headers });
+src/dashboards/SalesAgentDashboard.jsx:85:      const res = await axios.get(`${API_BASE}/agent/sales-detailed`, { headers });
+src/dashboards/SalesAgentDashboard.jsx:95:      const res = await axios.get(`${API_BASE}/agent/stats`, { headers });
+src/dashboards/VendorDashboard.jsx:105:      const res = await axios.get(`${API_BASE}/vendor/applications`, { headers });
+src/dashboards/VendorDashboard.jsx:141:      const res = await axios.patch(`${API_BASE}/vendor/profile`, userData, { headers });
+src/dashboards/VendorDashboard.jsx:163:      const response = await axios.post(`${API_BASE}/upload`, formData, {
+src/dashboards/VendorDashboard.jsx:177:      const updateRes = await axios.patch(`${API_BASE}/auth/me`, 
+src/dashboards/VendorDashboard.jsx:5:import API_BASE from '../config/api';
+src/dashboards/VendorDashboard.jsx:76:      await axios.post(`${API_BASE}/report`, { message: reportMessage.trim() }, { headers });
+src/dashboards/VendorDashboard.jsx:87:      const res = await axios.get(`${API_BASE}/auth/me`, { headers });
+src/pages/AdminOrganizerWithdrawals.jsx:26:      const res = await axios.get(`${API_BASE}/payments/admin/organizer-withdrawals`, { headers });
+src/pages/AdminOrganizerWithdrawals.jsx:43:      const res = await axios.post(
+src/pages/AdminOrganizerWithdrawals.jsx:44:        `${API_BASE}/payments/admin/approve-organizer-withdrawal/${withdrawalId}`,
+src/pages/AdminOrganizerWithdrawals.jsx:4:import API_BASE from '../config/api';
+src/pages/AdminOrganizerWithdrawals.jsx:67:      const res = await axios.post(
+src/pages/AdminOrganizerWithdrawals.jsx:68:        `${API_BASE}/payments/admin/decline-organizer-withdrawal/${selectedWithdrawal.id}`,
+src/pages/AdminRevenueManagement.jsx:116:      const res = await axios.post(
+src/pages/AdminRevenueManagement.jsx:117:        `${API_BASE}/payments/admin/process-withdrawal/${withdrawalId}`,
+src/pages/AdminRevenueManagement.jsx:49:      const res = await axios.get(`${API_BASE}/payments/admin/revenue-summary`, { headers });
+src/pages/AdminRevenueManagement.jsx:4:import API_BASE from '../config/api';
+src/pages/AdminRevenueManagement.jsx:59:      const res = await axios.get(`${API_BASE}/payments/admin/withdrawals`, { headers });
+src/pages/AdminRevenueManagement.jsx:82:      const res = await axios.post(
+src/pages/AdminRevenueManagement.jsx:83:        `${API_BASE}/payments/admin/request-withdrawal`,
+src/pages/AdminSupport.jsx:109:        const uploadRes = await axios.post('/api/upload', formData, {
+src/pages/AdminSupport.jsx:131:      await axios.post(`/api/support/admin/chat/${chatId}/message`, { 
+src/pages/AdminSupport.jsx:152:      await axios.post(`/api/support/admin/chat/${chatId}/close`, {}, { headers });
+src/pages/AdminSupport.jsx:164:      await axios.delete(`/api/support/admin/chat/${chatId}`, { headers });
+src/pages/AdminSupport.jsx:185:      await axios.post(`/api/support/admin/user/${userId}/ban`, {}, { headers });
+src/pages/AdminSupport.jsx:31:      const res = await axios.get('/api/support/admin/chats', { headers });
+src/pages/AdminSupport.jsx:40:      const res = await axios.get('/api/support/admin/admin-chats', { headers });
+src/pages/AdminSupport.jsx:51:      const res = await axios.get('/api/support/admin/analytics', { headers });
+src/pages/EditEvent.js:114:    const res = await axios.post(`${API_BASE}/upload`, uploadForm, {
+src/pages/EditEvent.js:164:        await axios.patch(`${API_BASE}/admin/events/${eventId}`, payload, {
+src/pages/EditEvent.js:183:        await axios.put(`${API_BASE}/events/${eventId}`, form, {
+src/pages/EditEvent.js:44:        const res = await axios.get(`${API_BASE}/events/${eventId}`);
+src/pages/EditEvent.js:4:import API_BASE from '../config/api';
+src/pages/ReportToAdmin.jsx:26:      await axios.post(`${API_BASE}/report`, { message: reportMessage.trim() }, { headers });
+src/pages/ReportToAdmin.jsx:4:import API_BASE from '../config/api';
+src/services/api.js:14:    const res = await fetch(url, opts);
+src/services/api.js:1:import API_BASE from '../config/api';
+src/services/api.js:287:    const res = await fetch(`${API_BASE}/payments/paystack`, {
+src/services/api.js:300:    const res = await fetch(`${API_BASE}/payments/withdraw`, {
+src/services/api.js:313:    const res = await fetch(`${API_BASE}/payments/organizer/payout`, {
+src/services/api.js:326:    const res = await fetch(`${API_BASE}/payments/admin/pending-payouts`, {
+src/services/api.js:337:    const res = await fetch(`${API_BASE}/payments/admin/process-payout/${payoutId}`, {
+src/services/api.js:349:    const res = await fetch(`${API_BASE}/payments/organizer/payouts`, {
+src/services/api.js:360:    const res = await fetch(`${API_BASE}/payments/summary`, {
+src/services/api.js:371:    const res = await fetch(`${API_BASE}/payments/verify?reference=${encodeURIComponent(reference)}`);
+src/services/api.js:387:    const res = await fetch(`${API_BASE}/sms/send`, {
+src/services/api.js:411:    const res = await fetch(`${API_BASE}/promotion/sms/bulk`, {
+src/services/api.js:425:    const res = await fetch(`${API_BASE}/promotion/offers/create`, {
+src/services/api.js:447:    const res = await fetch(`${API_BASE}/payments/admin/revenue-summary`, {
+src/services/api.js:458:    const res = await fetch(`${API_BASE}/payments/admin/request-withdrawal`, {
+src/services/api.js:45:  return safeFetch(`${API_BASE}/auth/signup`, {
+src/services/api.js:471:    const res = await fetch(`${API_BASE}/payments/admin/withdrawals`, {
+src/services/api.js:482:    const res = await fetch(`${API_BASE}/payments/admin/process-withdrawal/${withdrawalId}`, {
+src/services/api.js:53:  return safeFetch(`${API_BASE}/auth/verify-otp`, {
+src/services/api.js:61:  return safeFetch(`${API_BASE}/auth/resend-otp`, {
+src/services/api.js:69:  return safeFetch(`${API_BASE}/auth/login`, {
+src/services/api.js:77:  return safeFetch(`${API_BASE}/auth/password-reset`, {
+src/services/api.js:85:  return safeFetch(`${API_BASE}/auth/password-reset`, {
+src/services/api.js:93:  return safeFetch(`${API_BASE}/auth/password-reset`, {
+src/services/smsService.js:22:    console.log(`[SMS] Sending to ${phone} via ${BACKEND_BASE_URL}`);
+src/services/smsService.js:24:    const response = await fetch(`${BACKEND_BASE_URL}/api/sms/send`, {
+src/services/smsService.js:6:const BACKEND_BASE_URL =
+src/services/smsService.js:87:    const response = await fetch(`${BACKEND_BASE_URL}/api/health`);

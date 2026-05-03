@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"name": "reektickets",
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"json.schemaDownload.enable": false
+	}
+}

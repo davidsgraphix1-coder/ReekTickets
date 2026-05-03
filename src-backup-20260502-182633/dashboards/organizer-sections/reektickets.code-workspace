@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../zenoph.notify-2.23.10-python"
+		}
+	],
+	"settings": {
+		"json.schemaDownload.enable": false
+	}
+}
