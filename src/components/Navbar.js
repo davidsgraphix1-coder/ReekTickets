@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
-export default function Navbar({ user, onLogout }) {
+export default function Navbar({ user, onLogout, isHomepage }) {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,7 +73,7 @@ export default function Navbar({ user, onLogout }) {
   }, [isMobileMenuOpen]);
 
   return (
-    <header className="top-nav">
+    <header className={`top-nav ${isHomepage ? 'home-nav' : ''}`}>
       <div className="nav-left" onClick={() => navigate('/')}>
         <img src="/logo-section.jpg" alt="ReekTickets" className="logo-img" />
       </div>

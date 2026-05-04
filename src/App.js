@@ -90,52 +90,61 @@ function AppContent() {
     return children;
   };
 
+  const isHomepage = ['/','/home'].includes(location.pathname);
+
   return (
     <div className="App">
-      {location.pathname === '/' && <Navbar user={user} onLogout={logout} />}
-      {location.pathname !== '/' && <MobileMenuBar user={user} onLogout={logout} />}
-      <main className="app-content">
-        <Routes>
-          <Route path="/" element={<Home user={user} />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/login" element={<Login onLogin={setUser} />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/signup" element={<Signup onLogin={setUser} />} />
-          <Route path="/signup/organizer" element={<OrganizerSignup onLogin={setUser} />} />
-          <Route path="/verify-email" element={<VerifyOtp onLogin={setUser} />} />
-          <Route path="/events" element={<Events user={user} />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/events/:id" element={<EventDetails />} />
-          <Route path="/event/:id" element={<EventDetails />} />
-          <Route path="/checkout/:eventId" element={<CheckoutPage />} />
-          <Route path="/payment/success" element={<PaymentSuccess />} />
-          <Route path="/dashboard" element={<PrivateRoute><Dashboard user={user} /></PrivateRoute>} />
-          <Route path="/dashboard/attendee" element={<PrivateRoute allowedRoles={['attendee']}><AttendeeDashboard /></PrivateRoute>} />
-          <Route path="/dashboard/organizer/*" element={<PrivateRoute allowedRoles={['organizer']}><OrganizerDashboard /></PrivateRoute>} />
-          <Route path="/dashboard/vendor" element={<PrivateRoute allowedRoles={['vendor']}><VendorDashboard /></PrivateRoute>} />
-          <Route path="/dashboard/agent" element={<PrivateRoute allowedRoles={['agent']}><SalesAgentDashboard /></PrivateRoute>} />
-          <Route path="/dashboard/gate" element={<PrivateRoute allowedRoles={['gate','entry']}><GateEntryDashboard /></PrivateRoute>} />
-          <Route path="/dashboard/admin" element={<PrivateRoute allowedRoles={['admin']}><AdminDashboard /></PrivateRoute>} />
-          <Route path="/admin/support" element={<PrivateRoute allowedRoles={['admin']}><AdminSupport /></PrivateRoute>} />
-          <Route path="/ticket/:id" element={<TicketView />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:slug" element={<BlogArticle />} />
-          <Route path="/create-event" element={<CreateEvent />} />
-          <Route path="/my-tickets" element={<MyTickets />} />
-          <Route path="/vendor" element={<Vendor />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/vendor/register" element={<VendorRegister />} />
-          <Route path="/agents" element={<SalesAgents />} />
-          <Route path="/admindavid" element={<AdminPortal />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/ticket-agreement" element={<TicketAgreement />} />
-          <Route path="/sms-test" element={<SmsTest />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </main>
+      {isHomepage ? <Navbar user={user} onLogout={logout} isHomepage={isHomepage} /> : <MobileMenuBar user={user} onLogout={logout} />}
+
+      {isHomepage ? (
+        <main className="home-main">
+          <Home user={user} />
+        </main>
+      ) : (
+        <main className="app-content">
+          <Routes>
+            <Route path="/" element={<Home user={user} />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/login" element={<Login onLogin={setUser} />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/signup" element={<Signup onLogin={setUser} />} />
+            <Route path="/signup/organizer" element={<OrganizerSignup onLogin={setUser} />} />
+            <Route path="/verify-email" element={<VerifyOtp onLogin={setUser} />} />
+            <Route path="/events" element={<Events user={user} />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/events/:id" element={<EventDetails />} />
+            <Route path="/event/:id" element={<EventDetails />} />
+            <Route path="/checkout/:eventId" element={<CheckoutPage />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/dashboard" element={<PrivateRoute><Dashboard user={user} /></PrivateRoute>} />
+            <Route path="/dashboard/attendee" element={<PrivateRoute allowedRoles={['attendee']}><AttendeeDashboard /></PrivateRoute>} />
+            <Route path="/dashboard/organizer/*" element={<PrivateRoute allowedRoles={['organizer']}><OrganizerDashboard /></PrivateRoute>} />
+            <Route path="/dashboard/vendor" element={<PrivateRoute allowedRoles={['vendor']}><VendorDashboard /></PrivateRoute>} />
+            <Route path="/dashboard/agent" element={<PrivateRoute allowedRoles={['agent']}><SalesAgentDashboard /></PrivateRoute>} />
+            <Route path="/dashboard/gate" element={<PrivateRoute allowedRoles={['gate','entry']}><GateEntryDashboard /></PrivateRoute>} />
+            <Route path="/dashboard/admin" element={<PrivateRoute allowedRoles={['admin']}><AdminDashboard /></PrivateRoute>} />
+            <Route path="/admin/support" element={<PrivateRoute allowedRoles={['admin']}><AdminSupport /></PrivateRoute>} />
+            <Route path="/ticket/:id" element={<TicketView />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogArticle />} />
+            <Route path="/create-event" element={<CreateEvent />} />
+            <Route path="/my-tickets" element={<MyTickets />} />
+            <Route path="/vendor" element={<Vendor />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/vendor/register" element={<VendorRegister />} />
+            <Route path="/agents" element={<SalesAgents />} />
+            <Route path="/admindavid" element={<AdminPortal />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/ticket-agreement" element={<TicketAgreement />} />
+            <Route path="/sms-test" element={<SmsTest />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </main>
+      )}
+
       <SupportChat user={user} />
-      {location.pathname === '/' && <Footer />}
+      {isHomepage && <Footer />}
     </div>
   );
 }

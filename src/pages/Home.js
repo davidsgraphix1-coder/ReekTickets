@@ -110,22 +110,20 @@ export default function Home({ user }) {
       {/* HERO BANNER */}
       <section
         className="hero hero-white"
-        style={{ backgroundImage: `url('/banner.jpg')` }}
+        style={{ backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.66), rgba(0,0,0,0.24)), url('/banner.jpg')` }}
       >
-        <div className="hero-overlay">
-          <div className="hero-content">
-            <p className="eyebrow">ReekTickets — Anytime, anywhere</p>
-            <h1>{slides[slide].title}</h1>
-            <p className="hero-text">{slides[slide].subtitle}</p>
-            <div className="hero-controls">
-              <button className="hero-arrow" onClick={prevSlide} aria-label="Previous slide">←</button>
-              <div className="dots">
-                {slides.map((_, index) => (
-                  <span key={index} className={`dot ${index === slide ? 'active' : ''}`}></span>
-                ))}
-              </div>
-              <button className="hero-arrow" onClick={nextSlide} aria-label="Next slide">→</button>
+        <div className="hero-content">
+          <p className="eyebrow">ReekTickets — Anytime, anywhere</p>
+          <h1>{slides[slide].title}</h1>
+          <p className="hero-text">{slides[slide].subtitle}</p>
+          <div className="hero-controls">
+            <button className="hero-arrow" onClick={prevSlide} aria-label="Previous slide">←</button>
+            <div className="dots">
+              {slides.map((_, index) => (
+                <span key={index} className={`dot ${index === slide ? 'active' : ''}`}></span>
+              ))}
             </div>
+            <button className="hero-arrow" onClick={nextSlide} aria-label="Next slide">→</button>
           </div>
         </div>
       </section>
