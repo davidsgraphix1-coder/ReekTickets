@@ -11,11 +11,12 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto
   color: #fff;
 }
 .top-nav.home-nav .nav-actions .btn-login {
+  background: linear-gradient(135deg, #7B2CBF, #4361EE);
   color: #fff;
-  border-color: rgba(255,255,255,0.65);
+  border: 0;
 }
 .top-nav .nav-left { display: flex; align-items: center; gap: .6rem; cursor: pointer; }
-.logo-img { width: 300px; height: 300px; border-radius: 0; object-fit: contain; background: transparent; padding: 0; box-shadow: none; filter: none; }
+.logo-img { width: 60px; height: 60px; border-radius: 0; object-fit: contain; background: transparent; padding: 0; box-shadow: none; filter: none; }
 
 /* Desktop Banner */
 .desktop-banner {
@@ -40,7 +41,7 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto
 .nav-actions .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(66, 52, 163, 0.35); }
 .nav-actions .btn-signup { background: linear-gradient(135deg, #7B2CBF, #4361EE); color: #fff; border: 0; box-shadow: 0 0 20px rgba(123, 44, 191, 0.4); transition: all .3s ease; }
 .nav-actions .btn-signup:hover { box-shadow: 0 0 30px rgba(123, 44, 191, 0.7), 0 4px 20px rgba(67, 97, 238, 0.4); transform: translateY(-2px); }
-.nav-actions .btn-login { background: #fff; color: #7B2CBF; border: 2px solid #7B2CBF; box-shadow: 0 0 15px rgba(123, 44, 191, 0.2); transition: all .3s ease; }
+.nav-actions .btn-login { background: linear-gradient(135deg, #7B2CBF, #4361EE); color: #fff; border: 0; box-shadow: 0 0 20px rgba(123, 44, 191, 0.4); transition: all .3s ease; }
 .nav-actions .btn-login:hover { box-shadow: 0 0 25px rgba(123, 44, 191, 0.5); background: #7B2CBF; color: #fff; }
 
 /* Mobile Menu Styles - Slide Down */
@@ -568,7 +569,7 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto
 .all-events-header { max-width: 760px; }
 .all-events-eyebrow { margin: 0; color: #7b2cbf; font-size: 0.9rem; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 700; }
 .all-events-title { font-size: clamp(2.5rem, 4vw, 3rem); margin: 0.65rem 0 0.9rem; line-height: 1.05; color: #111; }
-.all-events-subtitle { max-width: 760px; margin: 0; color: #4f4f4f; font-size: 1rem; line-height: 1.7; }
+.all-events-subtitle { max-width: 760px; margin: 0; color: #111; font-size: 1rem; line-height: 1.7; }
 .all-events-viewall { align-self: flex-start; margin-top: 0.5rem; color: #7b2cbf; font-weight: 700; text-decoration: none; }
 .all-events-filters { display: flex; flex-wrap: wrap; gap: 0.8rem; }
 .events-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.75rem; width: 100%; }
