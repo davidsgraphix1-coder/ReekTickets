@@ -128,8 +128,8 @@ export default function Home({ user }) {
         </div>
       </section>
 
-      {/* ALL EVENTS SECTION (Egotickets-style, dark) */}
-      <section className="all-events-section all-events-dark">
+      {/* ALL EVENTS SECTION */}
+      <section className="all-events-section">
         <div className="all-events-inner">
           <div className="all-events-top">
             <div className="all-events-header">
