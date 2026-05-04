@@ -16,7 +16,7 @@ body { margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto
   border: 0;
 }
 .top-nav .nav-left { display: flex; align-items: center; gap: .6rem; cursor: pointer; }
-.logo-img { width: 60px; height: 60px; border-radius: 0; object-fit: contain; background: transparent; padding: 0; box-shadow: none; filter: none; }
+.logo-img { width: 300px; height: 300px; border-radius: 0; object-fit: contain; background: transparent; padding: 0; box-shadow: none; filter: none; }
 
 /* Desktop Banner */
 .desktop-banner {
@@ -3403,7 +3403,7 @@ tr:hover { background: #f3f5ff; }
   color: #ffffff;
   padding: clamp(4rem, 8vw, 6rem) 5vw;
 }
-.all-events-inner {
+.all-events-section.all-events-dark .all-events-inner {
   width: min(1200px, 100%);
   max-width: 1280px;
   margin: 0 auto;
@@ -3412,7 +3412,7 @@ tr:hover { background: #f3f5ff; }
   flex-direction: column;
   gap: 2rem;
 }
-.all-events-top {
+.all-events-section.all-events-dark .all-events-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -3420,7 +3420,7 @@ tr:hover { background: #f3f5ff; }
   margin-bottom: 1.75rem;
   flex-wrap: wrap;
 }
-.all-events-eyebrow {
+.all-events-section.all-events-dark .all-events-eyebrow {
   color: #ffffff;
   font-size: 12px;
   letter-spacing: 2px;
@@ -3428,24 +3428,24 @@ tr:hover { background: #f3f5ff; }
   margin: 0 0 10px;
   text-transform: uppercase;
 }
-.all-events-title {
+.all-events-section.all-events-dark .all-events-title {
   font-size: clamp(2.4rem, 4vw, 3.25rem);
   font-weight: 800;
   margin: 0 0 0.75rem;
   color: #ffffff;
   line-height: 1.05;
 }
-.all-events-title .title-accent {
+.all-events-section.all-events-dark .all-events-title .title-accent {
   color: #ffffff;
 }
-.all-events-subtitle {
+.all-events-section.all-events-dark .all-events-subtitle {
   color: #cbd5e1;
   margin: 0;
   max-width: 720px;
   font-size: 1rem;
   line-height: 1.65;
 }
-.all-events-viewall {
+.all-events-section.all-events-dark .all-events-viewall {
   color: #ffffff;
   font-weight: 700;
   text-decoration: none;
@@ -3453,9 +3453,9 @@ tr:hover { background: #f3f5ff; }
   white-space: nowrap;
   margin-top: 0.5rem;
 }
-.all-events-viewall:hover { color: #9ca3af; }
+.all-events-section.all-events-dark .all-events-viewall:hover { color: #9ca3af; }
 
-.all-events-filters {
+.all-events-section.all-events-dark .all-events-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
